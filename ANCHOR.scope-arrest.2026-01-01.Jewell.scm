@@ -1,6 +1,6 @@
 ;; ANCHOR.scope-arrest.2026-01-01.Jewell.scm  (betlang)
 ;; SPDX-FileCopyrightText: 2026 hyperpolymath
-;; SPDX-License-Identifier: AGPL-3.0-or-later
+;; SPDX-License-Identifier: PMPL-1.0-or-later
 ;;
 ;; Scope arrest anchor for betlang project.
 ;; Purpose: Lock semantics; stop identity drift; enable future backends without confusion.

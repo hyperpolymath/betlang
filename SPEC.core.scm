@@ -1,5 +1,5 @@
 ;; SPDX-FileCopyrightText: 2025 hyperpolymath
-;; SPDX-License-Identifier: AGPL-3.0-or-later
+;; SPDX-License-Identifier: PMPL-1.0-or-later
 ;;
 ;; SPEC.core.scm - Formal Semantics Specification for betlang
 ;;

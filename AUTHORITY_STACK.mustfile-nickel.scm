@@ -1,5 +1,5 @@
 ;; SPDX-FileCopyrightText: 2026 hyperpolymath
-;; SPDX-License-Identifier: AGPL-3.0-or-later
+;; SPDX-License-Identifier: PMPL-1.0-or-later
 ;;
 ;; AUTHORITY_STACK.mustfile-nickel.scm
 ;; Shared drop for hyperpolymath repos: defines task routing + config authority.
