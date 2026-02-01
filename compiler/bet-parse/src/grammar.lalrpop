@@ -248,7 +248,7 @@ ExprAtom: Expr = {
     "true" => Expr::Ternary(TernaryValue::True),
     "false" => Expr::Ternary(TernaryValue::False),
     "unknown" => Expr::Ternary(TernaryValue::Unknown),
-    "()" => Expr::Unit,
+    "(" ")" => Expr::Unit,
 
     // Variable
     <s:IDENT> => Expr::Var(Symbol::intern(&s)),
@@ -373,7 +373,7 @@ PatternAtom: Pattern = {
     "true" => Pattern::Literal(Literal::Ternary(TernaryValue::True)),
     "false" => Pattern::Literal(Literal::Ternary(TernaryValue::False)),
     "unknown" => Pattern::Literal(Literal::Ternary(TernaryValue::Unknown)),
-    "()" => Pattern::Literal(Literal::Unit),
+    "(" ")" => Pattern::Literal(Literal::Unit),
     "(" <first:Pattern> "," <rest:Comma<Spanned<Pattern>>> ")" => {
         let mut elems = vec![Spanned::dummy(first)];
         elems.extend(rest);

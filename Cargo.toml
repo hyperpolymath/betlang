@@ -24,6 +24,7 @@ members = [
 
     # Tools
     "tools/bet-cli",
+    "tools/bet-lsp",
 
     # Bindings
     "bindings/chapel",

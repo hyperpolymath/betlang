@@ -36,6 +36,6 @@ rayon.workspace = true
 proptest.workspace = true
 criterion.workspace = true
 
-[[bench]]
-name = "data_structures"
-harness = false
+# [[bench]]
+# name = "data_structures"
+# harness = false

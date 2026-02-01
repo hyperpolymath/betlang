@@ -8,28 +8,28 @@ use bet_core::{Type, TypeEnv, CompileError, CompileResult};
 pub fn check(expr: &Expr, env: &TypeEnv) -> CompileResult<Type> {
     // TODO: Implement full type checking
     match expr {
-        Expr::Literal(lit) => check_literal(lit),
+        // Literals
+        Expr::Unit => Ok(Type::Unit),
+        Expr::Bool(_) => Ok(Type::Bool),
+        Expr::Ternary(_) => Ok(Type::Ternary),
+        Expr::Int(_) => Ok(Type::Int),
+        Expr::Float(_) => Ok(Type::Float),
+        Expr::String(_) => Ok(Type::String),
+
+        // Variables
         Expr::Var(name) => env
-            .lookup(name)
+            .lookup(&name.to_string())
             .cloned()
             .ok_or_else(|| CompileError::UndefinedVariable {
-                name: name.clone(),
+                name: name.to_string(),
                 span: None,
             }),
-        Expr::Bet(bet) => check_bet(bet, env),
-        _ => Ok(Type::Unit), // Placeholder
-    }
-}
 
-fn check_literal(lit: &Literal) -> CompileResult<Type> {
-    Ok(match lit {
-        Literal::Unit => Type::Unit,
-        Literal::Bool(_) => Type::Bool,
-        Literal::Ternary(_) => Type::Ternary,
-        Literal::Int(_) => Type::Int,
-        Literal::Float(_) => Type::Float,
-        Literal::String(_) => Type::String,
-    })
+        // Bet expressions
+        Expr::Bet(bet) => check_bet(bet, env),
+
+        _ => Ok(Type::Unit), // Placeholder for other expressions
+    }
 }
 
 fn check_bet(bet: &BetExpr, env: &TypeEnv) -> CompileResult<Type> {
@@ -37,7 +37,7 @@ fn check_bet(bet: &BetExpr, env: &TypeEnv) -> CompileResult<Type> {
     let types: Vec<_> = bet
         .alternatives
         .iter()
-        .map(|alt| check(&alt.value, env))
+        .map(|alt| check(&alt.node, env))
         .collect::<Result<_, _>>()?;
 
     if types.len() != 3 {

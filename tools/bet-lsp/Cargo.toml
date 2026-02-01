@@ -1,0 +1,34 @@
+# SPDX-License-Identifier: MIT OR Apache-2.0
+# Optional tooling - NOT authoritative
+
+[package]
+name = "bet-lsp"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+
+[lib]
+name = "bet_lsp"
+path = "src/lib.rs"
+
+[[bin]]
+name = "bet-lsp"
+path = "src/main.rs"
+
+[dependencies]
+# LSP
+tower-lsp = "0.20"
+tokio = { version = "1", features = ["full"] }
+dashmap = "6.0"
+once_cell = "1.19"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+
+# Betlang compiler components
+# Note: bet-parse has LALR grammar conflicts, using simplified parsing for now
+bet-syntax = { path = "../../compiler/bet-syntax" }
+# bet-parse = { path = "../../compiler/bet-parse" }
+bet-core = { path = "../../compiler/bet-core" }
+# bet-check = { path = "../../compiler/bet-check" }
