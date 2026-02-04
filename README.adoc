@@ -42,6 +42,27 @@ betlang is a Domain-Specific Language (DSL) for probabilistic programming built 
 - Credible intervals and Bayes factors
 - Posterior predictive distributions
 
+==== Uncertainty-Aware Number Systems (`lib/number-systems.rkt`)
+- DistnumberNormal, AffineNumber, FuzzyTriangular, BayesianNumber
+- RiskNumber, SurrealFuzzy, p-Adic Probability, LotteryNumber
+- Examples and tests in `lib/number-systems.rkt`
+- Support matrix in `SAFETY-FEATURES.md`
+
+Support matrix (implemented):
+
+|===
+| System | Best For | Accessibility | Mathematical Rigor | Julia Integration
+
+| Surreal Fuzzies | Theoretical flexibility | Medium | High | Possible (FFI)
+| DistNumber | Everyday probabilistic arithmetic | High | Medium | Easy (FFI)
+| Affine Arithmetic | Correlated uncertainties | Medium | High | Moderate (FFI)
+| Fuzzy Numbers | Interpretability | High | Medium | Easy (FFI)
+| p-Adic Probabilities | Hierarchical models | Low | Very High | Hard (FFI)
+| RiskNumbers | Financial/gambling risk | High | Medium | Custom (FFI)
+| BayesianNumbers | Learning from data | Medium | High | Moderate (FFI)
+| LotteryNumbers | Gambling/decision theory | High | Medium | Easy (FFI)
+|===
+
 ==== Optimization (`lib/optimization.rkt`)
 - Simulated annealing
 - Genetic algorithms

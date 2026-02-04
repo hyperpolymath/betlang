@@ -272,6 +272,299 @@ pub extern "C" fn bet_correlation(x: *const c_double, y: *const c_double, n: siz
     }
 }
 
+// ============================================================================
+// Uncertainty-Aware Number Systems
+// ============================================================================
+
+#[no_mangle]
+pub extern "C" fn bet_distnumber_add(
+    mean1: c_double,
+    std1: c_double,
+    mean2: c_double,
+    std2: c_double,
+    out_mean: *mut c_double,
+    out_std: *mut c_double,
+) -> c_int {
+    if out_mean.is_null() || out_std.is_null() {
+        return 0;
+    }
+
+    let mean = mean1 + mean2;
+    let std = (std1.powi(2) + std2.powi(2)).sqrt();
+    unsafe {
+        *out_mean = mean;
+        *out_std = std;
+    }
+    1
+}
+
+#[no_mangle]
+pub extern "C" fn bet_distnumber_mul(
+    mean1: c_double,
+    std1: c_double,
+    mean2: c_double,
+    std2: c_double,
+    out_mean: *mut c_double,
+    out_std: *mut c_double,
+) -> c_int {
+    if out_mean.is_null() || out_std.is_null() {
+        return 0;
+    }
+
+    let mean = mean1 * mean2;
+    let variance = mean1.powi(2) * std2.powi(2)
+        + mean2.powi(2) * std1.powi(2)
+        + std1.powi(2) * std2.powi(2);
+    let std = variance.sqrt();
+    unsafe {
+        *out_mean = mean;
+        *out_std = std;
+    }
+    1
+}
+
+#[no_mangle]
+pub extern "C" fn bet_affine_add(
+    lower1: c_double,
+    upper1: c_double,
+    lower2: c_double,
+    upper2: c_double,
+    out_lower: *mut c_double,
+    out_upper: *mut c_double,
+) -> c_int {
+    if out_lower.is_null() || out_upper.is_null() {
+        return 0;
+    }
+
+    unsafe {
+        *out_lower = lower1 + lower2;
+        *out_upper = upper1 + upper2;
+    }
+    1
+}
+
+#[no_mangle]
+pub extern "C" fn bet_affine_mul(
+    lower1: c_double,
+    upper1: c_double,
+    lower2: c_double,
+    upper2: c_double,
+    out_lower: *mut c_double,
+    out_upper: *mut c_double,
+) -> c_int {
+    if out_lower.is_null() || out_upper.is_null() {
+        return 0;
+    }
+
+    let products = [
+        lower1 * lower2,
+        lower1 * upper2,
+        upper1 * lower2,
+        upper1 * upper2,
+    ];
+    let min = products
+        .iter()
+        .cloned()
+        .fold(f64::INFINITY, f64::min);
+    let max = products
+        .iter()
+        .cloned()
+        .fold(f64::NEG_INFINITY, f64::max);
+
+    unsafe {
+        *out_lower = min;
+        *out_upper = max;
+    }
+    1
+}
+
+#[no_mangle]
+pub extern "C" fn bet_affine_contains(
+    lower: c_double,
+    upper: c_double,
+    value: c_double,
+) -> c_int {
+    if value >= lower && value <= upper {
+        1
+    } else {
+        0
+    }
+}
+
+#[no_mangle]
+pub extern "C" fn bet_fuzzy_membership(
+    left: c_double,
+    center: c_double,
+    right: c_double,
+    x: c_double,
+) -> c_double {
+    if x <= left {
+        0.0
+    } else if x <= center {
+        (x - left) / (center - left)
+    } else if x < right {
+        (right - x) / (right - center)
+    } else {
+        0.0
+    }
+}
+
+#[no_mangle]
+pub extern "C" fn bet_surreal_fuzzy_membership(
+    left: c_double,
+    center: c_double,
+    right: c_double,
+    epsilon: c_double,
+    x: c_double,
+) -> c_double {
+    let a = left - epsilon;
+    let c = right + epsilon;
+    if x <= a {
+        0.0
+    } else if x <= center {
+        (x - a) / (center - a)
+    } else if x < c {
+        (c - x) / (c - center)
+    } else {
+        0.0
+    }
+}
+
+#[no_mangle]
+pub extern "C" fn bet_bayesian_update(
+    prior: c_double,
+    likelihood: c_double,
+    evidence: c_double,
+) -> c_double {
+    if evidence <= 0.0 {
+        return 0.0;
+    }
+    (likelihood * prior) / evidence
+}
+
+#[no_mangle]
+pub extern "C" fn bet_value_at_risk(
+    samples: *const c_double,
+    n: size_t,
+    confidence: c_double,
+) -> c_double {
+    if samples.is_null() || n == 0 || confidence <= 0.0 || confidence > 1.0 {
+        return 0.0;
+    }
+
+    let slice = unsafe { std::slice::from_raw_parts(samples, n) };
+    let mut sorted = slice.to_vec();
+    sorted.sort_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal));
+    let index = ((1.0 - confidence) * n as f64).floor() as usize;
+    sorted[std::cmp::min(index, n - 1)]
+}
+
+#[no_mangle]
+pub extern "C" fn bet_conditional_var(
+    samples: *const c_double,
+    n: size_t,
+    confidence: c_double,
+) -> c_double {
+    if samples.is_null() || n == 0 {
+        return 0.0;
+    }
+
+    let var = bet_value_at_risk(samples, n, confidence);
+    let slice = unsafe { std::slice::from_raw_parts(samples, n) };
+    let mut total = 0.0;
+    let mut count = 0usize;
+
+    for &x in slice {
+        if x <= var {
+            total += x;
+            count += 1;
+        }
+    }
+
+    if count == 0 {
+        var
+    } else {
+        total / count as f64
+    }
+}
+
+#[no_mangle]
+pub extern "C" fn bet_padic_to_real(
+    base: c_uint,
+    digits: *const c_uint,
+    n: size_t,
+) -> c_double {
+    if base < 2 || digits.is_null() || n == 0 {
+        return 0.0;
+    }
+
+    let slice = unsafe { std::slice::from_raw_parts(digits, n) };
+    let base_f = base as f64;
+    let mut sum = 0.0;
+    let mut denom = base_f;
+
+    for &d in slice {
+        sum += (d as f64) / denom;
+        denom *= base_f;
+    }
+
+    sum
+}
+
+#[no_mangle]
+pub extern "C" fn bet_lottery_expected(
+    outcomes: *const c_double,
+    weights: *const c_double,
+    n: size_t,
+) -> c_double {
+    if outcomes.is_null() || weights.is_null() || n == 0 {
+        return 0.0;
+    }
+
+    let outcomes_slice = unsafe { std::slice::from_raw_parts(outcomes, n) };
+    let weights_slice = unsafe { std::slice::from_raw_parts(weights, n) };
+    let total: f64 = weights_slice.iter().sum();
+    if total <= 0.0 {
+        return 0.0;
+    }
+
+    outcomes_slice
+        .iter()
+        .zip(weights_slice.iter())
+        .map(|(o, w)| o * w)
+        .sum::<f64>()
+        / total
+}
+
+#[no_mangle]
+pub extern "C" fn bet_lottery_sample(
+    outcomes: *const c_double,
+    weights: *const c_double,
+    n: size_t,
+) -> c_double {
+    if outcomes.is_null() || weights.is_null() || n == 0 {
+        return 0.0;
+    }
+
+    let outcomes_slice = unsafe { std::slice::from_raw_parts(outcomes, n) };
+    let weights_slice = unsafe { std::slice::from_raw_parts(weights, n) };
+    let total: f64 = weights_slice.iter().sum();
+    if total <= 0.0 {
+        return 0.0;
+    }
+
+    let mut cumulative = 0.0;
+    let r: f64 = thread_rng().gen::<f64>() * total;
+    for (o, w) in outcomes_slice.iter().zip(weights_slice.iter()) {
+        cumulative += w;
+        if r < cumulative {
+            return *o;
+        }
+    }
+
+    *outcomes_slice.last().unwrap_or(&0.0)
+}
+
 #[no_mangle]
 pub extern "C" fn bet_version() -> *const c_char {
     static VERSION: &str = concat!(env!("CARGO_PKG_VERSION"), "\0");

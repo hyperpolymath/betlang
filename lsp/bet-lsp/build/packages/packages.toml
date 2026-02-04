@@ -1,0 +1,9 @@
+[packages]
+gleeunit = "1.9.0"
+glisten = "2.0.0"
+gleam_erlang = "0.34.0"
+gleam_json = "1.0.1"
+gleam_stdlib = "0.68.1"
+gleam_http = "3.7.2"
+gleam_otp = "0.16.1"
+thoas = "1.2.1"

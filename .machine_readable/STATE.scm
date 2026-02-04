@@ -1,39 +1,129 @@
 ;; SPDX-License-Identifier: PMPL-1.0-or-later
+;; SPDX-FileCopyrightText: 2026 Jonathan D.A. Jewell
 ;; STATE.scm - Project state for betlang
 ;; Media-Type: application/vnd.state+scm
 
 (state
   (metadata
-    (version "0.0.1")
+    (version "0.5.0")
     (schema-version "1.0")
     (created "2026-01-03")
-    (updated "2026-01-03")
+    (updated "2026-02-01")
     (project "betlang")
     (repo "github.com/hyperpolymath/betlang"))
 
   (project-context
-    (name "betlang")
-    (tagline "")
-    (tech-stack ()))
+    (name "BetLang")
+    (tagline "Safe probabilistic programming with Dutch book prevention and gambling harm reduction")
+    (tech-stack (Racket Rust LALRPOP Julia)))
 
   (current-position
-    (phase "initial")
-    (overall-completion 0)
-    (components ())
-    (working-features ()))
+    (phase "safety-features-complete")
+    (overall-completion 65)
+    (components
+      ((racket-implementation (status "working") (completion 90))
+       (safety-features (status "complete") (completion 100))
+       (dutch-book-prevention (status "complete") (completion 100))
+       (risk-of-ruin-protection (status "complete") (completion 100))
+       (cool-off-mechanism (status "complete") (completion 100))
+       (number-systems (status "partial") (completion 45))
+       (rust-compiler (status "broken") (completion 30))
+       (julia-backend (status "planned") (completion 0))))
+    (working-features
+      ("Ternary bets with equal/weighted probabilities"
+       "Dutch book detection and prevention"
+       "Kelly criterion optimal stake calculation"
+       "Risk-of-ruin Monte Carlo simulation"
+       "Cool-off mechanism with violation tracking"
+       "DistnumberNormal (Gaussian distributions)"
+       "AffineNumber (interval arithmetic)"
+       "FuzzyTriangular (fuzzy logic)"
+       "BayesianNumber (Bayesian inference)"
+       "RiskNumber (VaR/CVaR calculations)"
+       "Comprehensive safety demo (examples/safety-features.rkt)")))
 
   (route-to-mvp
-    (milestones ()))
+    (milestones
+      ((v0.5-safety-features
+        (status "complete")
+        (completion 100)
+        (items
+          (("Dutch book prevention" "complete")
+           ("Risk-of-ruin protection" "complete")
+           ("Cool-off mechanism" "complete")
+           ("5 core number systems" "complete")
+           ("Safety features demo" "complete")
+           ("Documentation (SAFETY-FEATURES.md)" "complete"))))
+
+       (v0.6-remaining-number-systems
+        (status "planned")
+        (completion 0)
+        (items
+          (("DistnumberBeta" "planned")
+           ("Hyperreal numbers" "planned")
+           ("Surreal numbers" "planned")
+           ("p-Adic numbers" "planned")
+           ("Imprecise probabilities" "planned")
+           ("Dempster-Shafer theory" "planned"))))
+
+       (v0.7-rust-compiler-fix
+        (status "planned")
+        (completion 0)
+        (items
+          (("Fix serde serialization errors" "planned")
+           ("Complete type checker" "planned")
+           ("Complete code generator" "planned")
+           ("Complete interpreter" "planned"))))
+
+       (v0.8-julia-backend
+        (status "planned")
+        (completion 0)
+        (items
+          (("BetLang → Julia compiler" "planned")
+           ("Distributions.jl integration" "planned")
+           ("Aggregate-library preparation" "planned"))))
+
+       (v1.0-production
+        (status "planned")
+        (completion 0)
+        (items
+          (("Idris2 ABI formal proofs" "planned")
+           ("Academic paper submission" "planned")
+           ("Performance optimization" "planned")
+           ("Full documentation" "planned")
+           ("Release preparation" "planned")))))))
 
   (blockers-and-issues
-    (critical)
-    (high)
-    (medium)
-    (low))
+    (critical ())
+    (high
+      (("Rust compiler has serde serialization errors" "unresolved")
+       ("Type checker is stub (not implemented)" "unresolved")))
+    (medium
+      (("6 advanced number systems not implemented" "unresolved")
+       ("Julia backend doesn't exist yet" "unresolved")))
+    (low
+      (("Missing some GitHub workflows vs affinescript" "unresolved"))))
 
   (critical-next-actions
-    (immediate)
-    (this-week)
-    (this-month))
+    (immediate
+      (("Update README with safety features" "high")
+       ("Commit safety features to git" "high")))
+    (this-week
+      (("Implement remaining 6 number systems" "medium")
+       ("Fix Rust compiler serde errors" "medium")))
+    (this-month
+      (("Create Julia backend" "medium")
+       ("Academic paper draft" "low"))))
 
-  (session-history ()))
+  (session-history
+    ((date "2026-02-01")
+     (session "safety-features-implementation")
+     (accomplishments
+       ("Implemented Dutch book prevention (lib/dutch-book.rkt)"
+        "Implemented risk-of-ruin protection (lib/risk-of-ruin.rkt)"
+        "Implemented cool-off mechanism (lib/cool-off.rkt)"
+        "Implemented 5 uncertainty-aware number systems (lib/number-systems.rkt)"
+        "Created comprehensive safety demo (examples/safety-features.rkt)"
+        "Created safety documentation (SAFETY-FEATURES.md)"
+        "All safety features tested and working"
+        "Updated ECOSYSTEM.scm with correct project description")))))

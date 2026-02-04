@@ -26,6 +26,7 @@ extern {
         "if" => Token::If,
         "then" => Token::Then,
         "else" => Token::Else,
+        "end" => Token::End,
         "do" => Token::Do,
         "return" => Token::Return,
         "type" => Token::Type,
@@ -258,11 +259,25 @@ ExprAtom: Expr = {
         Expr::Bet(BetExpr {
             alternatives: [Box::new(a), Box::new(b), Box::new(c)],
         }),
+    "bet" <a:Spanned<Expr>> "," <b:Spanned<Expr>> "," <c:Spanned<Expr>> "end" =>
+        Expr::Bet(BetExpr {
+            alternatives: [Box::new(a), Box::new(b), Box::new(c)],
+        }),
 
     // Weighted bet
     "bet" "{" <a:Spanned<Expr>> "@" <wa:Spanned<Expr>> ","
                <b:Spanned<Expr>> "@" <wb:Spanned<Expr>> ","
                <c:Spanned<Expr>> "@" <wc:Spanned<Expr>> "}" =>
+        Expr::WeightedBet(WeightedBetExpr {
+            alternatives: [
+                (Box::new(a), Box::new(wa)),
+                (Box::new(b), Box::new(wb)),
+                (Box::new(c), Box::new(wc)),
+            ],
+        }),
+    "bet" <a:Spanned<Expr>> "@" <wa:Spanned<Expr>> ","
+               <b:Spanned<Expr>> "@" <wb:Spanned<Expr>> ","
+               <c:Spanned<Expr>> "@" <wc:Spanned<Expr>> "end" =>
         Expr::WeightedBet(WeightedBetExpr {
             alternatives: [
                 (Box::new(a), Box::new(wa)),
@@ -287,9 +302,23 @@ ExprAtom: Expr = {
             body: Box::new(body),
             is_rec: is_rec.is_some(),
         }),
+    "let" <is_rec:"rec"?> <pat:Spanned<Pattern>> <type_ann:(":" <Spanned<Type>>)?> "=" <val:Spanned<Expr>> "in" <body:Spanned<Expr>> "end" =>
+        Expr::Let(LetExpr {
+            pattern: pat,
+            type_ann,
+            value: Box::new(val),
+            body: Box::new(body),
+            is_rec: is_rec.is_some(),
+        }),
 
     // If
     "if" <cond:Spanned<Expr>> "then" <then_br:Spanned<Expr>> "else" <else_br:Spanned<Expr>> =>
+        Expr::If(IfExpr {
+            condition: Box::new(cond),
+            then_branch: Box::new(then_br),
+            else_branch: Box::new(else_br),
+        }),
+    "if" <cond:Spanned<Expr>> "then" <then_br:Spanned<Expr>> "else" <else_br:Spanned<Expr>> "end" =>
         Expr::If(IfExpr {
             condition: Box::new(cond),
             then_branch: Box::new(then_br),
@@ -302,13 +331,22 @@ ExprAtom: Expr = {
             scrutinee: Box::new(scrutinee),
             arms,
         }),
+    "match" <scrutinee:Spanned<Expr>> <arms:Semi<MatchArm>> "end" =>
+        Expr::Match(MatchExpr {
+            scrutinee: Box::new(scrutinee),
+            arms,
+        }),
 
     // Do notation
     "do" "{" <stmts:Semi<Spanned<DoStatement>>> "}" =>
         Expr::Do(DoExpr { statements: stmts }),
+    "do" <stmts:Semi<Spanned<DoStatement>>> "end" =>
+        Expr::Do(DoExpr { statements: stmts }),
 
     // Parallel
     "parallel" <n:Spanned<ExprAtom>> "{" <body:Spanned<Expr>> "}" =>
+        Expr::Parallel(Box::new(n), Box::new(body)),
+    "parallel" <n:Spanned<ExprAtom>> "do" <body:Spanned<Expr>> "end" =>
         Expr::Parallel(Box::new(n), Box::new(body)),
 
     // Tuple

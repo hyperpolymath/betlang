@@ -98,6 +98,47 @@ betlang> (if (equal? (bet 'a 'b 'c) 'a)
 "Got A!"
 ```
 
+## Keyword-delimited Syntax (preferred)
+
+Betlang now exposes a Julia-style keyword syntax where each block ends with `end`.
+It desugars directly to the same AST as the brace-based form, but many users find it
+easier to read and write. The brace form is still accepted for backwards compatibility,
+but the `end` style is the recommended one going forward.
+
+```betlang
+if x > 0 then
+  bet "Positive" "Zero" "Negative"
+else
+  "No change"
+end
+
+let result = bet "A" "B" "C" in
+  if (equal? result "B") then
+    "Hit"
+  else
+    "Miss"
+  end
+end
+
+match value
+  'A -> "Alpha"
+  'B -> "Beta"
+  other -> "Other"
+end
+
+do
+  x <- sample normal
+  y <- sample normal
+  return (+ x y)
+end
+
+parallel 4 do
+  sample normal
+end
+```
+
+Each keyword form (`bet`, `let … in`, `if … then … else`, `match`, `do`, `parallel`) can resurface general-purpose expressions, and the trailing `end` keeps the structure explicit. Old-style `{}`/`,` grouping is still parsed, but aim for `end` blocks for new code.
+
 ## Understanding Probability
 
 ### Running Multiple Trials

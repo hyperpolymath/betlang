@@ -317,6 +317,177 @@ function bet_correlation(x::Vector{Float64}, y::Vector{Float64})::Float64
 end
 
 # ============================================================================
+# Uncertainty-Aware Number Systems
+# ============================================================================
+
+"""
+    distnumber_add(mean1, std1, mean2, std2) -> (mean, std)
+
+Combine two Gaussian distnumbers by addition.
+"""
+function distnumber_add(mean1::Real, std1::Real, mean2::Real, std2::Real)
+    out_mean = Ref{Cdouble}()
+    out_std = Ref{Cdouble}()
+    ok = ccall(dlsym(LIBBET[], :bet_distnumber_add), Cint,
+               (Cdouble, Cdouble, Cdouble, Cdouble, Ptr{Cdouble}, Ptr{Cdouble}),
+               Float64(mean1), Float64(std1), Float64(mean2), Float64(std2),
+               out_mean, out_std)
+    ok == 0 && error("distnumber_add failed")
+    return (out_mean[], out_std[])
+end
+
+"""
+    distnumber_mul(mean1, std1, mean2, std2) -> (mean, std)
+
+Approximate product of two Gaussian distnumbers.
+"""
+function distnumber_mul(mean1::Real, std1::Real, mean2::Real, std2::Real)
+    out_mean = Ref{Cdouble}()
+    out_std = Ref{Cdouble}()
+    ok = ccall(dlsym(LIBBET[], :bet_distnumber_mul), Cint,
+               (Cdouble, Cdouble, Cdouble, Cdouble, Ptr{Cdouble}, Ptr{Cdouble}),
+               Float64(mean1), Float64(std1), Float64(mean2), Float64(std2),
+               out_mean, out_std)
+    ok == 0 && error("distnumber_mul failed")
+    return (out_mean[], out_std[])
+end
+
+"""
+    affine_add(lower1, upper1, lower2, upper2) -> (lower, upper)
+
+Add two affine interval numbers.
+"""
+function affine_add(lower1::Real, upper1::Real, lower2::Real, upper2::Real)
+    out_lower = Ref{Cdouble}()
+    out_upper = Ref{Cdouble}()
+    ok = ccall(dlsym(LIBBET[], :bet_affine_add), Cint,
+               (Cdouble, Cdouble, Cdouble, Cdouble, Ptr{Cdouble}, Ptr{Cdouble}),
+               Float64(lower1), Float64(upper1), Float64(lower2), Float64(upper2),
+               out_lower, out_upper)
+    ok == 0 && error("affine_add failed")
+    return (out_lower[], out_upper[])
+end
+
+"""
+    affine_mul(lower1, upper1, lower2, upper2) -> (lower, upper)
+
+Multiply two affine interval numbers.
+"""
+function affine_mul(lower1::Real, upper1::Real, lower2::Real, upper2::Real)
+    out_lower = Ref{Cdouble}()
+    out_upper = Ref{Cdouble}()
+    ok = ccall(dlsym(LIBBET[], :bet_affine_mul), Cint,
+               (Cdouble, Cdouble, Cdouble, Cdouble, Ptr{Cdouble}, Ptr{Cdouble}),
+               Float64(lower1), Float64(upper1), Float64(lower2), Float64(upper2),
+               out_lower, out_upper)
+    ok == 0 && error("affine_mul failed")
+    return (out_lower[], out_upper[])
+end
+
+"""
+    affine_contains(lower, upper, value) -> Bool
+
+Check if value is within [lower, upper].
+"""
+function affine_contains(lower::Real, upper::Real, value::Real)::Bool
+    ccall(dlsym(LIBBET[], :bet_affine_contains), Cint,
+          (Cdouble, Cdouble, Cdouble),
+          Float64(lower), Float64(upper), Float64(value)) != 0
+end
+
+"""
+    fuzzy_membership(left, center, right, x) -> Float64
+
+Triangular fuzzy membership.
+"""
+function fuzzy_membership(left::Real, center::Real, right::Real, x::Real)::Float64
+    ccall(dlsym(LIBBET[], :bet_fuzzy_membership), Cdouble,
+          (Cdouble, Cdouble, Cdouble, Cdouble),
+          Float64(left), Float64(center), Float64(right), Float64(x))
+end
+
+"""
+    surreal_fuzzy_membership(left, center, right, epsilon, x) -> Float64
+
+Fuzzy membership with infinitesimal tolerance.
+"""
+function surreal_fuzzy_membership(
+    left::Real,
+    center::Real,
+    right::Real,
+    epsilon::Real,
+    x::Real,
+)::Float64
+    ccall(dlsym(LIBBET[], :bet_surreal_fuzzy_membership), Cdouble,
+          (Cdouble, Cdouble, Cdouble, Cdouble, Cdouble),
+          Float64(left), Float64(center), Float64(right), Float64(epsilon), Float64(x))
+end
+
+"""
+    bayesian_update(prior, likelihood, evidence) -> Float64
+
+Compute posterior = likelihood * prior / evidence.
+"""
+function bayesian_update(prior::Real, likelihood::Real, evidence::Real)::Float64
+    ccall(dlsym(LIBBET[], :bet_bayesian_update), Cdouble,
+          (Cdouble, Cdouble, Cdouble),
+          Float64(prior), Float64(likelihood), Float64(evidence))
+end
+
+"""
+    value_at_risk(samples, confidence) -> Float64
+
+Compute VaR at confidence level.
+"""
+function value_at_risk(samples::Vector{Float64}, confidence::Real)::Float64
+    ccall(dlsym(LIBBET[], :bet_value_at_risk), Cdouble,
+          (Ptr{Cdouble}, Csize_t, Cdouble), samples, length(samples), Float64(confidence))
+end
+
+"""
+    conditional_var(samples, confidence) -> Float64
+
+Compute CVaR (expected shortfall) at confidence level.
+"""
+function conditional_var(samples::Vector{Float64}, confidence::Real)::Float64
+    ccall(dlsym(LIBBET[], :bet_conditional_var), Cdouble,
+          (Ptr{Cdouble}, Csize_t, Cdouble), samples, length(samples), Float64(confidence))
+end
+
+"""
+    padic_to_real(base, digits) -> Float64
+
+Convert p-adic digit expansion to a real probability.
+"""
+function padic_to_real(base::Integer, digits::Vector{<:Integer})::Float64
+    d = UInt32.(digits)
+    ccall(dlsym(LIBBET[], :bet_padic_to_real), Cdouble,
+          (Cuint, Ptr{Cuint}, Csize_t), UInt32(base), d, length(d))
+end
+
+"""
+    lottery_expected(outcomes, weights) -> Float64
+
+Expected value of a lottery number.
+"""
+function lottery_expected(outcomes::Vector{Float64}, weights::Vector{Float64})::Float64
+    @assert length(outcomes) == length(weights)
+    ccall(dlsym(LIBBET[], :bet_lottery_expected), Cdouble,
+          (Ptr{Cdouble}, Ptr{Cdouble}, Csize_t), outcomes, weights, length(outcomes))
+end
+
+"""
+    lottery_sample(outcomes, weights) -> Float64
+
+Sample from a lottery number.
+"""
+function lottery_sample(outcomes::Vector{Float64}, weights::Vector{Float64})::Float64
+    @assert length(outcomes) == length(weights)
+    ccall(dlsym(LIBBET[], :bet_lottery_sample), Cdouble,
+          (Ptr{Cdouble}, Ptr{Cdouble}, Csize_t), outcomes, weights, length(outcomes))
+end
+
+# ============================================================================
 # High-Level API
 # ============================================================================
 

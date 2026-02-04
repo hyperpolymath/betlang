@@ -1,0 +1,16 @@
+rescript = 1
+rule astj
+  command = /var/mnt/eclipse/repos/betlang/editors/vscode/node_modules/rescript/linux/bsc.exe  -warn-error +101 -bs-v 11.1.4 -uncurried  -absname -bs-ast -o $out $i
+o src/VSCode.ast : astj ../../src/VSCode.res
+rule deps
+  command = /var/mnt/eclipse/repos/betlang/editors/vscode/node_modules/rescript/linux/bsb_helper.exe -hash 01f137aa28e8f6a8e6efabc3fd6f6c1c $in
+  restat = 1
+o src/VSCode.d : deps src/VSCode.ast
+rule mij
+  command = /var/mnt/eclipse/repos/betlang/editors/vscode/node_modules/rescript/linux/bsc.exe -I src   -warn-error +101 -uncurried -bs-package-name betlang-vscode -bs-package-output esmodule:$in_d:.res.js $i
+  dyndep = 1
+  restat = 1
+o src/VSCode.cmj src/VSCode.cmi ../../src/VSCode.res.js : mij src/VSCode.ast
+o src/Extension.ast : astj ../../src/Extension.res
+o src/Extension.d : deps src/Extension.ast
+o src/Extension.cmj src/Extension.cmi ../../src/Extension.res.js : mij src/Extension.ast

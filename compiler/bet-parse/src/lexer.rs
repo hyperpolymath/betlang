@@ -35,6 +35,9 @@ pub enum Token {
     #[token("else")]
     Else,
 
+    #[token("end")]
+    End,
+
     #[token("do")]
     Do,
 
@@ -254,6 +257,7 @@ impl std::fmt::Display for Token {
             Token::If => write!(f, "if"),
             Token::Then => write!(f, "then"),
             Token::Else => write!(f, "else"),
+            Token::End => write!(f, "end"),
             Token::Do => write!(f, "do"),
             Token::Return => write!(f, "return"),
             Token::Type => write!(f, "type"),
@@ -427,5 +431,11 @@ mod tests {
         let tokens = lex("do { x <- sample dist; return x }").unwrap();
         assert_eq!(tokens[0].token, Token::Do);
         assert!(tokens.iter().any(|t| matches!(t.token, Token::LArrow)));
+    }
+
+    #[test]
+    fn test_lex_end_keyword() {
+        let tokens = lex("if x then y else z end").unwrap();
+        assert!(tokens.iter().any(|t| matches!(t.token, Token::End)));
     }
 }

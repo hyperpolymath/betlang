@@ -69,6 +69,10 @@ build-tooling:
     @echo "NOTE: These are non-authoritative. See TOOLING.md"
     cargo build --release
 
+# Optimized release build for Betlang v3
+build-v3: build-tooling
+    @echo "Betlang v3 optimized build: release tooling complete."
+
 # Run Rust tooling tests (optional)
 test-tooling:
     @echo "Testing optional Rust tooling..."
