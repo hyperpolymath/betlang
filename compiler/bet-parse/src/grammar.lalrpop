@@ -1,5 +1,7 @@
-// SPDX-License-Identifier: MIT OR Apache-2.0
+// SPDX-License-Identifier: PMPL-1.0-or-later
 // Betlang Grammar
+//
+// Author: Jonathan D.A. Jewell <jonathan.jewell@open.ac.uk>
 
 use bet_syntax::{
     ast::*,
@@ -109,18 +111,28 @@ Spanned<T>: Spanned<T> = {
     <l:@L> <t:T> <r:@R> => Spanned::new(t, Span::new(l as u32, r as u32)),
 };
 
+// Comma-separated list allowing trailing comma, possibly empty
 Comma<T>: Vec<T> = {
-    <mut v:(<T> ",")*> <e:T?> => match e {
-        Some(e) => { v.push(e); v }
-        None => v
-    }
+    => Vec::new(),
+    <v:Sep<T, ",">> => v,
+    <v:Sep<T, ",">> "," => v,
+};
+
+// One-or-more comma-separated (no trailing comma)
+Sep<T, S>: Vec<T> = {
+    <e:T> => vec![e],
+    <mut v:Sep<T, S>> S <e:T> => { v.push(e); v },
 };
 
 Semi<T>: Vec<T> = {
-    <mut v:(<T> ";")*> <e:T?> => match e {
-        Some(e) => { v.push(e); v }
-        None => v
-    }
+    => Vec::new(),
+    <v:SemiSep<T>> => v,
+    <v:SemiSep<T>> ";" => v,
+};
+
+SemiSep<T>: Vec<T> = {
+    <e:T> => vec![e],
+    <mut v:SemiSep<T>> ";" <e:T> => { v.push(e); v },
 };
 
 // === Top-Level ===
@@ -254,30 +266,22 @@ ExprAtom: Expr = {
     // Variable
     <s:IDENT> => Expr::Var(Symbol::intern(&s)),
 
-    // Bet expressions
+    // Bet expressions (brace-delimited)
     "bet" "{" <a:Spanned<Expr>> "," <b:Spanned<Expr>> "," <c:Spanned<Expr>> "}" =>
         Expr::Bet(BetExpr {
             alternatives: [Box::new(a), Box::new(b), Box::new(c)],
         }),
-    "bet" <a:Spanned<Expr>> "," <b:Spanned<Expr>> "," <c:Spanned<Expr>> "end" =>
+
+    // Bet with end delimiter (atoms only to prevent ambiguity)
+    "bet" <a:Spanned<ExprAtom>> "," <b:Spanned<ExprAtom>> "," <c:Spanned<ExprAtom>> "end" =>
         Expr::Bet(BetExpr {
             alternatives: [Box::new(a), Box::new(b), Box::new(c)],
         }),
 
-    // Weighted bet
+    // Weighted bet (brace-delimited only)
     "bet" "{" <a:Spanned<Expr>> "@" <wa:Spanned<Expr>> ","
                <b:Spanned<Expr>> "@" <wb:Spanned<Expr>> ","
                <c:Spanned<Expr>> "@" <wc:Spanned<Expr>> "}" =>
-        Expr::WeightedBet(WeightedBetExpr {
-            alternatives: [
-                (Box::new(a), Box::new(wa)),
-                (Box::new(b), Box::new(wb)),
-                (Box::new(c), Box::new(wc)),
-            ],
-        }),
-    "bet" <a:Spanned<Expr>> "@" <wa:Spanned<Expr>> ","
-               <b:Spanned<Expr>> "@" <wb:Spanned<Expr>> ","
-               <c:Spanned<Expr>> "@" <wc:Spanned<Expr>> "end" =>
         Expr::WeightedBet(WeightedBetExpr {
             alternatives: [
                 (Box::new(a), Box::new(wa)),
@@ -293,7 +297,7 @@ ExprAtom: Expr = {
             body: Box::new(body),
         }),
 
-    // Let
+    // Let expression (uses "in" as delimiter)
     "let" <is_rec:"rec"?> <pat:Spanned<Pattern>> <type_ann:(":" <Spanned<Type>>)?> "=" <val:Spanned<Expr>> "in" <body:Spanned<Expr>> =>
         Expr::Let(LetExpr {
             pattern: pat,
@@ -302,22 +306,8 @@ ExprAtom: Expr = {
             body: Box::new(body),
             is_rec: is_rec.is_some(),
         }),
-    "let" <is_rec:"rec"?> <pat:Spanned<Pattern>> <type_ann:(":" <Spanned<Type>>)?> "=" <val:Spanned<Expr>> "in" <body:Spanned<Expr>> "end" =>
-        Expr::Let(LetExpr {
-            pattern: pat,
-            type_ann,
-            value: Box::new(val),
-            body: Box::new(body),
-            is_rec: is_rec.is_some(),
-        }),
 
-    // If
-    "if" <cond:Spanned<Expr>> "then" <then_br:Spanned<Expr>> "else" <else_br:Spanned<Expr>> =>
-        Expr::If(IfExpr {
-            condition: Box::new(cond),
-            then_branch: Box::new(then_br),
-            else_branch: Box::new(else_br),
-        }),
+    // If expression (end-delimited for unambiguous nesting)
     "if" <cond:Spanned<Expr>> "then" <then_br:Spanned<Expr>> "else" <else_br:Spanned<Expr>> "end" =>
         Expr::If(IfExpr {
             condition: Box::new(cond),
@@ -326,21 +316,21 @@ ExprAtom: Expr = {
         }),
 
     // Match
-    "match" <scrutinee:Spanned<Expr>> "{" <arms:Comma<MatchArm>> "}" =>
+    "match" <scrutinee:Spanned<Expr>> "{" <arms:Sep<MatchArm, ",">> "}" =>
         Expr::Match(MatchExpr {
             scrutinee: Box::new(scrutinee),
             arms,
         }),
-    "match" <scrutinee:Spanned<Expr>> <arms:Semi<MatchArm>> "end" =>
+    "match" <scrutinee:Spanned<ExprAtom>> <arms:Sep<MatchArm, ";">> "end" =>
         Expr::Match(MatchExpr {
             scrutinee: Box::new(scrutinee),
             arms,
         }),
 
     // Do notation
-    "do" "{" <stmts:Semi<Spanned<DoStatement>>> "}" =>
+    "do" "{" <stmts:Sep<Spanned<DoStatement>, ";">> "}" =>
         Expr::Do(DoExpr { statements: stmts }),
-    "do" <stmts:Semi<Spanned<DoStatement>>> "end" =>
+    "do" <stmts:Sep<Spanned<DoStatement>, ";">> "end" =>
         Expr::Do(DoExpr { statements: stmts }),
 
     // Parallel
@@ -349,9 +339,9 @@ ExprAtom: Expr = {
     "parallel" <n:Spanned<ExprAtom>> "do" <body:Spanned<Expr>> "end" =>
         Expr::Parallel(Box::new(n), Box::new(body)),
 
-    // Tuple
-    "(" <first:Expr> "," <rest:Comma<Spanned<Expr>>> ")" => {
-        let mut elems = vec![Spanned::dummy(first)];
+    // Tuple (2+ elements, comma-separated, no trailing comma)
+    "(" <first:Spanned<Expr>> "," <rest:Sep<Spanned<Expr>, ",">> ")" => {
+        let mut elems = vec![first];
         elems.extend(rest);
         Expr::Tuple(elems)
     },
@@ -360,7 +350,7 @@ ExprAtom: Expr = {
     "[" <elems:Comma<Spanned<Expr>>> "]" => Expr::List(elems),
 
     // Record
-    "{" <fields:Comma<RecordField>> "}" => Expr::Record(fields),
+    "{" <fields:Sep<RecordField, ",">> "}" => Expr::Record(fields),
 
     // Parenthesized / type annotation
     "(" <e:Expr> ")" => e,
@@ -412,8 +402,8 @@ PatternAtom: Pattern = {
     "false" => Pattern::Literal(Literal::Ternary(TernaryValue::False)),
     "unknown" => Pattern::Literal(Literal::Ternary(TernaryValue::Unknown)),
     "(" ")" => Pattern::Literal(Literal::Unit),
-    "(" <first:Pattern> "," <rest:Comma<Spanned<Pattern>>> ")" => {
-        let mut elems = vec![Spanned::dummy(first)];
+    "(" <first:Spanned<Pattern>> "," <rest:Sep<Spanned<Pattern>, ",">> ")" => {
+        let mut elems = vec![first];
         elems.extend(rest);
         Pattern::Tuple(elems)
     },
@@ -443,12 +433,12 @@ TypeAtom: Type = {
     <s:IDENT> => Type::Named(Symbol::intern(&s)),
     <s:TYPEVAR> => Type::Var(Symbol::intern(&s)),
     "(" <t:Type> ")" => t,
-    "(" <first:Type> "," <rest:Comma<Spanned<Type>>> ")" => {
-        let mut elems = vec![Spanned::dummy(first)];
+    "(" <first:Spanned<Type>> "," <rest:Sep<Spanned<Type>, ",">> ")" => {
+        let mut elems = vec![first];
         elems.extend(rest);
         Type::Tuple(elems)
     },
-    "{" <fields:Comma<RecordTypeField>> "}" => Type::Record(fields),
+    "{" <fields:Sep<RecordTypeField, ",">> "}" => Type::Record(fields),
     "_" => Type::Hole,
 };
 
