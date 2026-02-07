@@ -10,15 +10,57 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 === Added
 - RSR (Rhodium Standard Repository) compliance improvements
-- `.gitignore` for Racket projects
-- `CONTRIBUTING.md` with comprehensive contribution guidelines
-- `SECURITY.md` with security policy and vulnerability reporting
-- `CODE_OF_CONDUCT.md` (Contributor Covenant 2.1)
-- `MAINTAINERS.md` with project maintainer information
-- `.github/workflows/test.yml` for automated CI/CD testing
-- `info.rkt` for Racket package metadata
-- `.well-known/` directory with RFC 9116 compliant files
-- `TPCF.md` for Tri-Perimeter Contribution Framework
+
+== [0.6.0] - 2026-02-07
+
+=== Added
+- **6 advanced number systems** completing all 14 uncertainty-aware types:
+  * DistnumberBeta - Beta distributions for bounded probabilities
+  * Hyperreal - Non-standard analysis with infinitesimals
+  * SurrealAdvanced - Full surreal number arithmetic
+  * PAdicAdvanced - Complete p-adic number system
+  * ImpreciseProbability - Interval-valued probability bounds
+  * DempsterShafer - Belief functions and evidence theory
+- `RUST-STATUS.md` documenting Rust compiler blockers and solutions
+- Updated `SAFETY-FEATURES.md` with all 14 number systems
+
+=== Changed
+- Overall completion: 65% → 80%
+- Number systems: 45% → 100% (all 14 implemented)
+- Racket implementation: 90% → 100% (production ready)
+- Updated `README.adoc` with comprehensive status table
+- Updated `STATE.scm` to reflect v0.6.0 completion
+- Updated `ECOSYSTEM.scm` with betlang's ecosystem position
+
+=== Fixed
+- Rust compiler serde serialization issues (Arc<T> helpers)
+- Rust compiler type system issues (lifetimes, PartialEq)
+- Rust runtime API compatibility (im crate HashSet methods)
+
+=== Status
+- ✅ Racket implementation: **Production Ready**
+- ✅ Safety features: Complete (4/4)
+- ✅ Number systems: Complete (14/14)
+- ⚠️ Rust compiler: Blocked by LALRPOP parser conflicts
+
+== [0.5.0] - 2026-02-01
+
+=== Added
+- **4 safety features** for gambling harm reduction:
+  * Dutch book prevention (`lib/dutch-book.rkt`)
+  * Risk-of-ruin protection (`lib/risk-of-ruin.rkt`)
+  * Cool-off mechanism (`lib/cool-off.rkt`)
+  * 8 uncertainty-aware number systems (`lib/number-systems.rkt`)
+- `SAFETY-FEATURES.md` comprehensive documentation
+- `examples/safety-features.rkt` demonstration
+- Kelly criterion optimal stake calculation
+- Monte Carlo risk-of-ruin simulation
+- Time-locked betting with violation tracking
+
+=== Changed
+- Overall completion: 40% → 65%
+- Safety features: 0% → 100%
+- Number systems: 0% → 45%
 
 == [0.1.0] - 2025-11-22
 
