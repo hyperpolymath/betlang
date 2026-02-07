@@ -105,25 +105,24 @@
 
   (blockers-and-issues
     (critical ())
-    (high
-      (("Rust compiler has serde serialization errors" "unresolved")
-       ("Type checker is stub (not implemented)" "unresolved")))
+    (high ())
     (medium
-      (("6 advanced number systems not implemented" "unresolved")
-       ("Julia backend doesn't exist yet" "unresolved")))
+      (("Rust compiler: LALRPOP parser has 3 shift/reduce conflicts" "documented")
+       ("Rust compiler: Parser generation blocks entire build" "documented")
+       ("Rust compiler: Optional tooling, non-authoritative" "accepted")
+       ("Julia backend doesn't exist yet (planned for v0.8)" "accepted")))
     (low
-      (("Missing some GitHub workflows vs affinescript" "unresolved"))))
+      (("Rust type checker is stub" "documented")
+       ("Missing some GitHub workflows" "accepted"))))
 
   (critical-next-actions
-    (immediate
-      (("Update README with safety features" "high")
-       ("Commit safety features to git" "high")))
-    (this-week
-      (("Implement remaining 6 number systems" "medium")
-       ("Fix Rust compiler serde errors" "medium")))
-    (this-month
-      (("Create Julia backend" "medium")
-       ("Academic paper draft" "low"))))
+    (immediate ())
+    (optional-future-work
+      (("Fix LALRPOP parser conflicts (Rust compiler)" "medium")
+       ("Complete Rust type checker and interpreter" "medium")
+       ("Create Julia backend (v0.8)" "medium")
+       ("Academic paper draft" "low")
+       ("Performance optimization" "low"))))
 
   (session-history
     ((date "2026-02-01")
