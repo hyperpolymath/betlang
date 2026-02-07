@@ -1,0 +1,54 @@
+# SPDX-License-Identifier: PMPL-1.0-or-later
+# justfile for BetLang Julia backend
+
+# Default recipe
+default:
+    @just --list
+
+# Install Julia dependencies
+install:
+    julia --project=. -e 'using Pkg; Pkg.instantiate()'
+
+# Run tests
+test:
+    julia --project=. test/runtests.jl
+
+# Run basic example
+example:
+    julia --project=. examples/basic.jl
+
+# Compile betlang source to Julia
+compile INPUT OUTPUT="":
+    #!/usr/bin/env bash
+    if [ -z "{{OUTPUT}}" ]; then
+        OUTPUT="${INPUT%.bet}.jl"
+    else
+        OUTPUT="{{OUTPUT}}"
+    fi
+    racket compiler/betlang-to-julia.rkt "{{INPUT}}" -o "$OUTPUT"
+    echo "Generated: $OUTPUT"
+
+# Compile and run betlang source
+run INPUT:
+    #!/usr/bin/env bash
+    OUTPUT="${INPUT%.bet}.jl"
+    just compile "{{INPUT}}" "$OUTPUT"
+    julia --project=. "$OUTPUT"
+
+# Clean generated files
+clean:
+    rm -f examples/*.jl.bak
+    rm -f test/*.jl.bak
+
+# Run Julia REPL with BetLang loaded
+repl:
+    julia --project=. -e 'using BetLang'
+
+# Format Julia code
+format:
+    find . -name "*.jl" -exec julia -e 'using JuliaFormatter; format_file("{}")' \;
+
+# Development: compile and test example
+dev:
+    just compile examples/test.bet
+    julia --project=. examples/test.jl
