@@ -10,6 +10,8 @@ using Random
 
 export bet, bet_weighted, bet_conditional, bet_parallel, bet_repeat
 export bet_with_seed, bet_probability, bet_entropy
+export bet_map, bet_filter, bet_fold, bet_expect, bet_variance
+export bet_chain, bet_compose
 
 # ============================================================================
 # Core Bet Primitives
@@ -187,6 +189,126 @@ function bet_entropy(n::Int, a, b, c)
     end
 
     return H
+end
+
+# ============================================================================
+# List Operations
+# ============================================================================
+
+"""
+    bet_map(fn::Function, a, b, c)
+
+Map a function over three bet values.
+
+# Examples
+```julia
+result = bet_map(x -> x * 2, 1, 2, 3)
+# => 2, 4, or 6
+```
+"""
+function bet_map(fn::Function, a, b, c)
+    choice = bet(a, b, c)
+    return fn(choice)
+end
+
+"""
+    bet_filter(predicate::Function, values::Vector)
+
+Filter values using bet-based selection.
+
+# Examples
+```julia
+filtered = bet_filter(x -> x > 5, [1, 3, 7, 9, 2])
+```
+"""
+function bet_filter(predicate::Function, values::Vector)
+    return filter(predicate, values)
+end
+
+"""
+    bet_fold(fn::Function, init, a, b, c)
+
+Fold a function over bet values.
+
+# Examples
+```julia
+sum = bet_fold(+, 0, 1, 2, 3)
+```
+"""
+function bet_fold(fn::Function, init, a, b, c)
+    values = [a, b, c]
+    return foldl(fn, values; init=init)
+end
+
+# ============================================================================
+# Expected Value and Statistics
+# ============================================================================
+
+"""
+    bet_expect(fn::Function, a, b, c)
+
+Calculate expected value of a function over uniform ternary bet.
+
+# Examples
+```julia
+E = bet_expect(x -> x^2, 1, 2, 3)
+# => (1 + 4 + 9) / 3 = 4.667
+```
+"""
+function bet_expect(fn::Function, a, b, c)
+    return (fn(a) + fn(b) + fn(c)) / 3
+end
+
+"""
+    bet_variance(a, b, c)
+
+Calculate variance of a uniform ternary bet.
+
+# Examples
+```julia
+var = bet_variance(1, 2, 3)
+```
+"""
+function bet_variance(a, b, c)
+    μ = (a + b + c) / 3
+    return ((a - μ)^2 + (b - μ)^2 + (c - μ)^2) / 3
+end
+
+# ============================================================================
+# Composition
+# ============================================================================
+
+"""
+    bet_chain(a, b, c, continuation::Function)
+
+Chain bets together - use result of first bet as input to continuation.
+
+# Examples
+```julia
+result = bet_chain(1, 2, 3) do x
+    bet(x, x * 2, x * 3)
+end
+```
+"""
+function bet_chain(continuation::Function, a, b, c)
+    first_choice = bet(a, b, c)
+    return continuation(first_choice)
+end
+
+"""
+    bet_compose(f::Function, g::Function, a, b, c)
+
+Compose two functions with a bet.
+
+# Examples
+```julia
+result = bet_compose(x -> x * 2, x -> x + 1, 1, 2, 3)
+# => f(g(bet(1,2,3)))
+```
+"""
+function bet_compose(f::Function, g::Function, a, b, c)
+    choice = bet(a, b, c)
+    return f(g(choice))
 end
 
 # ============================================================================

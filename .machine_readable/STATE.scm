@@ -5,7 +5,7 @@
 
 (state
   (metadata
-    (version "0.6.0")
+    (version "0.8.0-dev")
     (schema-version "1.0")
     (created "2026-01-03")
     (updated "2026-02-07")
@@ -15,11 +15,11 @@
   (project-context
     (name "BetLang")
     (tagline "Safe probabilistic programming with Dutch book prevention and gambling harm reduction")
-    (tech-stack (Racket Rust LALRPOP Julia)))
+    (tech-stack (Racket Julia Rust LALRPOP)))
 
   (current-position
-    (phase "v0.6-number-systems-complete")
-    (overall-completion 80)
+    (phase "v0.8-julia-backend-development")
+    (overall-completion 82)
     (components
       ((racket-implementation (status "complete") (completion 100))
        (safety-features (status "complete") (completion 100))
@@ -27,8 +27,8 @@
        (risk-of-ruin-protection (status "complete") (completion 100))
        (cool-off-mechanism (status "complete") (completion 100))
        (number-systems (status "complete") (completion 100))
-       (rust-compiler (status "broken") (completion 30))
-       (julia-backend (status "planned") (completion 0))))
+       (rust-compiler (status "blocked") (completion 30))
+       (julia-backend (status "in-progress") (completion 20))))
     (working-features
       ("Ternary bets with equal/weighted probabilities"
        "Dutch book detection and prevention"
@@ -86,11 +86,19 @@
            ("Complete interpreter" "planned"))))
 
        (v0.8-julia-backend
-        (status "planned")
-        (completion 0)
+        (status "in-progress")
+        (completion 20)
         (items
-          (("BetLang → Julia compiler" "planned")
-           ("Distributions.jl integration" "planned")
+          (("Step 1: Core bet primitives" "complete")
+           ("Step 1: Racket → Julia compiler" "complete")
+           ("Step 1: Test suite (121 tests)" "complete")
+           ("Step 1: List operations and composition" "complete")
+           ("Step 2: Core language features" "in-progress")
+           ("Step 3: Standard library functions" "planned")
+           ("Step 4: Number systems (14 types)" "planned")
+           ("Step 5: Safety features" "planned")
+           ("Step 6: Performance optimization" "planned")
+           ("Distributions.jl integration" "partial")
            ("Aggregate-library preparation" "planned"))))
 
        (v1.0-production
@@ -109,22 +117,47 @@
     (medium
       (("Rust compiler: LALRPOP parser has 3 shift/reduce conflicts" "documented")
        ("Rust compiler: Parser generation blocks entire build" "documented")
-       ("Rust compiler: Optional tooling, non-authoritative" "accepted")
-       ("Julia backend doesn't exist yet (planned for v0.8)" "accepted")))
+       ("Rust compiler: Optional tooling, non-authoritative" "accepted")))
     (low
       (("Rust type checker is stub" "documented")
+       ("Julia backend: Standard library not yet implemented" "in-progress")
+       ("Julia backend: Number systems not yet ported" "planned")
        ("Missing some GitHub workflows" "accepted"))))
 
   (critical-next-actions
-    (immediate ())
+    (immediate
+      (("Continue Julia backend Step 2: Core language features" "medium")))
     (optional-future-work
-      (("Fix LALRPOP parser conflicts (Rust compiler)" "medium")
-       ("Complete Rust type checker and interpreter" "medium")
-       ("Create Julia backend (v0.8)" "medium")
+      (("Julia backend Step 3: Standard library" "medium")
+       ("Julia backend Step 4: Number systems" "medium")
+       ("Julia backend Step 5: Safety features" "medium")
+       ("Fix LALRPOP parser conflicts (Rust compiler)" "low")
+       ("Complete Rust type checker and interpreter" "low")
        ("Academic paper draft" "low")
        ("Performance optimization" "low"))))
 
   (session-history
+    ((date "2026-02-07")
+     (session "julia-backend-implementation")
+     (accomplishments
+       ("Created BetLang.jl Julia package (~300 lines)"
+        "Implemented core bet primitives (bet, bet_weighted, bet_conditional, etc.)"
+        "Implemented list operations (bet_map, bet_filter, bet_fold)"
+        "Implemented composition (bet_chain, bet_compose)"
+        "Implemented statistical utilities (bet_probability, bet_entropy, bet_expect, bet_variance)"
+        "Created Racket → Julia compiler (~220 lines)"
+        "Created comprehensive test suite (121 tests, all passing)"
+        "Integrated Distributions.jl, StatsBase.jl, Random.jl"
+        "Created examples (basic.jl, coin-flip-game.bet)"
+        "Created Julia backend documentation (julia-backend/README.md)"
+        "Created design documents (julia-backend-design.md, hyperpolymath-julia-integration.md)"
+        "Updated main README with Julia backend section"
+        "Updated ROADMAP with v0.8 milestone"
+        "Updated CHANGELOG with v0.6.0 details"
+        "Updated ECOSYSTEM.scm with project positioning"
+        "Updated SAFETY-FEATURES.md to document all 14 number systems"
+        "Step 1 of Julia backend (Minimal Viable Backend) complete"
+        "Total: ~1600 lines of new code and documentation")))
     ((date "2026-02-01")
      (session "safety-features-implementation")
      (accomplishments

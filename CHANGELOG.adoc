@@ -9,7 +9,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 == [Unreleased]
 
 === Added
-- RSR (Rhodium Standard Repository) compliance improvements
+- Julia backend v0.8.0-dev (Step 1 complete)
+  * BetLang.jl module with core bet primitives
+  * Racket → Julia compiler
+  * Test suite with 121 tests (all passing)
+  * List operations (map, filter, fold)
+  * Composition functions (chain, compose)
+  * Statistical utilities (probability, entropy, expect, variance)
+  * Integration with Distributions.jl, StatsBase.jl
+  * Examples and documentation
+- Design documents for Julia backend and ecosystem integration
+- Updated all documentation to reflect v0.6 completion
+
+=== Changed
+- Version: 0.6.0 → 0.8.0-dev
+- Overall completion: 80% → 82%
+- Julia backend: 0% → 20% (Step 1 complete)
 
 == [0.6.0] - 2026-02-07
 

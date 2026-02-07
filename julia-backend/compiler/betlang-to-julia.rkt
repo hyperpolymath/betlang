@@ -132,6 +132,17 @@
     [(list 'display expr)
      (format "println(~a)" (compile-expr expr env))]
 
+    ;; (lambda (args ...) body) -> anonymous function
+    [(list 'lambda params body ...)
+     (define param-strs
+       (map julia-identifier params))
+     (define body-strs
+       (for/list ([expr body])
+         (compile-expr expr env)))
+     (format "(~a) -> begin ~a end"
+             (string-join param-strs ", ")
+             (string-join body-strs "; "))]
+
     ;; Generic function call
     [(list fn args ...)
      (format "~a(~a)"

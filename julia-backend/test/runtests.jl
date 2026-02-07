@@ -84,4 +84,45 @@ end
     @test all(r -> r in [1, 2, 3], results)
 end
 
+@testset "Bet Map" begin
+    result = bet_map(x -> x * 2, 1, 2, 3)
+    @test result in [2, 4, 6]
+end
+
+@testset "Bet Filter" begin
+    filtered = bet_filter(x -> x > 5, [1, 3, 7, 9, 2])
+    @test filtered == [7, 9]
+end
+
+@testset "Bet Fold" begin
+    sum_result = bet_fold(+, 0, 1, 2, 3)
+    @test sum_result == 6  # 0 + 1 + 2 + 3
+end
+
+@testset "Bet Expect" begin
+    E = bet_expect(x -> x^2, 1, 2, 3)
+    @test isapprox(E, (1 + 4 + 9) / 3)
+end
+
+@testset "Bet Variance" begin
+    var = bet_variance(1, 2, 3)
+    expected_var = ((1 - 2)^2 + (2 - 2)^2 + (3 - 2)^2) / 3
+    @test isapprox(var, expected_var)
+end
+
+@testset "Bet Chain" begin
+    result = bet_chain(1, 2, 3) do x
+        x * 10
+    end
+    @test result in [10, 20, 30]
+end
+
+@testset "Bet Compose" begin
+    result = bet_compose(x -> x * 2, x -> x + 1, 1, 2, 3)
+    # bet(1,2,3) -> choice in [1,2,3]
+    # g(choice) = choice + 1 -> [2,3,4]
+    # f(g(choice)) = 2 * (choice + 1) -> [4,6,8]
+    @test result in [4, 6, 8]
+end
+
 end # testset
