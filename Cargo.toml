@@ -45,7 +45,7 @@ lalrpop-util = "0.20"
 lalrpop = "0.20"
 
 # Data structures
-im = "15.1"                    # Immutable collections
+im = { version = "15.1", features = ["serde"] }  # Immutable collections with serde support
 indexmap = "2.1"
 smallvec = "1.11"
 

@@ -242,7 +242,7 @@ pub mod tcp {
 
         /// Read exact number of bytes
         pub async fn read_exact(&mut self, buf: &mut [u8]) -> IoResult<()> {
-            self.stream.read_exact(buf).await.map_err(Into::into)
+            self.stream.read_exact(buf).await.map_err(Into::into).map(|_| ())
         }
 
         /// Read all available data

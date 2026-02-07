@@ -275,7 +275,7 @@ pub mod map {
     }
 
     /// Get value by key
-    pub fn get(map: &HashMap<String, Value>, key: &str) -> Option<&Value> {
+    pub fn get<'a>(map: &'a HashMap<String, Value>, key: &str) -> Option<&'a Value> {
         map.get(key)
     }
 
@@ -446,12 +446,12 @@ pub mod set {
 
     /// Check if a is superset of b
     pub fn is_superset(a: &HashSet<Value>, b: &HashSet<Value>) -> bool {
-        a.is_superset(b)
+        b.is_subset(a)
     }
 
     /// Check if sets are disjoint (no common elements)
     pub fn is_disjoint(a: &HashSet<Value>, b: &HashSet<Value>) -> bool {
-        a.intersection(b.clone()).is_empty()
+        a.clone().intersection(b.clone()).is_empty()
     }
 
     /// Convert set to list

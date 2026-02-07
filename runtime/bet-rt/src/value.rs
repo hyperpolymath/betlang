@@ -2,9 +2,68 @@
 //! Runtime values for Betlang
 
 use im::{HashMap, Vector};
-use serde::{Deserialize, Serialize};
+use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use std::fmt;
 use std::sync::Arc;
+
+/// Serde helper modules for Arc<T> types
+mod arc_serde {
+    use super::*;
+
+    pub mod arc_string {
+        use super::*;
+
+        pub fn serialize<S>(arc: &Arc<String>, serializer: S) -> Result<S::Ok, S::Error>
+        where
+            S: Serializer,
+        {
+            arc.as_ref().serialize(serializer)
+        }
+
+        pub fn deserialize<'de, D>(deserializer: D) -> Result<Arc<String>, D::Error>
+        where
+            D: Deserializer<'de>,
+        {
+            String::deserialize(deserializer).map(Arc::new)
+        }
+    }
+
+    pub mod arc_vec_u8 {
+        use super::*;
+
+        pub fn serialize<S>(arc: &Arc<Vec<u8>>, serializer: S) -> Result<S::Ok, S::Error>
+        where
+            S: Serializer,
+        {
+            arc.as_ref().serialize(serializer)
+        }
+
+        pub fn deserialize<'de, D>(deserializer: D) -> Result<Arc<Vec<u8>>, D::Error>
+        where
+            D: Deserializer<'de>,
+        {
+            Vec::<u8>::deserialize(deserializer).map(Arc::new)
+        }
+    }
+
+    pub mod arc_vec_value {
+        use super::*;
+
+        pub fn serialize<S>(arc: &Arc<Vec<super::Value>>, serializer: S) -> Result<S::Ok, S::Error>
+        where
+            S: Serializer,
+        {
+            arc.as_ref().serialize(serializer)
+        }
+
+        pub fn deserialize<'de, D>(deserializer: D) -> Result<Arc<Vec<super::Value>>, D::Error>
+        where
+            D: Deserializer<'de>,
+        {
+            Vec::<super::Value>::deserialize(deserializer).map(Arc::new)
+        }
+    }
+}
 
 /// Ternary logic value
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
@@ -84,7 +143,7 @@ impl fmt::Display for Ternary {
 }
 
 /// Runtime value representation
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum Value {
     /// Unit value
     Unit,
@@ -102,9 +161,11 @@ pub enum Value {
     Float(f64),
 
     /// UTF-8 string
+    #[serde(with = "arc_serde::arc_string")]
     String(Arc<String>),
 
     /// Byte array
+    #[serde(with = "arc_serde::arc_vec_u8")]
     Bytes(Arc<Vec<u8>>),
 
     /// Immutable list/array
@@ -117,6 +178,7 @@ pub enum Value {
     Set(HashMap<Value, ()>),
 
     /// Tuple (fixed-size, heterogeneous)
+    #[serde(with = "arc_serde::arc_vec_value")]
     Tuple(Arc<Vec<Value>>),
 
     /// Distribution (lazy probabilistic value)
@@ -136,7 +198,33 @@ pub enum Value {
     File(Arc<FileHandle>),
 
     /// Error value
+    #[serde(with = "arc_serde::arc_string")]
     Error(Arc<String>),
+}
+
+impl PartialEq for Value {
+    fn eq(&self, other: &Self) -> bool {
+        match (self, other) {
+            (Value::Unit, Value::Unit) => true,
+            (Value::Bool(a), Value::Bool(b)) => a == b,
+            (Value::Ternary(a), Value::Ternary(b)) => a == b,
+            (Value::Int(a), Value::Int(b)) => a == b,
+            (Value::Float(a), Value::Float(b)) => a == b,
+            (Value::String(a), Value::String(b)) => a == b,
+            (Value::Bytes(a), Value::Bytes(b)) => a == b,
+            (Value::List(a), Value::List(b)) => a == b,
+            (Value::Map(a), Value::Map(b)) => a == b,
+            (Value::Set(a), Value::Set(b)) => a == b,
+            (Value::Tuple(a), Value::Tuple(b)) => a == b,
+            (Value::Error(a), Value::Error(b)) => a == b,
+            // Non-comparable types (contain function pointers)
+            (Value::Dist(_), Value::Dist(_)) => false,
+            (Value::Closure(_), Value::Closure(_)) => false,
+            (Value::Native(a), Value::Native(b)) => a == b,
+            (Value::File(_), Value::File(_)) => false,
+            _ => false,
+        }
+    }
 }
 
 impl Eq for Value {}
