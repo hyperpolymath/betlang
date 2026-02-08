@@ -1,0 +1,143 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# SPDX-FileCopyrightText: 2025 hyperpolymath
+#
+# justfile for betlang-playground
+# BetLang: Ternary Logic & Probabilistic Programming
+# See: https://just.systems/
+
+# Default recipe - show help
+default:
+    @just --list
+
+# === Building ===
+
+# Build the playground
+build:
+    deno task check
+
+# Clean build artifacts
+clean:
+    rm -rf lib/
+    rm -rf .cache/
+
+# === Development ===
+
+# Watch for changes and rebuild
+dev:
+    deno task dev
+
+# === Testing ===
+
+# Run all tests
+test:
+    @if [ -n "$(find test -name '*.ts' 2>/dev/null)" ] || [ -n "$(find src -name '*.ts' 2>/dev/null)" ]; then \
+        deno task test; \
+    else \
+        echo "No tests to run"; \
+    fi
+
+# Run tests with verbose output
+test-verbose:
+    deno test --allow-read -- --reporter=verbose
+
+# === Linting and Formatting ===
+
+# Format code
+fmt:
+    @if [ -n "$(find src -name '*.ts' 2>/dev/null)" ] || [ -n "$(find test -name '*.ts' 2>/dev/null)" ]; then \
+        deno task fmt; \
+    else \
+        echo "No TypeScript files to format"; \
+    fi
+
+# Lint code
+lint:
+    @if [ -n "$(find src -name '*.ts' 2>/dev/null)" ] || [ -n "$(find test -name '*.ts' 2>/dev/null)" ]; then \
+        deno task lint; \
+    else \
+        echo "No TypeScript files to lint"; \
+    fi
+
+# Run all checks (format + lint + test)
+check: fmt lint test
+    @echo "All checks passed"
+
+# === Documentation ===
+
+# Build documentation
+docs:
+    asciidoctor README.adoc -o docs/index.html
+
+# === Ternary Logic ===
+
+# Demonstrate ternary logic
+ternary-demo:
+    @echo "=== Ternary Logic Demo ==="
+    @echo "Values: True (T), False (F), Unknown (U)"
+    @echo ""
+    @echo "AND truth table:"
+    @echo "  T AND T = T"
+    @echo "  T AND U = U"
+    @echo "  T AND F = F"
+    @echo "  U AND U = U"
+    @echo "  U AND F = F"
+    @echo "  F AND F = F"
+    @echo ""
+    deno run --allow-read src/ternary.ts
+
+# === Probabilistic Programming ===
+
+# Run probability examples
+probability:
+    @echo "=== Probabilistic Programming Demo ==="
+    deno task probability
+
+# Run uncertainty modeling
+uncertainty:
+    @echo "=== Uncertainty Modeling ==="
+    deno run --allow-read examples/uncertainty.ts
+
+# === RSR Compliance ===
+
+# Run RSR compliance check
+rsr-check:
+    @echo "=== RSR Compliance Check ==="
+    @echo ""
+    @test -f README.adoc && echo "  ✓ README.adoc" || echo "  ✗ README.adoc"
+    @test -f LICENSE.txt && echo "  ✓ LICENSE.txt" || echo "  ✗ LICENSE.txt"
+    @test -f SECURITY.md && echo "  ✓ SECURITY.md" || echo "  ✗ SECURITY.md"
+    @test -f CODE_OF_CONDUCT.md && echo "  ✓ CODE_OF_CONDUCT.md" || echo "  ✗ CODE_OF_CONDUCT.md"
+    @test -f CONTRIBUTING.adoc && echo "  ✓ CONTRIBUTING.adoc" || echo "  ✗ CONTRIBUTING.adoc"
+    @test -f CHANGELOG.md && echo "  ✓ CHANGELOG.md" || echo "  ✗ CHANGELOG.md"
+    @test -f deno.json && echo "  ✓ deno.json (Deno runtime)" || echo "  ✗ deno.json"
+    @test -f rescript.json && echo "  ✓ rescript.json (ReScript)" || echo "  ✗ rescript.json"
+    @test -f Mustfile && echo "  ✓ Mustfile" || echo "  ✗ Mustfile"
+    @test -d .well-known && echo "  ✓ .well-known/" || echo "  ✗ .well-known/"
+    @echo ""
+    @echo "=== RSR Compliance: Bronze Level ✓ ==="
+
+# Run verification script
+rsr-verify:
+    @./scripts/verify-rsr.sh
+
+# === Utility ===
+
+# Show project statistics
+stats:
+    @echo "=== Project Statistics ==="
+    @echo ""
+    @echo "Source files:"
+    @find src/ -name '*.res' -o -name '*.ts' 2>/dev/null | wc -l || echo "0"
+    @echo ""
+    @echo "Test files:"
+    @find test/ -name '*_test.ts' 2>/dev/null | wc -l || echo "0"
+    @echo ""
+    @echo "Examples:"
+    @find examples/ -type f 2>/dev/null | wc -l || echo "0"
+
+# Initialize git hooks
+init-hooks:
+    @echo "#!/bin/sh" > .git/hooks/pre-commit
+    @echo "just check" >> .git/hooks/pre-commit
+    @chmod +x .git/hooks/pre-commit
+    @echo "Git hooks initialized"

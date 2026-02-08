@@ -1,0 +1,26 @@
+-- SPDX-License-Identifier: AGPL-3.0-or-later
+-- BetLang Experimental Features Example
+
+-- Enable experimental features
+#![feature(linear_types)]
+#![feature(dependent_types)]
+#![feature(effect_system)]
+
+-- Using linear types (experimental)
+@linear
+fn example_linear():
+    let resource = acquire()
+    use(resource)  -- Must be used exactly once
+
+-- Syntax variant exploration
+syntax_variant A:
+    let x = 5
+    let y = x + 10
+
+syntax_variant B:
+    x := 5
+    y := x + 10
+
+-- Compare and evaluate different approaches
+fn main():
+    example_linear()
