@@ -107,22 +107,28 @@ Time-locked betting prevention to reduce compulsive gambling.
 
 **Module:** `lib/number-systems.rkt`
 
-8 number types for representing and computing with uncertainty.
+14 number types for representing and computing with uncertainty.
 
-**Support matrix (implemented):**
+**Support matrix (all 14 systems implemented):**
 
 | System | Best For | Accessibility | Mathematical Rigor | Julia Integration |
 | --- | --- | --- | --- | --- |
-| Surreal Fuzzies | Theoretical flexibility | Medium | High | Possible (FFI) |
-| DistNumber | Everyday probabilistic arithmetic | High | Medium | Easy (FFI) |
-| Affine Arithmetic | Correlated uncertainties | Medium | High | Moderate (FFI) |
-| Fuzzy Numbers | Interpretability | High | Medium | Easy (FFI) |
-| p-Adic Probabilities | Hierarchical models | Low | Very High | Hard (FFI) |
-| RiskNumbers | Financial/gambling risk | High | Medium | Custom (FFI) |
-| BayesianNumbers | Learning from data | Medium | High | Moderate (FFI) |
-| LotteryNumbers | Gambling/decision theory | High | Medium | Easy (FFI) |
+| DistnumberNormal | Everyday probabilistic arithmetic | High | Medium | Easy (FFI) |
+| DistnumberBeta | Bounded probabilities | High | High | Easy (FFI) |
+| AffineNumber | Correlated uncertainties | Medium | High | Moderate (FFI) |
+| FuzzyTriangular | Interpretability | High | Medium | Easy (FFI) |
+| BayesianNumber | Learning from data | Medium | High | Moderate (FFI) |
+| RiskNumber | Financial/gambling risk | High | Medium | Custom (FFI) |
+| SurrealFuzzy | Infinitesimal tolerance | Medium | High | Possible (FFI) |
+| PAdicProbability | Hierarchical models | Low | Very High | Hard (FFI) |
+| LotteryNumber | Gambling/decision theory | High | Medium | Easy (FFI) |
+| Hyperreal | Non-standard analysis | Low | Very High | Hard (FFI) |
+| SurrealAdvanced | Full surreal arithmetic | Low | Very High | Hard (FFI) |
+| PAdicAdvanced | Complete p-adic system | Low | Very High | Hard (FFI) |
+| ImpreciseProbability | Interval-valued bounds | Medium | High | Moderate (FFI) |
+| DempsterShafer | Belief functions | Medium | High | Moderate (FFI) |
 
-**Implemented (8 core types):**
+**Implemented (all 14 types):**
 
 #### DistnumberNormal - Gaussian Distributions
 ```racket
@@ -173,10 +179,44 @@ Time-locked betting prevention to reduce compulsive gambling.
 (lottery-number-expected-value ln)  ;; => 12.5
 ```
 
-**Planned (3 advanced types):**
-- Hyperreal
-- Imprecise
-- Dempster-Shafer
+#### DistnumberBeta - Beta Distributions
+```racket
+(define prob (make-distnumber-beta 8 2))  ;; Beta(8, 2)
+(distnumber-beta-mean prob)  ;; => 0.8
+(distnumber-beta-mode prob)  ;; => 0.875
+```
+
+#### Hyperreal - Non-standard Analysis
+```racket
+(define h (make-hyperreal 5 0.01))  ;; 5 + 0.01ε
+(hyperreal-add h (make-hyperreal 3 0.02))  ;; => 8 + 0.03ε
+```
+
+#### SurrealAdvanced - Full Surreal Numbers
+```racket
+(define s (make-surreal-advanced '(0 1) '(3 4)))  ;; {0,1|3,4} = 2
+(surreal-add s (make-surreal-advanced '(1) '(2)))
+```
+
+#### PAdicAdvanced - Complete p-Adic Numbers
+```racket
+(define p (make-padic-advanced 5 3 '(2 1 4)))  ;; 5-adic number
+(padic-add p (make-padic-advanced 5 3 '(3 0 1)))
+```
+
+#### ImpreciseProbability - Interval Bounds
+```racket
+(define ip (make-imprecise-probability 0.3 0.7))  ;; [0.3, 0.7]
+(imprecise-midpoint ip)  ;; => 0.5
+(imprecise-width ip)     ;; => 0.4
+```
+
+#### DempsterShafer - Belief Functions
+```racket
+(define ds (make-dempster-shafer '((a) (b) (a b)) '(0.3 0.4 0.3)))
+(belief ds '(a))      ;; => 0.3
+(plausibility ds '(a))  ;; => 0.6
+```
 
 ## Safety Guarantees
 

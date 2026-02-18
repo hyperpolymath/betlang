@@ -1,22 +1,130 @@
 // SPDX-License-Identifier: PMPL-1.0-or-later
-= YOUR Template Repo Roadmap
+= BetLang Roadmap
 
 == Current Status
 
-Initial development phase.
+**Version:** v0.6.0 (2026-02-07)
+**Overall Completion:** 80%
+**Racket Implementation:** ✅ Production Ready (100%)
 
-== Milestones
+== Completed Milestones
 
-=== v0.1.0 - Foundation
-* [ ] Core functionality
-* [ ] Basic documentation
-* [ ] CI/CD pipeline
+=== ✅ v0.5.0 - Safety Features (2026-02-01)
 
-=== v1.0.0 - Stable Release
-* [ ] Full feature set
-* [ ] Comprehensive tests
-* [ ] Production ready
+* ✅ Dutch book prevention
+* ✅ Risk-of-ruin protection
+* ✅ Cool-off mechanism
+* ✅ 8 core uncertainty-aware number systems
+* ✅ Safety features documentation
+
+=== ✅ v0.6.0 - All Number Systems (2026-02-07)
+
+* ✅ DistnumberBeta (Beta distributions)
+* ✅ Hyperreal (non-standard analysis)
+* ✅ SurrealAdvanced (full surreal arithmetic)
+* ✅ PAdicAdvanced (complete p-adic system)
+* ✅ ImpreciseProbability (interval bounds)
+* ✅ DempsterShafer (belief functions)
+
+**All 14 uncertainty-aware number systems now complete.**
+
+== Planned Milestones
+
+=== v0.7 - Rust Compiler Fix (Future)
+
+**Status:** Optional - Racket is authoritative
+**Estimated Effort:** 4-8 hours for experienced LALRPOP developer
+
+* [ ] Fix LALRPOP parser shift/reduce conflicts
+* [ ] Complete type checker implementation
+* [ ] Complete interpreter implementation
+* [ ] Complete code generator
+
+**Current Blocker:** 3 LALRPOP grammar conflicts (see `RUST-STATUS.md`)
+
+**Alternative:** Switch to nom/pest parser (8-16 hours)
+
+=== v0.8 - Julia Backend (Planned)
+
+**Purpose:** Performance and Distributions.jl integration
+
+* [ ] BetLang → Julia compiler
+* [ ] Distributions.jl integration
+* [ ] FFI preparation for aggregate-library
+* [ ] Performance benchmarks
+
+=== v1.0 - Production Release (Planned)
+
+* [ ] Idris2 ABI formal proofs
+* [ ] Academic paper submission (PLDI/POPL/ICFP 2027)
+* [ ] Performance optimization
+* [ ] Full documentation polish
+* [ ] Release preparation
+* [ ] Integration with GamCare/GamStop
+
+== Implementation Status
+
+[cols="2,1,1,3"]
+|===
+| Component | Status | Completion | Notes
+
+| *Racket Implementation* | ✅ Complete | 100% | Authoritative, production-ready
+| *Safety Features* | ✅ Complete | 100% | All 4 features working
+| *Number Systems* | ✅ Complete | 100% | All 14 systems implemented
+| *Standard Library* | ✅ Complete | 100% | 12 modules, 180+ functions
+| *Documentation* | ✅ Complete | 100% | Tutorials, examples, API reference
+| *Rust Compiler* | ⚠️ Blocked | 30% | Optional tooling (LALRPOP conflicts)
+| *Julia Backend* | 📋 Planned | 0% | Future work (v0.8)
+|===
 
 == Future Directions
 
-_To be determined based on community feedback._
+=== Research Publications
+
+**Target Conferences (2027):**
+* PLDI - Programming Language Design & Implementation
+* POPL - Principles of Programming Languages
+* ICFP - International Conference on Functional Programming
+
+**Target Journals:**
+* Quantitative Finance journals
+* Journal of Statistical Software
+
+=== Community Growth
+
+* Build user community around probabilistic programming
+* Integrate with quantitative finance workflows
+* Partner with responsible gambling organizations
+* Develop educational materials for statistics/finance courses
+
+=== Ecosystem Integration
+
+* Julia Distributions.jl (v0.8)
+* R integration (via reticulate/Rcpp patterns)
+* Python bindings (potential)
+* Web interface (probabilistic notebook)
+
+== Long-Term Vision
+
+BetLang aims to be the **first probabilistic programming language** with:
+
+1. **Mathematical Safety** - Dutch book prevention, formal proofs
+2. **Gambling Harm Reduction** - Built-in cool-off, stake limits
+3. **Ternary Philosophy** - 3-way choices as primitive
+4. **Uncertainty Quantification** - 14 number systems for all needs
+5. **Academic Rigor** - Published proofs, peer-reviewed
+
+**Target Users:**
+* Quantitative finance professionals
+* Statistical modelers and data scientists
+* Game theory researchers
+* Monte Carlo simulation practitioners
+* Probabilistic programming researchers
+
+== Contributing
+
+See `CONTRIBUTING.adoc` for how to contribute to betlang development.
+
+== License
+
+PMPL-1.0-or-later (Palimpsest License)

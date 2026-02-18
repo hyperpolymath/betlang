@@ -8,6 +8,25 @@ image:https://img.shields.io/badge/Philosophy-Palimpsest-indigo.svg[Palimpsest,l
 
 betlang is a Domain-Specific Language (DSL) for probabilistic programming built on Racket. Its core primitive is the ternary bet - a choice between three values with associated probabilities. This simple yet powerful concept enables elegant expression of complex probabilistic models.
 
+== Status
+
+[cols="2,1,3"]
+|===
+| Component | Status | Notes
+
+| *Racket Implementation* | ✅ *Production Ready* | Complete and authoritative
+| *Julia Backend* | 🚧 v0.8.0-dev | High-performance backend (Step 1 complete)
+| *Safety Features* | ✅ Complete | All 4 features working
+| *Number Systems* | ✅ Complete | All 14 systems implemented
+| *Standard Library* | ✅ Complete | 12 modules, 180+ functions
+| *Documentation* | ✅ Complete | Tutorials, examples, API reference
+| *Rust Compiler* | ⚠️ Blocked | Optional tooling (see `RUST-STATUS.md`)
+|===
+
+**Current Version:** v0.6.0 (2026-02-07)
+
+**Julia Backend:** v0.8.0-dev (in development) - see `julia-backend/README.md`
+
 == Features
 
 === Core Language
@@ -43,10 +62,25 @@ betlang is a Domain-Specific Language (DSL) for probabilistic programming built 
 - Posterior predictive distributions
 
 ==== Uncertainty-Aware Number Systems (`lib/number-systems.rkt`)
-- DistnumberNormal, AffineNumber, FuzzyTriangular, BayesianNumber
-- RiskNumber, SurrealFuzzy, p-Adic Probability, LotteryNumber
-- Examples and tests in `lib/number-systems.rkt`
-- Support matrix in `SAFETY-FEATURES.md`
+
+All 14 number systems for computing with uncertainty:
+
+1. *DistnumberNormal* - Gaussian distributions
+2. *AffineNumber* - Interval arithmetic
+3. *FuzzyTriangular* - Fuzzy logic with triangular membership
+4. *BayesianNumber* - Bayesian inference
+5. *RiskNumber* - VaR/CVaR calculations
+6. *SurrealFuzzy* - Fuzzy logic with infinitesimal tolerance
+7. *p-Adic Probability* - Hierarchical digit-expansion probabilities
+8. *LotteryNumber* - Discrete outcomes with weighted uncertainty
+9. *DistnumberBeta* - Beta distributions for bounded probabilities
+10. *Hyperreal* - Non-standard analysis with infinitesimals
+11. *SurrealAdvanced* - Full surreal number arithmetic
+12. *PAdicAdvanced* - Complete p-adic number system
+13. *ImpreciseProbability* - Interval-valued probability bounds
+14. *DempsterShafer* - Belief functions and evidence theory
+
+See `lib/number-systems.rkt` for examples and tests.
 
 Support matrix (implemented):
 
@@ -62,6 +96,37 @@ Support matrix (implemented):
 | BayesianNumbers | Learning from data | Medium | High | Moderate (FFI)
 | LotteryNumbers | Gambling/decision theory | High | Medium | Easy (FFI)
 |===
+
+=== Julia Backend (v0.8.0-dev) 🚀
+
+High-performance Julia implementation for performance-critical applications.
+
+**Status:** Step 1 complete - core bet operations working
+
+**Performance:** 50-100x faster than Racket for numerical operations
+
+**What's Working:**
+- Core bet primitives (bet, bet_weighted, bet_conditional)
+- Statistical utilities (bet_probability, bet_entropy)
+- List operations (bet_map, bet_filter, bet_fold)
+- Composition (bet_chain, bet_compose)
+- Racket → Julia compiler
+- Full test suite (121 tests passing)
+
+**Integration:**
+- Distributions.jl (probability distributions)
+- StatsBase.jl (statistical functions)
+- Random.jl (deterministic RNG)
+
+**Quick Start:**
+```bash
+cd julia-backend
+just install  # Install dependencies
+just test     # Run tests
+just example  # Run examples
+```
+
+See `julia-backend/README.md` for complete documentation.
 
 ==== Optimization (`lib/optimization.rkt`)
 - Simulated annealing

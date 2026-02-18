@@ -5,41 +5,51 @@
 
 (state
   (metadata
-    (version "0.5.0")
+    (version "0.8.0-dev")
     (schema-version "1.0")
     (created "2026-01-03")
-    (updated "2026-02-01")
+    (updated "2026-02-07")
     (project "betlang")
     (repo "github.com/hyperpolymath/betlang"))
 
   (project-context
     (name "BetLang")
     (tagline "Safe probabilistic programming with Dutch book prevention and gambling harm reduction")
-    (tech-stack (Racket Rust LALRPOP Julia)))
+    (tech-stack (Racket Julia Rust LALRPOP)))
 
   (current-position
-    (phase "safety-features-complete")
-    (overall-completion 65)
+    (phase "v0.8-julia-backend-development")
+    (overall-completion 82)
     (components
-      ((racket-implementation (status "working") (completion 90))
+      ((racket-implementation (status "complete") (completion 100))
        (safety-features (status "complete") (completion 100))
        (dutch-book-prevention (status "complete") (completion 100))
        (risk-of-ruin-protection (status "complete") (completion 100))
        (cool-off-mechanism (status "complete") (completion 100))
-       (number-systems (status "partial") (completion 45))
-       (rust-compiler (status "broken") (completion 30))
-       (julia-backend (status "planned") (completion 0))))
+       (number-systems (status "complete") (completion 100))
+       (rust-compiler (status "blocked") (completion 30))
+       (julia-backend (status "in-progress") (completion 20))))
     (working-features
       ("Ternary bets with equal/weighted probabilities"
        "Dutch book detection and prevention"
        "Kelly criterion optimal stake calculation"
        "Risk-of-ruin Monte Carlo simulation"
        "Cool-off mechanism with violation tracking"
-       "DistnumberNormal (Gaussian distributions)"
-       "AffineNumber (interval arithmetic)"
-       "FuzzyTriangular (fuzzy logic)"
-       "BayesianNumber (Bayesian inference)"
-       "RiskNumber (VaR/CVaR calculations)"
+       "All 14 uncertainty-aware number systems:"
+       "  1. DistnumberNormal (Gaussian distributions)"
+       "  2. AffineNumber (interval arithmetic)"
+       "  3. FuzzyTriangular (fuzzy logic)"
+       "  4. BayesianNumber (Bayesian inference)"
+       "  5. RiskNumber (VaR/CVaR calculations)"
+       "  6. SurrealFuzzy (infinitesimal tolerance)"
+       "  7. p-Adic Probability (hierarchical digits)"
+       "  8. LotteryNumber (weighted discrete outcomes)"
+       "  9. DistnumberBeta (Beta distributions)"
+       " 10. Hyperreal (non-standard analysis)"
+       " 11. SurrealAdvanced (full surreal arithmetic)"
+       " 12. PAdicAdvanced (complete p-adic system)"
+       " 13. ImpreciseProbability (interval bounds)"
+       " 14. DempsterShafer (belief functions)"
        "Comprehensive safety demo (examples/safety-features.rkt)")))
 
   (route-to-mvp
@@ -56,15 +66,15 @@
            ("Documentation (SAFETY-FEATURES.md)" "complete"))))
 
        (v0.6-remaining-number-systems
-        (status "planned")
-        (completion 0)
+        (status "complete")
+        (completion 100)
         (items
-          (("DistnumberBeta" "planned")
-           ("Hyperreal numbers" "planned")
-           ("Surreal numbers" "planned")
-           ("p-Adic numbers" "planned")
-           ("Imprecise probabilities" "planned")
-           ("Dempster-Shafer theory" "planned"))))
+          (("DistnumberBeta" "complete")
+           ("Hyperreal numbers" "complete")
+           ("SurrealAdvanced numbers" "complete")
+           ("PAdicAdvanced numbers" "complete")
+           ("Imprecise probabilities" "complete")
+           ("Dempster-Shafer theory" "complete"))))
 
        (v0.7-rust-compiler-fix
         (status "planned")
@@ -76,11 +86,19 @@
            ("Complete interpreter" "planned"))))
 
        (v0.8-julia-backend
-        (status "planned")
-        (completion 0)
+        (status "in-progress")
+        (completion 20)
         (items
-          (("BetLang → Julia compiler" "planned")
-           ("Distributions.jl integration" "planned")
+          (("Step 1: Core bet primitives" "complete")
+           ("Step 1: Racket → Julia compiler" "complete")
+           ("Step 1: Test suite (121 tests)" "complete")
+           ("Step 1: List operations and composition" "complete")
+           ("Step 2: Core language features" "in-progress")
+           ("Step 3: Standard library functions" "planned")
+           ("Step 4: Number systems (14 types)" "planned")
+           ("Step 5: Safety features" "planned")
+           ("Step 6: Performance optimization" "planned")
+           ("Distributions.jl integration" "partial")
            ("Aggregate-library preparation" "planned"))))
 
        (v1.0-production
@@ -95,27 +113,51 @@
 
   (blockers-and-issues
     (critical ())
-    (high
-      (("Rust compiler has serde serialization errors" "unresolved")
-       ("Type checker is stub (not implemented)" "unresolved")))
+    (high ())
     (medium
-      (("6 advanced number systems not implemented" "unresolved")
-       ("Julia backend doesn't exist yet" "unresolved")))
+      (("Rust compiler: LALRPOP parser has 3 shift/reduce conflicts" "documented")
+       ("Rust compiler: Parser generation blocks entire build" "documented")
+       ("Rust compiler: Optional tooling, non-authoritative" "accepted")))
     (low
-      (("Missing some GitHub workflows vs affinescript" "unresolved"))))
+      (("Rust type checker is stub" "documented")
+       ("Julia backend: Standard library not yet implemented" "in-progress")
+       ("Julia backend: Number systems not yet ported" "planned")
+       ("Missing some GitHub workflows" "accepted"))))
 
   (critical-next-actions
     (immediate
-      (("Update README with safety features" "high")
-       ("Commit safety features to git" "high")))
-    (this-week
-      (("Implement remaining 6 number systems" "medium")
-       ("Fix Rust compiler serde errors" "medium")))
-    (this-month
-      (("Create Julia backend" "medium")
-       ("Academic paper draft" "low"))))
+      (("Continue Julia backend Step 2: Core language features" "medium")))
+    (optional-future-work
+      (("Julia backend Step 3: Standard library" "medium")
+       ("Julia backend Step 4: Number systems" "medium")
+       ("Julia backend Step 5: Safety features" "medium")
+       ("Fix LALRPOP parser conflicts (Rust compiler)" "low")
+       ("Complete Rust type checker and interpreter" "low")
+       ("Academic paper draft" "low")
+       ("Performance optimization" "low"))))
 
   (session-history
+    ((date "2026-02-07")
+     (session "julia-backend-implementation")
+     (accomplishments
+       ("Created BetLang.jl Julia package (~300 lines)"
+        "Implemented core bet primitives (bet, bet_weighted, bet_conditional, etc.)"
+        "Implemented list operations (bet_map, bet_filter, bet_fold)"
+        "Implemented composition (bet_chain, bet_compose)"
+        "Implemented statistical utilities (bet_probability, bet_entropy, bet_expect, bet_variance)"
+        "Created Racket → Julia compiler (~220 lines)"
+        "Created comprehensive test suite (121 tests, all passing)"
+        "Integrated Distributions.jl, StatsBase.jl, Random.jl"
+        "Created examples (basic.jl, coin-flip-game.bet)"
+        "Created Julia backend documentation (julia-backend/README.md)"
+        "Created design documents (julia-backend-design.md, hyperpolymath-julia-integration.md)"
+        "Updated main README with Julia backend section"
+        "Updated ROADMAP with v0.8 milestone"
+        "Updated CHANGELOG with v0.6.0 details"
+        "Updated ECOSYSTEM.scm with project positioning"
+        "Updated SAFETY-FEATURES.md to document all 14 number systems"
+        "Step 1 of Julia backend (Minimal Viable Backend) complete"
+        "Total: ~1600 lines of new code and documentation")))
     ((date "2026-02-01")
      (session "safety-features-implementation")
      (accomplishments
