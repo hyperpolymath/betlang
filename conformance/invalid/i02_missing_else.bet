@@ -1,0 +1,4 @@
+;; SPDX-License-Identifier: PMPL-1.0-or-later
+;; Conformance (INVALID): bet with only two arguments (needs three)
+
+(bet 'only-two 'options)

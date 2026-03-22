@@ -1,0 +1,15 @@
+# SPDX-License-Identifier: PMPL-1.0-or-later
+# SPDX-FileCopyrightText: 2026 Jonathan D.A. Jewell
+
+[package]
+name = "bet-wasm"
+description = "WebAssembly backend for BetLang (probabilistic ternary DSL)"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+bet-syntax = { path = "../bet-syntax" }
+wasm-encoder = { workspace = true }
+thiserror = { workspace = true }
+
+[dev-dependencies]

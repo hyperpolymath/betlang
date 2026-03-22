@@ -1,0 +1,5 @@
+;; SPDX-License-Identifier: PMPL-1.0-or-later
+;; Conformance: probabilistic weighted bet
+
+(bet-with-seed 99 (lambda ()
+  (bet/weighted '(heavy 7) '(medium 2) '(light 1))))

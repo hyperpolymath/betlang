@@ -1,0 +1,5 @@
+;; SPDX-License-Identifier: PMPL-1.0-or-later
+;; Conformance: conditional bet (pattern-like matching)
+
+(bet/conditional #t 'yes 'no 'maybe)
+(bet/conditional #f 'yes 'no 'maybe)

@@ -1,0 +1,14 @@
+# betlang Semantics
+
+Betlang is a ternary DSL built for probabilistic reasoning and strategic expression.
+
+## Core Form:
+(bet A B C) → randomly selects one of three values.
+
+Used for:
+- Logic games
+- Confidence trees
+- Narrative speculation
+- Symbolic betting and uncertainty modeling
+
+Inspired by musical ternary form: A–B–A.

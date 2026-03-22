@@ -1,0 +1,212 @@
+/* TEAM */
+
+Lead Developer: [TO BE CONFIGURED]
+Contact: maintainer [at] betlang.org
+From: Earth
+GitHub: @username
+
+/* THANKS */
+
+Inspired by:
+  - Musical ternary form (A-B-A)
+  - Probabilistic programming languages
+  - Racket programming language team
+  - Open source community
+
+AI Assistance:
+  - Claude (Anthropic) - Code generation assistance
+  - Various AI tools for development
+
+/* SITE */
+
+Last update: 2025/11/22
+Language: Racket / English
+Standards: RSR Framework, RFC 9116
+Doctype: Markdown
+IDE: Various (VS Code, Emacs, Vim, etc.)
+Components: Racket 8.11+
+Architecture: Functional, Probabilistic
+
+/* PROJECT */
+
+Name: betlang
+Tagline: A Ternary Probabilistic Programming Language
+Version: 0.1.0
+Status: Active Development
+License: CC0 1.0 Universal (Public Domain)
+Repository: https://github.com/yourusername/betlang
+
+/* FEATURES */
+
+Core Primitive: (bet A B C)
+Philosophy: Ternary over Binary
+Paradigm: Functional, Probabilistic
+Libraries: 10+
+Functions: 180+
+Lines of Code: 6,000+
+Test Cases: 25+
+
+/* STATS */
+
+Repository Created: 2025-07-28
+First Commit: 2025-07-28
+Major Release: 2025-11-22
+Total Commits: 10+
+Contributors: Growing!
+
+Documentation:
+  - README.md (285 lines)
+  - Tutorial (500+ lines)
+  - Semantics (340+ lines)
+  - API Reference (600+ lines)
+
+Libraries:
+  - Statistics
+  - Probability Distributions
+  - Bayesian Inference
+  - Optimization
+  - Markov Chains
+  - Advanced Sampling
+  - Combinators
+  - Ternary Logic
+
+Examples:
+  - Monte Carlo Simulations
+  - Game Theory
+  - Financial Modeling
+  - Probabilistic Data Structures
+
+Tools:
+  - Interactive REPL
+  - Analysis & Visualization
+  - Performance Benchmarks
+  - CI/CD Automation
+
+/* TECH STACK */
+
+Language: Racket (Scheme dialect)
+Testing: rackunit
+CI/CD: GitHub Actions
+Documentation: Markdown, Scribble
+Version Control: Git
+Hosting: GitHub
+Package Manager: Racket package system
+
+/* PHILOSOPHY */
+
+Why Ternary?
+  - Richer than binary
+  - Models three-way decisions
+  - Interesting emergent properties
+  - Inspired by music theory
+
+Design Principles:
+  - Simplicity - Core primitive is one line
+  - Composability - Build complex from simple
+  - Purity - Functional programming
+  - Offline-first - No network dependencies
+  - Memory-safe - Garbage collected
+  - Type-friendly - Contracts available
+
+Use Cases:
+  - Quantitative Finance
+  - Statistical Modeling
+  - Machine Learning
+  - Monte Carlo Simulations
+  - Game Theory
+  - Research & Education
+
+/* COMMUNITY */
+
+Code of Conduct: Contributor Covenant 2.1
+Contributing: See CONTRIBUTING.md
+Security: See SECURITY.md
+License: CC0 1.0 (Public Domain)
+
+Ways to Contribute:
+  - Code
+  - Documentation
+  - Examples
+  - Bug reports
+  - Feature ideas
+  - Testing
+  - Spreading the word
+
+/* CONTACT */
+
+Issues: https://github.com/yourusername/betlang/issues
+Discussions: https://github.com/yourusername/betlang/discussions
+Email: [contact@betlang.org]
+Security: security@betlang.org (see SECURITY.md)
+
+/* ATTRIBUTION */
+
+This project stands on the shoulders of giants:
+
+Mathematics:
+  - Probability theory
+  - Statistics
+  - Stochastic processes
+  - Game theory
+
+Computer Science:
+  - Functional programming
+  - Probabilistic programming
+  - Type systems
+  - Domain-specific languages
+
+Music Theory:
+  - Ternary form (A-B-A)
+  - Compositional structures
+
+/* FUTURE */
+
+Planned Features:
+  - Enhanced type safety (Typed Racket)
+  - More distributions
+  - Visualization tools
+  - IDE integrations
+  - Package publishing
+  - Academic papers
+  - Conference talks
+
+Dream Goals:
+  - Production use in finance
+  - Academic research citations
+  - Teaching tool for probability
+  - Community-driven development
+  - International collaboration
+
+/* FUN FACTS */
+
+- The entire core is ~160 lines
+- Tests are probabilistic (they can "fail" randomly!)
+- Name plays on "bet" + "lang"
+- Inspired by coin flips but uses three-sided coins
+- Created during exploration of ternary logic
+- Public domain - truly free
+
+/* RANDOM QUOTE */
+
+"All models are wrong, but some are useful." - George Box
+
+In betlang, we embrace uncertainty.
+Every bet is a model of reality.
+Some bets are more useful than others.
+All bets are probabilistic.
+
+🎲 Happy betting! 🎲
+
+/* EOF */
+
+     _          _   _
+    | |        | | | |
+    | |__   ___| |_| | __ _ _ __   __ _
+    | '_ \ / _ \ __| |/ _` | '_ \ / _` |
+    | |_) |  __/ |_| | (_| | | | | (_| |
+    |_.__/ \___|\__|_|\__,_|_| |_|\__, |
+                                   __/ |
+                                  |___/
+
+Ternary Probabilistic Programming Language
+A-B-A | 1-2-3 | Bet-Bet-Bet

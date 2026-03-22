@@ -1,0 +1,8 @@
+# Project Architecture
+
+- core/betlang.rkt — DSL operators
+- lib/ternary.rkt — Conditional constructs
+- epl/shell.rkt — REPL interface + logging
+- 	ests/ — Probabilistic tests
+- docs/ — Theory and specification
+- homepage/ — Public face of the project

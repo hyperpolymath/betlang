@@ -1,0 +1,116 @@
+<!-- SPDX-License-Identifier: MIT OR Apache-2.0 -->
+<idea-plugin>
+    <id>com.hyperpolymath.betlang</id>
+    <name>Betlang</name>
+    <vendor email="support@hyperpolymath.com" url="https://github.com/hyperpolymath/betlang">
+        Hyperpolymath
+    </vendor>
+
+    <description><![CDATA[
+        <h2>Betlang Language Support</h2>
+        <p>Language support for Betlang - a ternary probabilistic programming language.</p>
+
+        <h3>Features</h3>
+        <ul>
+            <li>Syntax highlighting</li>
+            <li>Error checking and diagnostics</li>
+            <li>Code completion</li>
+            <li>Hover documentation</li>
+            <li>Go to definition</li>
+            <li>Find references</li>
+            <li>Code formatting</li>
+            <li>Integrated REPL</li>
+        </ul>
+
+        <h3>Quick Start</h3>
+        <p>Create a file with <code>.bet</code> or <code>.betlang</code> extension and start coding!</p>
+
+        <pre>
+let choice = bet { "heads", "tails", "edge" }
+println(choice)
+        </pre>
+    ]]></description>
+
+    <change-notes><![CDATA[
+        <h3>0.1.0</h3>
+        <ul>
+            <li>Initial release</li>
+            <li>LSP-based language support</li>
+            <li>Syntax highlighting</li>
+            <li>Basic error checking</li>
+        </ul>
+    ]]></change-notes>
+
+    <depends>com.intellij.modules.platform</depends>
+
+    <extensions defaultExtensionNs="com.intellij">
+        <!-- Language definition -->
+        <fileType
+            name="Betlang"
+            implementationClass="com.hyperpolymath.betlang.BetlangFileType"
+            fieldName="INSTANCE"
+            language="Betlang"
+            extensions="bet;betlang"/>
+
+        <lang.parserDefinition
+            language="Betlang"
+            implementationClass="com.hyperpolymath.betlang.BetlangParserDefinition"/>
+
+        <lang.syntaxHighlighterFactory
+            language="Betlang"
+            implementationClass="com.hyperpolymath.betlang.BetlangSyntaxHighlighterFactory"/>
+
+        <!-- LSP support -->
+        <platform.lsp.serverSupportProvider
+            implementation="com.hyperpolymath.betlang.BetlangLspServerSupportProvider"/>
+
+        <!-- Run configuration -->
+        <configurationType
+            implementation="com.hyperpolymath.betlang.run.BetlangConfigurationType"/>
+
+        <!-- Tool window for REPL -->
+        <toolWindow
+            id="Betlang REPL"
+            anchor="bottom"
+            icon="/icons/repl.svg"
+            factoryClass="com.hyperpolymath.betlang.repl.BetlangReplToolWindowFactory"/>
+
+        <!-- Color settings page -->
+        <colorSettingsPage
+            implementation="com.hyperpolymath.betlang.BetlangColorSettingsPage"/>
+
+        <!-- Documentation provider -->
+        <lang.documentationProvider
+            language="Betlang"
+            implementationClass="com.hyperpolymath.betlang.BetlangDocumentationProvider"/>
+
+        <!-- Notification group -->
+        <notificationGroup id="Betlang Notifications"
+            displayType="BALLOON"
+            bundle="messages.BetlangBundle"
+            key="notification.group.betlang"/>
+    </extensions>
+
+    <actions>
+        <group id="BetlangMenu" text="Betlang" popup="true">
+            <add-to-group group-id="ToolsMenu" anchor="last"/>
+
+            <action id="Betlang.StartRepl"
+                class="com.hyperpolymath.betlang.actions.StartReplAction"
+                text="Start REPL"
+                description="Start Betlang REPL"/>
+
+            <action id="Betlang.EvalSelection"
+                class="com.hyperpolymath.betlang.actions.EvalSelectionAction"
+                text="Evaluate Selection"
+                description="Evaluate selected code in REPL">
+                <keyboard-shortcut keymap="$default" first-keystroke="ctrl ENTER"/>
+            </action>
+
+            <action id="Betlang.RestartLsp"
+                class="com.hyperpolymath.betlang.actions.RestartLspAction"
+                text="Restart Language Server"
+                description="Restart the Betlang language server"/>
+        </group>
+    </actions>
+</idea-plugin>

@@ -1,0 +1,4 @@
+;; SPDX-License-Identifier: PMPL-1.0-or-later
+;; Conformance: ternary bet (core primitive)
+
+(bet-with-seed 42 (lambda () (bet 'A 'B 'C)))

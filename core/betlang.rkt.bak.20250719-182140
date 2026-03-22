@@ -1,0 +1,9 @@
+#lang racket
+(provide bet)
+
+;; (bet A B C) randomly chooses A, B, or C
+(define (bet a b c)
+  (match (random 3)
+    [0 a]
+    [1 b]
+    [_ c]))

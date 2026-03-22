@@ -1,0 +1,69 @@
+;; SPDX-FileCopyrightText: 2025 hyperpolymath
+;; SPDX-License-Identifier: PMPL-1.0-or-later
+;;
+;; smoke.bet - Betlang Conformance Smoke Test
+;;
+;; Usage: racket repl/shell.rkt < conformance/smoke.bet
+;;
+;; This file tests core betlang primitives to verify a working installation.
+;; All tests use seeds for reproducibility.
+
+;; ============================================================================
+;; Test 1: Basic seeded bet (deterministic verification)
+;; ============================================================================
+(bet-with-seed 42 (lambda () (bet 'A 'B 'C)))
+
+;; ============================================================================
+;; Test 2: Weighted bet with seed
+;; ============================================================================
+(bet-with-seed 123 (lambda () (bet/weighted '(heavy 7) '(medium 2) '(light 1))))
+
+;; ============================================================================
+;; Test 3: Conditional bet - true branch
+;; ============================================================================
+(bet/conditional #t 'yes 'no 'maybe)
+
+;; ============================================================================
+;; Test 4: Conditional bet - false branch (seeded)
+;; ============================================================================
+(bet-with-seed 99 (lambda () (bet/conditional #f 'yes 'no 'maybe)))
+
+;; ============================================================================
+;; Test 5: Lazy evaluation (only one thunk should execute)
+;; ============================================================================
+(bet-with-seed 77 (lambda ()
+  (bet/lazy
+    (lambda () 'lazy-A)
+    (lambda () 'lazy-B)
+    (lambda () 'lazy-C))))
+
+;; ============================================================================
+;; Test 6: Idempotent bet (should always return same value)
+;; ============================================================================
+(bet 'same 'same 'same)
+
+;; ============================================================================
+;; Test 7: All-bets utility
+;; ============================================================================
+(all-bets 1 2 3)
+
+;; ============================================================================
+;; Test 8: Parallel bets with seed
+;; ============================================================================
+(bet-with-seed 2025 (lambda () (bet-parallel 5 'win 'draw 'lose)))
+
+;; ============================================================================
+;; Test 9: Probability estimation (seeded for reproducibility)
+;; ============================================================================
+(bet-with-seed 314 (lambda ()
+  (bet-probability 100 (lambda (x) (equal? x 'A)) 'A 'B 'C)))
+
+;; ============================================================================
+;; Test 10: Entropy calculation
+;; ============================================================================
+(bet-entropy '(A A A B B B C C C))
+
+;; ============================================================================
+;; Exit cleanly
+;; ============================================================================
+:quit

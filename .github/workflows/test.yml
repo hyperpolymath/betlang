@@ -1,0 +1,174 @@
+# SPDX-License-Identifier: PMPL-1.0-or-later
+name: Test
+permissions: read-all
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+  workflow_dispatch:
+
+jobs:
+  test:
+    name: Test on Racket ${{ matrix.racket-version }}
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        racket-version: ['8.11', '8.12', 'current']
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+
+      - name: Setup Racket
+        uses: Bogdanp/setup-racket@v1.14
+        with:
+          version: ${{ matrix.racket-version }}
+          packages: 'rackunit'
+
+      - name: Run core tests
+        run: racket tests/basics.rkt
+
+      - name: Run benchmarks
+        run: racket benchmarks/performance.rkt
+        continue-on-error: true  # Benchmarks may vary by platform
+
+      - name: Test example files
+        run: |
+          racket examples/basic-tutorial.rkt
+          racket examples/monte-carlo.rkt
+          racket examples/game-theory.rkt
+          racket examples/finance.rkt
+          racket examples/probabilistic-structures.rkt
+        shell: bash
+
+      - name: Test library modules
+        run: |
+          racket -e '(require "lib/statistics.rkt")' -e '(displayln "statistics.rkt OK")'
+          racket -e '(require "lib/distributions.rkt")' -e '(displayln "distributions.rkt OK")'
+          racket -e '(require "lib/markov.rkt")' -e '(displayln "markov.rkt OK")'
+          racket -e '(require "lib/bayesian.rkt")' -e '(displayln "bayesian.rkt OK")'
+          racket -e '(require "lib/combinators.rkt")' -e '(displayln "combinators.rkt OK")'
+          racket -e '(require "lib/optimization.rkt")' -e '(displayln "optimization.rkt OK")'
+          racket -e '(require "lib/sampling.rkt")' -e '(displayln "sampling.rkt OK")'
+          racket -e '(require "lib/ternary.rkt")' -e '(displayln "ternary.rkt OK")'
+        shell: bash
+
+      - name: Test REPL startup
+        run: echo ':quit' | racket repl/shell.rkt
+        shell: bash
+
+      - name: Check for compilation warnings
+        run: raco setup --check-pkg-deps --no-docs betlang || true
+        continue-on-error: true
+
+  lint:
+    name: Code Quality
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+
+      - name: Setup Racket
+        uses: Bogdanp/setup-racket@v1.14
+        with:
+          version: 'current'
+
+      - name: Check file formatting
+        run: |
+          find . -name "*.rkt" -type f | while read file; do
+            echo "Checking $file"
+            racket -l racket/base -e "(require syntax/parse)" "$file" 2>&1 || echo "Warning: $file may have issues"
+          done
+        shell: bash
+        continue-on-error: true
+
+      - name: Check for TODO comments
+        run: |
+          echo "=== TODO/FIXME/HACK comments found ==="
+          grep -r "TODO\|FIXME\|HACK" --include="*.rkt" . || echo "No TODO comments found"
+        shell: bash
+        continue-on-error: true
+
+  docs:
+    name: Documentation Check
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+
+      - name: Check documentation completeness
+        run: |
+          echo "=== Checking required documentation files ==="
+          test -f README.md && echo "✓ README.md" || echo "✗ README.md missing"
+          test -f LICENSE && echo "✓ LICENSE" || echo "✗ LICENSE missing"
+          test -f CONTRIBUTING.md && echo "✓ CONTRIBUTING.md" || echo "✗ CONTRIBUTING.md missing"
+          test -f SECURITY.md && echo "✓ SECURITY.md" || echo "✗ SECURITY.md missing"
+          test -f CODE_OF_CONDUCT.md && echo "✓ CODE_OF_CONDUCT.md" || echo "✗ CODE_OF_CONDUCT.md missing"
+          test -f CHANGELOG.md && echo "✓ CHANGELOG.md" || echo "✗ CHANGELOG.md missing"
+        shell: bash
+        continue-on-error: true
+
+      - name: Check for broken links in markdown
+        run: |
+          echo "=== Checking for broken internal links ==="
+          grep -r "\[.*\](.*\.md)" --include="*.md" . | grep -v "http" || echo "No markdown links found"
+        shell: bash
+        continue-on-error: true
+
+  rsr-compliance:
+    name: RSR Framework Compliance
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+
+      - name: Check RSR compliance
+        run: |
+          echo "=== RSR (Rhodium Standard Repository) Compliance Check ==="
+          echo ""
+          echo "📋 Documentation:"
+          test -f README.md && echo "  ✓ README.md" || echo "  ✗ README.md"
+          test -f LICENSE && echo "  ✓ LICENSE" || echo "  ✗ LICENSE"
+          test -f CONTRIBUTING.md && echo "  ✓ CONTRIBUTING.md" || echo "  ✗ CONTRIBUTING.md"
+          test -f SECURITY.md && echo "  ✓ SECURITY.md" || echo "  ✗ SECURITY.md"
+          test -f CODE_OF_CONDUCT.md && echo "  ✓ CODE_OF_CONDUCT.md" || echo "  ✗ CODE_OF_CONDUCT.md"
+          test -f MAINTAINERS.md && echo "  ✓ MAINTAINERS.md" || echo "  ✗ MAINTAINERS.md"
+          test -f CHANGELOG.md && echo "  ✓ CHANGELOG.md" || echo "  ✗ CHANGELOG.md"
+
+          echo ""
+          echo "🔒 Security:"
+          test -f .well-known/security.txt && echo "  ✓ .well-known/security.txt" || echo "  ✗ .well-known/security.txt"
+          test -f SECURITY.md && echo "  ✓ Security policy" || echo "  ✗ Security policy"
+
+          echo ""
+          echo "🤖 AI Policy:"
+          test -f .well-known/ai.txt && echo "  ✓ .well-known/ai.txt" || echo "  ✗ .well-known/ai.txt"
+
+          echo ""
+          echo "👥 Community:"
+          test -f .well-known/humans.txt && echo "  ✓ .well-known/humans.txt" || echo "  ✗ .well-known/humans.txt"
+          test -f TPCF.md && echo "  ✓ TPCF declaration" || echo "  ✗ TPCF declaration"
+
+          echo ""
+          echo "🧪 Testing:"
+          test -d tests && echo "  ✓ Test directory exists" || echo "  ✗ No tests directory"
+          test -f tests/basics.rkt && echo "  ✓ Test suite present" || echo "  ✗ No test suite"
+
+          echo ""
+          echo "🏗️ Build System:"
+          test -f info.rkt && echo "  ✓ info.rkt package metadata" || echo "  ✗ No package metadata"
+          test -f .gitignore && echo "  ✓ .gitignore" || echo "  ✗ No .gitignore"
+
+          echo ""
+          echo "=== Compliance Summary ==="
+          echo "For full RSR compliance, ensure all items above are present."
+        shell: bash
+        continue-on-error: true

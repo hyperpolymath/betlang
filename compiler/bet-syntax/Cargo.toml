@@ -1,0 +1,16 @@
+[package]
+name = "bet-syntax"
+description = "AST and syntax definitions for Betlang"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+im.workspace = true
+indexmap.workspace = true
+smallvec.workspace = true
+serde = { workspace = true, optional = true }
+
+[features]
+default = []
+serde = ["dep:serde", "im/serde", "indexmap/serde"]

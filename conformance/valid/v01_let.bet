@@ -1,0 +1,5 @@
+;; SPDX-License-Identifier: PMPL-1.0-or-later
+;; Conformance: let binding (define)
+
+(define x 42)
+(display x)

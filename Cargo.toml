@@ -1,0 +1,95 @@
+# ============================================================================
+# OPTIONAL TOOLING - NOT AUTHORITATIVE
+# ============================================================================
+# These Rust components are optional tooling that do NOT define betlang
+# semantics. The authoritative implementation is core/betlang.rkt (Racket).
+# See SPEC.core.scm for formal semantics and TOOLING.md for details.
+# ============================================================================
+
+[workspace]
+resolver = "2"
+members = [
+    # Compiler
+    "compiler/bet-syntax",
+    "compiler/bet-parse",
+    "compiler/bet-core",
+    "compiler/bet-check",
+    "compiler/bet-eval",
+    "compiler/bet-codegen",
+    "compiler/bet-wasm",
+
+    # Runtime
+    "runtime/bet-rt",
+    "runtime/bet-rand",
+    "runtime/bet-viz",
+
+    # Tools
+    "tools/bet-cli",
+    "tools/bet-lsp",
+    "tools/bet-dap",
+
+    # Bindings
+    "bindings/chapel",
+    "bindings/julia",
+]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/hyperpolymath/betlang"
+rust-version = "1.75"
+
+[workspace.dependencies]
+# Parsing
+logos = "0.14"
+lalrpop-util = "0.20"
+lalrpop = "0.20"
+
+# Data structures
+im = { version = "15.1", features = ["serde"] }  # Immutable collections with serde support
+indexmap = "2.1"
+smallvec = "1.11"
+
+# Error handling
+thiserror = "1.0"
+miette = { version = "7.0", features = ["fancy"] }
+
+# CLI
+clap = { version = "4.4", features = ["derive"] }
+rustyline = "14.0"
+
+# Randomness
+rand = "0.8"
+rand_distr = "0.4"
+rand_pcg = "0.3"
+rand_chacha = "0.3"
+
+# Parallelism
+rayon = "1.8"
+
+# Serialization
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+
+# Async (for LSP, etc.)
+tokio = { version = "1.35", features = ["full"] }
+
+# WASM
+wasm-encoder = "0.225"
+
+# Testing
+proptest = "1.4"
+criterion = "0.5"
+
+# Tracing/logging
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+
+[profile.release]
+lto = true
+codegen-units = 1
+panic = "abort"
+
+[profile.dev]
+opt-level = 1  # Faster dev builds with some optimization

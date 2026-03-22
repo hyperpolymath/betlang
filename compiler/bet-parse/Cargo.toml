@@ -1,0 +1,17 @@
+[package]
+name = "bet-parse"
+description = "Lexer and parser for Betlang"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+build = "build.rs"
+
+[dependencies]
+bet-syntax = { path = "../bet-syntax" }
+logos.workspace = true
+lalrpop-util.workspace = true
+thiserror.workspace = true
+miette.workspace = true
+
+[build-dependencies]
+lalrpop.workspace = true

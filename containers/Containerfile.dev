@@ -1,0 +1,61 @@
+# SPDX-License-Identifier: MIT OR Apache-2.0
+# Betlang Development Container
+#
+# Build with nerdctl or podman:
+#   nerdctl build -t betlang-dev:latest -f containers/Containerfile.dev .
+#   podman build -t betlang-dev:latest -f containers/Containerfile.dev .
+#
+# Run interactive development shell:
+#   nerdctl run -it --rm -v $(pwd):/workspace betlang-dev:latest bash
+#   podman run -it --rm -v $(pwd):/workspace betlang-dev:latest bash
+
+FROM docker.io/library/rust:1.75-bookworm
+
+# Install development dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    # Build tools
+    cmake \
+    pkg-config \
+    libssl-dev \
+    # Editors
+    vim \
+    neovim \
+    # Debug/profiling
+    gdb \
+    valgrind \
+    linux-perf \
+    # Documentation
+    graphviz \
+    # For Chapel bindings
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install additional Rust tools
+RUN rustup component add \
+    clippy \
+    rustfmt \
+    rust-src \
+    && cargo install \
+    cargo-watch \
+    cargo-expand \
+    cargo-audit \
+    cargo-deny \
+    bacon
+
+# Install Julia (for testing bindings)
+RUN curl -fsSL https://install.julialang.org | sh -s -- -y
+ENV PATH="/root/.juliaup/bin:${PATH}"
+
+# Set up workspace
+WORKDIR /workspace
+
+# Configure cargo for faster builds
+ENV CARGO_INCREMENTAL=1
+ENV CARGO_BUILD_JOBS=4
+
+# Default shell
+CMD ["/bin/bash"]
+
+# Labels
+LABEL org.opencontainers.image.title="Betlang Dev"
+LABEL org.opencontainers.image.description="Development environment for Betlang"

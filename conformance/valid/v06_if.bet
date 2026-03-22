@@ -1,0 +1,7 @@
+;; SPDX-License-Identifier: PMPL-1.0-or-later
+;; Conformance: conditional expression (if)
+
+(define x 10)
+(if (> x 5)
+    (display "large")
+    (display "small"))

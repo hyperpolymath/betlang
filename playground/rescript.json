@@ -1,0 +1,31 @@
+{
+  "name": "betlang-playground",
+  "sources": [
+    {
+      "dir": "src",
+      "subdirs": true
+    },
+    {
+      "dir": "test",
+      "subdirs": true,
+      "type": "dev"
+    },
+    {
+      "dir": "examples",
+      "subdirs": true,
+      "type": "dev"
+    }
+  ],
+  "package-specs": [
+    {
+      "module": "esmodule",
+      "in-source": false
+    }
+  ],
+  "suffix": ".res.mjs",
+  "dependencies": [],
+  "dev-dependencies": [],
+  "warnings": {
+    "number": "+A-48-42"
+  }
+}

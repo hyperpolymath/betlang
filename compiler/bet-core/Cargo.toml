@@ -1,0 +1,10 @@
+[package]
+name = "bet-core"
+description = "Core types and utilities for Betlang compiler"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+bet-syntax = { path = "../bet-syntax" }
+thiserror.workspace = true

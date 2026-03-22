@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<!-- SPDX-License-Identifier: MIT OR Apache-2.0 -->
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Betlang Playground</title>
+  <meta name="description" content="Interactive playground for Betlang - a ternary probabilistic programming language">
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <div id="app"></div>
+  <script type="module">
+    import { main } from '../src/App.res.mjs';
+    main(document.getElementById('app'));
+  </script>
+</body>
+</html>

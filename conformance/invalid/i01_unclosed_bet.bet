@@ -1,0 +1,4 @@
+;; SPDX-License-Identifier: PMPL-1.0-or-later
+;; Conformance (INVALID): unclosed parenthesis in bet form
+
+(bet 'A 'B

@@ -1,0 +1,6 @@
+homepage: "https://github.com/hyperpolymath/betlang"
+language: rust
+main_repo: "https://github.com/hyperpolymath/betlang"
+sanitizers:
+  - address
+  - undefined

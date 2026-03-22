@@ -1,0 +1,23 @@
+[package]
+name = "bet-chapel"
+description = "Chapel language bindings for Betlang"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[lib]
+name = "bet_chapel"
+crate-type = ["cdylib", "staticlib"]
+
+[dependencies]
+bet-rt = { path = "../../runtime/bet-rt" }
+
+# FFI
+libc = "0.2"
+
+# Core
+rand.workspace = true
+rand_distr.workspace = true
+
+[build-dependencies]
+cbindgen = "0.26"

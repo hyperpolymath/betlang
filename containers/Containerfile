@@ -1,0 +1,102 @@
+# SPDX-License-Identifier: MIT OR Apache-2.0
+# Betlang Container Image
+#
+# Build with nerdctl (preferred) or podman:
+#   nerdctl build -t betlang:latest -f containers/Containerfile .
+#   podman build -t betlang:latest -f containers/Containerfile .
+#
+# Run interactive REPL:
+#   nerdctl run -it --rm betlang:latest
+#   podman run -it --rm betlang:latest
+#
+# Run a betlang file:
+#   nerdctl run -it --rm -v $(pwd):/work betlang:latest bet run /work/example.bet
+
+# Stage 1: Build environment
+FROM docker.io/library/rust:1.75-bookworm AS builder
+
+WORKDIR /build
+
+# Install build dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    cmake \
+    pkg-config \
+    libssl-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy manifests first for dependency caching
+COPY Cargo.toml Cargo.lock ./
+COPY compiler/bet-syntax/Cargo.toml compiler/bet-syntax/
+COPY compiler/bet-parse/Cargo.toml compiler/bet-parse/
+COPY compiler/bet-core/Cargo.toml compiler/bet-core/
+COPY compiler/bet-check/Cargo.toml compiler/bet-check/
+COPY compiler/bet-eval/Cargo.toml compiler/bet-eval/
+COPY compiler/bet-codegen/Cargo.toml compiler/bet-codegen/
+COPY runtime/bet-rt/Cargo.toml runtime/bet-rt/
+COPY runtime/bet-rand/Cargo.toml runtime/bet-rand/
+COPY runtime/bet-viz/Cargo.toml runtime/bet-viz/
+COPY tools/bet-cli/Cargo.toml tools/bet-cli/
+COPY bindings/chapel/Cargo.toml bindings/chapel/
+COPY bindings/julia/Cargo.toml bindings/julia/
+
+# Create dummy source files for dependency caching
+RUN mkdir -p compiler/bet-syntax/src && echo "// dummy" > compiler/bet-syntax/src/lib.rs
+RUN mkdir -p compiler/bet-parse/src && echo "// dummy" > compiler/bet-parse/src/lib.rs
+RUN mkdir -p compiler/bet-core/src && echo "// dummy" > compiler/bet-core/src/lib.rs
+RUN mkdir -p compiler/bet-check/src && echo "// dummy" > compiler/bet-check/src/lib.rs
+RUN mkdir -p compiler/bet-eval/src && echo "// dummy" > compiler/bet-eval/src/lib.rs
+RUN mkdir -p compiler/bet-codegen/src && echo "// dummy" > compiler/bet-codegen/src/lib.rs
+RUN mkdir -p runtime/bet-rt/src && echo "// dummy" > runtime/bet-rt/src/lib.rs
+RUN mkdir -p runtime/bet-rand/src && echo "// dummy" > runtime/bet-rand/src/lib.rs
+RUN mkdir -p runtime/bet-viz/src && echo "// dummy" > runtime/bet-viz/src/lib.rs
+RUN mkdir -p tools/bet-cli/src && echo "fn main() {}" > tools/bet-cli/src/main.rs
+RUN mkdir -p bindings/chapel/src && echo "// dummy" > bindings/chapel/src/lib.rs
+RUN mkdir -p bindings/julia/src && echo "// dummy" > bindings/julia/src/lib.rs
+
+# Build dependencies (this layer will be cached)
+RUN cargo build --release 2>/dev/null || true
+
+# Copy actual source code
+COPY . .
+
+# Build the actual project
+RUN cargo build --release
+
+# Stage 2: Runtime image
+FROM docker.io/library/debian:bookworm-slim AS runtime
+
+# Install runtime dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    ca-certificates \
+    libssl3 \
+    && rm -rf /var/lib/apt/lists/*
+
+# Create non-root user
+RUN useradd -m -s /bin/bash betlang
+
+WORKDIR /app
+
+# Copy built binaries
+COPY --from=builder /build/target/release/bet /usr/local/bin/bet
+COPY --from=builder /build/target/release/libbet_julia.so /usr/local/lib/
+COPY --from=builder /build/target/release/libbet_chapel.so /usr/local/lib/
+
+# Copy standard library and examples
+COPY --from=builder /build/examples /app/examples
+COPY --from=builder /build/lib /app/lib
+
+# Set up library path
+ENV LD_LIBRARY_PATH=/usr/local/lib
+
+# Switch to non-root user
+USER betlang
+
+# Default command: run REPL
+ENTRYPOINT ["bet"]
+CMD ["repl"]
+
+# Labels
+LABEL org.opencontainers.image.title="Betlang"
+LABEL org.opencontainers.image.description="Ternary probabilistic programming language"
+LABEL org.opencontainers.image.source="https://github.com/hyperpolymath/betlang"
+LABEL org.opencontainers.image.licenses="MIT OR Apache-2.0"

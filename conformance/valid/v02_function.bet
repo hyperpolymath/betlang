@@ -1,0 +1,6 @@
+;; SPDX-License-Identifier: PMPL-1.0-or-later
+;; Conformance: function definition
+
+(define (add a b)
+  (+ a b))
+(display (add 3 4))

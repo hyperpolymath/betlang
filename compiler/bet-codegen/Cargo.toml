@@ -1,0 +1,11 @@
+[package]
+name = "bet-codegen"
+description = "Code generation for Betlang"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+bet-syntax = { path = "../bet-syntax" }
+bet-core = { path = "../bet-core" }
+thiserror.workspace = true

@@ -1,0 +1,559 @@
+// SPDX-License-Identifier: PMPL-1.0-or-later
+// Betlang Grammar
+//
+// Author: Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
+//
+// Grammar structure:
+//
+//   Expr       = ExprOpen | ExprClosed
+//   ExprOpen   = keyword-started forms that extend rightward (lambda,
+//                let-in, if-then-else-end, match-end, do-end, sample,
+//                bet-end, parallel-do-end).  Cannot be used as function
+//                application arguments.
+//   ExprClosed = operator precedence chain (ExprOr down to ExprAtom).
+//   ExprAtom   = literals, variables, parenthesised, brace/bracket-
+//                delimited forms.  Safe as application arguments.
+
+use bet_syntax::{
+    ast::*,
+    span::{Span, Spanned},
+    Symbol,
+};
+use crate::lexer::Token;
+
+grammar;
+
+// === External Token Types ===
+
+extern {
+    type Location = usize;
+    type Error = crate::lexer::LexError;
+
+    enum Token {
+        // Keywords
+        "bet" => Token::Bet,
+        "let" => Token::Let,
+        "in" => Token::In,
+        "fun" => Token::Fun,
+        "match" => Token::Match,
+        "if" => Token::If,
+        "then" => Token::Then,
+        "else" => Token::Else,
+        "end" => Token::End,
+        "do" => Token::Do,
+        "return" => Token::Return,
+        "type" => Token::Type,
+        "module" => Token::Module,
+        "import" => Token::Import,
+        "export" => Token::Export,
+        "rec" => Token::Rec,
+        "and" => Token::And,
+        "or" => Token::Or,
+        "not" => Token::Not,
+        "xor" => Token::Xor,
+        "true" => Token::True,
+        "false" => Token::False,
+        "unknown" => Token::Unknown,
+        "sample" => Token::Sample,
+        "observe" => Token::Observe,
+        "infer" => Token::Infer,
+        "parallel" => Token::Parallel,
+        "weighted" => Token::Weighted,
+        "MCMC" => Token::MCMC,
+        "HMC" => Token::HMC,
+        "SMC" => Token::SMC,
+        "VI" => Token::VI,
+
+        // Literals
+        INT => Token::Int(<i64>),
+        FLOAT => Token::Float(<f64>),
+        STRING => Token::String(<String>),
+        IDENT => Token::Ident(<String>),
+        TYPEVAR => Token::TypeVar(<String>),
+
+        // Operators
+        "+" => Token::Plus,
+        "-" => Token::Minus,
+        "*" => Token::Star,
+        "/" => Token::Slash,
+        "%" => Token::Percent,
+        "^" => Token::Caret,
+        "==" => Token::EqEq,
+        "!=" => Token::NotEq,
+        "<" => Token::Lt,
+        "<=" => Token::Le,
+        ">" => Token::Gt,
+        ">=" => Token::Ge,
+        "&&" => Token::AndAnd,
+        "||" => Token::OrOr,
+        "++" => Token::PlusPlus,
+        "::" => Token::ColonColon,
+        ">>" => Token::GtGt,
+        "|>" => Token::Pipe,
+        "<-" => Token::LArrow,
+        "->" => Token::RArrow,
+        "=>" => Token::FatArrow,
+
+        // Delimiters
+        "(" => Token::LParen,
+        ")" => Token::RParen,
+        "[" => Token::LBracket,
+        "]" => Token::RBracket,
+        "{" => Token::LBrace,
+        "}" => Token::RBrace,
+
+        // Punctuation
+        "," => Token::Comma,
+        ";" => Token::Semi,
+        ":" => Token::Colon,
+        "." => Token::Dot,
+        "=" => Token::Eq,
+        "@" => Token::At,
+        "|" => Token::Bar,
+        "_" => Token::Underscore,
+        "?" => Token::Question,
+        "\\" => Token::Backslash,
+    }
+}
+
+// === Helper Macros ===
+
+// Spanned wrapper -- safe on non-precedence-chain nonterminals.
+Spanned<T>: Spanned<T> = {
+    <l:@L> <t:T> <r:@R> => Spanned::new(t, Span::new(l as u32, r as u32)),
+};
+
+Comma<T>: Vec<T> = {
+    => Vec::new(),
+    <v:Sep<T, ",">> => v,
+    <v:Sep<T, ",">> "," => v,
+};
+
+Sep<T, S>: Vec<T> = {
+    <e:T> => vec![e],
+    <mut v:Sep<T, S>> S <e:T> => { v.push(e); v },
+};
+
+// === Dedicated Spanned wrappers for precedence-chain nonterminals ===
+// These avoid the reduce/reduce conflicts that generic Spanned<T> causes.
+
+SpannedExpr: Spanned<Expr> = {
+    <l:@L> <e:Expr> <r:@R> => Spanned::new(e, Span::new(l as u32, r as u32)),
+};
+
+SpannedExprAtom: Spanned<Expr> = {
+    <l:@L> <e:ExprAtom> <r:@R> => Spanned::new(e, Span::new(l as u32, r as u32)),
+};
+
+SpannedPattern: Spanned<Pattern> = {
+    <l:@L> <p:Pattern> <r:@R> => Spanned::new(p, Span::new(l as u32, r as u32)),
+};
+
+SpannedPatternAtom: Spanned<Pattern> = {
+    <l:@L> <p:PatternAtom> <r:@R> => Spanned::new(p, Span::new(l as u32, r as u32)),
+};
+
+SpannedType: Spanned<Type> = {
+    <l:@L> <t:Type> <r:@R> => Spanned::new(t, Span::new(l as u32, r as u32)),
+};
+
+SpannedTypeApp: Spanned<Type> = {
+    <l:@L> <t:TypeApp> <r:@R> => Spanned::new(t, Span::new(l as u32, r as u32)),
+};
+
+SpannedTypeAtom: Spanned<Type> = {
+    <l:@L> <t:TypeAtom> <r:@R> => Spanned::new(t, Span::new(l as u32, r as u32)),
+};
+
+// === Top-Level ===
+
+pub Module: Module = {
+    <l:@L> <items:Spanned<Item>*> <r:@R> => Module {
+        name: None,
+        items,
+        span: Span::new(l as u32, r as u32),
+    }
+};
+
+// Top-level items are keyword-started (let, type, import) so they are
+// unambiguously delimited without separators.  Bare expressions are not
+// allowed at top level; use `let _ = expr` or `parse_expr` for REPL.
+Item: Item = {
+    <LetDef> => Item::Let(<>),
+    <TypeDef> => Item::TypeDef(<>),
+    <Import> => Item::Import(<>),
+};
+
+LetDef: LetDef = {
+    "let" <is_rec:"rec"?> <name:Spanned<Ident>> <params:SpannedPattern*>
+        <type_ann:(":" <SpannedType>)?> "=" <body:SpannedExpr> => LetDef {
+        name: name.map(|s| Symbol::intern(&s)),
+        params,
+        type_ann,
+        body,
+        is_rec: is_rec.is_some(),
+    }
+};
+
+TypeDef: TypeDef = {
+    "type" <name:Spanned<Ident>> <params:Spanned<TypeVarIdent>*> "=" <body:SpannedType> => TypeDef {
+        name: name.map(|s| Symbol::intern(&s)),
+        params: params.into_iter().map(|s| s.map(|s| Symbol::intern(&s))).collect(),
+        body,
+    }
+};
+
+Import: Import = {
+    "import" <path:Spanned<Ident>+> => Import {
+        path: path.into_iter().map(|s| s.map(|s| Symbol::intern(&s))).collect(),
+        items: None,
+    },
+    "import" <path:Spanned<Ident>+> "." "{" <items:Comma<Spanned<Ident>>> "}" => Import {
+        path: path.into_iter().map(|s| s.map(|s| Symbol::intern(&s))).collect(),
+        items: Some(items.into_iter().map(|s| s.map(|s| Symbol::intern(&s))).collect()),
+    }
+};
+
+// === Expressions ===
+
+pub Expr: Expr = {
+    ExprOpen,
+    ExprClosed,
+};
+
+// Open expressions: keyword-started forms that extend rightward.
+// These CANNOT appear as function application arguments (use parens to wrap).
+ExprOpen: Expr = {
+    // Lambda
+    "fun" <params:SpannedPattern+> "->" <body:SpannedExpr> =>
+        Expr::Lambda(LambdaExpr {
+            params,
+            body: Box::new(body),
+        }),
+
+    // Let expression
+    "let" <is_rec:"rec"?> <pat:SpannedPattern> <type_ann:(":" <SpannedType>)?> "=" <val:SpannedExpr> "in" <body:SpannedExpr> =>
+        Expr::Let(LetExpr {
+            pattern: pat,
+            type_ann,
+            value: Box::new(val),
+            body: Box::new(body),
+            is_rec: is_rec.is_some(),
+        }),
+
+    // Sample (prefix unary over an atom)
+    <l:@L> "sample" <e:ExprAtom> <r:@R> =>
+        Expr::Sample(Box::new(Spanned::new(e, Span::new(l as u32, r as u32)))),
+
+    // If-then-else-end (keyword delimited)
+    "if" <cond:SpannedExpr> "then" <then_br:SpannedExpr> "else" <else_br:SpannedExpr> "end" =>
+        Expr::If(IfExpr {
+            condition: Box::new(cond),
+            then_branch: Box::new(then_br),
+            else_branch: Box::new(else_br),
+        }),
+
+    // Match-end
+    "match" <scrutinee:SpannedExprAtom> <arms:Sep<MatchArm, ";">> "end" =>
+        Expr::Match(MatchExpr {
+            scrutinee: Box::new(scrutinee),
+            arms,
+        }),
+
+    // Do-end
+    "do" <stmts:Sep<Spanned<DoStatement>, ";">> "end" =>
+        Expr::Do(DoExpr { statements: stmts }),
+
+    // Bet-end
+    "bet" <a:SpannedExprAtom> "," <b:SpannedExprAtom> "," <c:SpannedExprAtom> "end" =>
+        Expr::Bet(BetExpr {
+            alternatives: [Box::new(a), Box::new(b), Box::new(c)],
+        }),
+
+    // Parallel-do-end
+    "parallel" <n:SpannedExprAtom> "do" <body:SpannedExpr> "end" =>
+        Expr::Parallel(Box::new(n), Box::new(body)),
+
+    // Bet (brace-delimited)
+    "bet" "{" <a:SpannedExpr> "," <b:SpannedExpr> "," <c:SpannedExpr> "}" =>
+        Expr::Bet(BetExpr {
+            alternatives: [Box::new(a), Box::new(b), Box::new(c)],
+        }),
+
+    // Weighted bet (brace-delimited)
+    "bet" "{" <a:SpannedExpr> "@" <wa:SpannedExpr> ","
+               <b:SpannedExpr> "@" <wb:SpannedExpr> ","
+               <c:SpannedExpr> "@" <wc:SpannedExpr> "}" =>
+        Expr::WeightedBet(WeightedBetExpr {
+            alternatives: [
+                (Box::new(a), Box::new(wa)),
+                (Box::new(b), Box::new(wb)),
+                (Box::new(c), Box::new(wc)),
+            ],
+        }),
+
+    // Match (brace-delimited)
+    "match" <scrutinee:SpannedExpr> "{" <arms:Sep<MatchArm, ",">> "}" =>
+        Expr::Match(MatchExpr {
+            scrutinee: Box::new(scrutinee),
+            arms,
+        }),
+
+    // Do notation (brace-delimited)
+    "do" "{" <stmts:Sep<Spanned<DoStatement>, ";">> "}" =>
+        Expr::Do(DoExpr { statements: stmts }),
+
+    // Parallel (brace-delimited)
+    "parallel" <n:SpannedExprAtom> "{" <body:SpannedExpr> "}" =>
+        Expr::Parallel(Box::new(n), Box::new(body)),
+};
+
+// Closed expressions: the operator precedence chain.
+// All forms are either atomic or brace/bracket/paren-delimited.
+ExprClosed: Expr = {
+    ExprOr,
+};
+
+ExprOr: Expr = {
+    <l:@L> <le:ExprOr> "||" <re:ExprAnd> <r:@R> =>
+        Expr::BinOp(BinOp::Or,
+            Box::new(Spanned::new(le, Span::new(l as u32, r as u32))),
+            Box::new(Spanned::new(re, Span::new(l as u32, r as u32)))),
+    <l:@L> <le:ExprOr> "or" <re:ExprAnd> <r:@R> =>
+        Expr::BinOp(BinOp::Or,
+            Box::new(Spanned::new(le, Span::new(l as u32, r as u32))),
+            Box::new(Spanned::new(re, Span::new(l as u32, r as u32)))),
+    ExprAnd,
+};
+
+ExprAnd: Expr = {
+    <l:@L> <le:ExprAnd> "&&" <re:ExprCompare> <r:@R> =>
+        Expr::BinOp(BinOp::And,
+            Box::new(Spanned::new(le, Span::new(l as u32, r as u32))),
+            Box::new(Spanned::new(re, Span::new(l as u32, r as u32)))),
+    <l:@L> <le:ExprAnd> "and" <re:ExprCompare> <r:@R> =>
+        Expr::BinOp(BinOp::And,
+            Box::new(Spanned::new(le, Span::new(l as u32, r as u32))),
+            Box::new(Spanned::new(re, Span::new(l as u32, r as u32)))),
+    ExprCompare,
+};
+
+ExprCompare: Expr = {
+    <l:@L> <le:ExprCompare> "==" <re:ExprAdd> <r:@R> =>
+        Expr::BinOp(BinOp::Eq,
+            Box::new(Spanned::new(le, Span::new(l as u32, r as u32))),
+            Box::new(Spanned::new(re, Span::new(l as u32, r as u32)))),
+    <l:@L> <le:ExprCompare> "!=" <re:ExprAdd> <r:@R> =>
+        Expr::BinOp(BinOp::Ne,
+            Box::new(Spanned::new(le, Span::new(l as u32, r as u32))),
+            Box::new(Spanned::new(re, Span::new(l as u32, r as u32)))),
+    <l:@L> <le:ExprCompare> "<" <re:ExprAdd> <r:@R> =>
+        Expr::BinOp(BinOp::Lt,
+            Box::new(Spanned::new(le, Span::new(l as u32, r as u32))),
+            Box::new(Spanned::new(re, Span::new(l as u32, r as u32)))),
+    <l:@L> <le:ExprCompare> "<=" <re:ExprAdd> <r:@R> =>
+        Expr::BinOp(BinOp::Le,
+            Box::new(Spanned::new(le, Span::new(l as u32, r as u32))),
+            Box::new(Spanned::new(re, Span::new(l as u32, r as u32)))),
+    <l:@L> <le:ExprCompare> ">" <re:ExprAdd> <r:@R> =>
+        Expr::BinOp(BinOp::Gt,
+            Box::new(Spanned::new(le, Span::new(l as u32, r as u32))),
+            Box::new(Spanned::new(re, Span::new(l as u32, r as u32)))),
+    <l:@L> <le:ExprCompare> ">=" <re:ExprAdd> <r:@R> =>
+        Expr::BinOp(BinOp::Ge,
+            Box::new(Spanned::new(le, Span::new(l as u32, r as u32))),
+            Box::new(Spanned::new(re, Span::new(l as u32, r as u32)))),
+    ExprAdd,
+};
+
+ExprAdd: Expr = {
+    <l:@L> <le:ExprAdd> "+" <re:ExprMul> <r:@R> =>
+        Expr::BinOp(BinOp::Add,
+            Box::new(Spanned::new(le, Span::new(l as u32, r as u32))),
+            Box::new(Spanned::new(re, Span::new(l as u32, r as u32)))),
+    <l:@L> <le:ExprAdd> "-" <re:ExprMul> <r:@R> =>
+        Expr::BinOp(BinOp::Sub,
+            Box::new(Spanned::new(le, Span::new(l as u32, r as u32))),
+            Box::new(Spanned::new(re, Span::new(l as u32, r as u32)))),
+    <l:@L> <le:ExprAdd> "++" <re:ExprMul> <r:@R> =>
+        Expr::BinOp(BinOp::Concat,
+            Box::new(Spanned::new(le, Span::new(l as u32, r as u32))),
+            Box::new(Spanned::new(re, Span::new(l as u32, r as u32)))),
+    ExprMul,
+};
+
+ExprMul: Expr = {
+    <l:@L> <le:ExprMul> "*" <re:ExprUnary> <r:@R> =>
+        Expr::BinOp(BinOp::Mul,
+            Box::new(Spanned::new(le, Span::new(l as u32, r as u32))),
+            Box::new(Spanned::new(re, Span::new(l as u32, r as u32)))),
+    <l:@L> <le:ExprMul> "/" <re:ExprUnary> <r:@R> =>
+        Expr::BinOp(BinOp::Div,
+            Box::new(Spanned::new(le, Span::new(l as u32, r as u32))),
+            Box::new(Spanned::new(re, Span::new(l as u32, r as u32)))),
+    <l:@L> <le:ExprMul> "%" <re:ExprUnary> <r:@R> =>
+        Expr::BinOp(BinOp::Mod,
+            Box::new(Spanned::new(le, Span::new(l as u32, r as u32))),
+            Box::new(Spanned::new(re, Span::new(l as u32, r as u32)))),
+    ExprUnary,
+};
+
+ExprUnary: Expr = {
+    <l:@L> "-" <e:ExprUnary> <r:@R> =>
+        Expr::UnOp(UnOp::Neg, Box::new(Spanned::new(e, Span::new(l as u32, r as u32)))),
+    <l:@L> "not" <e:ExprUnary> <r:@R> =>
+        Expr::UnOp(UnOp::Not, Box::new(Spanned::new(e, Span::new(l as u32, r as u32)))),
+    ExprApp,
+};
+
+ExprApp: Expr = {
+    ExprAtom,
+};
+
+SpannedExprApp: Spanned<Expr> = {
+    <l:@L> <e:ExprApp> <r:@R> => Spanned::new(e, Span::new(l as u32, r as u32)),
+};
+
+// Atoms: fully self-delimiting expressions (no trailing ambiguity).
+// Only literals, variables, and brace/bracket/paren-delimited forms.
+ExprAtom: Expr = {
+    // Literals
+    <n:INT> => Expr::Int(n),
+    <n:FLOAT> => Expr::Float(n),
+    <s:STRING> => Expr::String(s),
+    "true" => Expr::Ternary(TernaryValue::True),
+    "false" => Expr::Ternary(TernaryValue::False),
+    "unknown" => Expr::Ternary(TernaryValue::Unknown),
+    "(" ")" => Expr::Unit,
+
+    // Variable
+    <s:IDENT> => Expr::Var(Symbol::intern(&s)),
+
+    // Tuple (2+ elements)
+    "(" <first:SpannedExpr> "," <rest:Sep<SpannedExpr, ",">> ")" => {
+        let mut elems = vec![first];
+        elems.extend(rest);
+        Expr::Tuple(elems)
+    },
+
+    // List
+    "[" <elems:Comma<SpannedExpr>> "]" => Expr::List(elems),
+
+    // Record
+    "{" <fields:Sep<RecordField, ",">> "}" => Expr::Record(fields),
+
+    // Parenthesized
+    "(" <e:Expr> ")" => e,
+
+    // Type annotation
+    "(" <e:SpannedExpr> ":" <t:SpannedType> ")" =>
+        Expr::Annotate(Box::new(e), t),
+
+    // Holes
+    "_" => Expr::Hole(None),
+    "?" <name:IDENT> => Expr::Hole(Some(Symbol::intern(&name))),
+};
+
+RecordField: (Spanned<Symbol>, Spanned<Expr>) = {
+    <name:Spanned<Ident>> "=" <val:SpannedExpr> =>
+        (name.map(|s| Symbol::intern(&s)), val),
+};
+
+MatchArm: MatchArm = {
+    <pat:SpannedPattern> <guard:("if" <SpannedExpr>)?> "->" <body:SpannedExpr> =>
+        MatchArm { pattern: pat, guard, body },
+};
+
+// DoStatement avoids the pattern/expression conflict by requiring bind
+// to use IDENT (most common case) rather than full Pattern.
+DoStatement: DoStatement = {
+    <l:@L> <name:IDENT> <r:@R> "<-" <e:SpannedExpr> =>
+        DoStatement::Bind(
+            Spanned::new(Pattern::Var(Symbol::intern(&name)), Span::new(l as u32, r as u32)),
+            e,
+        ),
+    <l:@L> "_" <r:@R> "<-" <e:SpannedExpr> =>
+        DoStatement::Bind(
+            Spanned::new(Pattern::Wildcard, Span::new(l as u32, r as u32)),
+            e,
+        ),
+    "let" <pat:SpannedPattern> "=" <e:SpannedExpr> =>
+        DoStatement::Let(pat, e),
+    <e:SpannedExpr> => DoStatement::Expr(e),
+};
+
+// === Patterns ===
+
+pub Pattern: Pattern = {
+    PatternOr,
+};
+
+PatternOr: Pattern = {
+    <a:SpannedPatternAtom> "|" <b:SpannedPatternAtom> "|" <c:SpannedPatternAtom> =>
+        Pattern::Or(Box::new(a), Box::new(b), Box::new(c)),
+    PatternAtom,
+};
+
+PatternAtom: Pattern = {
+    "_" => Pattern::Wildcard,
+    <s:IDENT> => Pattern::Var(Symbol::intern(&s)),
+    <n:INT> => Pattern::Literal(Literal::Int(n)),
+    <n:FLOAT> => Pattern::Literal(Literal::Float(n)),
+    <s:STRING> => Pattern::Literal(Literal::String(s)),
+    "true" => Pattern::Literal(Literal::Ternary(TernaryValue::True)),
+    "false" => Pattern::Literal(Literal::Ternary(TernaryValue::False)),
+    "unknown" => Pattern::Literal(Literal::Ternary(TernaryValue::Unknown)),
+    "(" ")" => Pattern::Literal(Literal::Unit),
+    "(" <first:SpannedPattern> "," <rest:Sep<SpannedPattern, ",">> ")" => {
+        let mut elems = vec![first];
+        elems.extend(rest);
+        Pattern::Tuple(elems)
+    },
+    "[" <elems:Comma<SpannedPattern>> "]" => Pattern::List(elems, None),
+    "(" <p:Pattern> ")" => p,
+};
+
+// === Types ===
+
+pub Type: Type = {
+    TypeArrow,
+};
+
+TypeArrow: Type = {
+    <arg:SpannedTypeApp> "->" <ret:SpannedType> =>
+        Type::Arrow(Box::new(arg), Box::new(ret)),
+    TypeApp,
+};
+
+TypeApp: Type = {
+    <f:SpannedTypeApp> <arg:SpannedTypeAtom> =>
+        Type::App(Box::new(f), vec![arg]),
+    TypeAtom,
+};
+
+TypeAtom: Type = {
+    <s:IDENT> => Type::Named(Symbol::intern(&s)),
+    <s:TYPEVAR> => Type::Var(Symbol::intern(&s)),
+    "(" <t:Type> ")" => t,
+    "(" <first:SpannedType> "," <rest:Sep<SpannedType, ",">> ")" => {
+        let mut elems = vec![first];
+        elems.extend(rest);
+        Type::Tuple(elems)
+    },
+    "{" <fields:Sep<RecordTypeField, ",">> "}" => Type::Record(fields),
+    "_" => Type::Hole,
+};
+
+RecordTypeField: (Symbol, Spanned<Type>) = {
+    <name:IDENT> ":" <ty:SpannedType> => (Symbol::intern(&name), ty),
+};
+
+// === Helpers ===
+
+Ident: String = {
+    <s:IDENT> => s,
+};
+
+TypeVarIdent: String = {
+    <s:TYPEVAR> => s,
+};

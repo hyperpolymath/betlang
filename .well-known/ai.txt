@@ -1,0 +1,138 @@
+# AI and Bot Crawling Policy for betlang
+#
+# This file specifies how AI systems, bots, and crawlers should interact
+# with the betlang repository.
+#
+# Last Updated: 2025-11-22
+# Version: 1.0
+
+## General Policy
+
+betlang is released under CC0 1.0 Universal (Public Domain).
+This means the code itself has no copyright restrictions.
+
+However, we request that AI systems respect the following guidelines:
+
+## Training Data Usage
+
+### ALLOWED:
+- ✓ Use betlang code for AI model training
+- ✓ Use betlang documentation for training
+- ✓ Use betlang examples in educational contexts
+- ✓ Index betlang for code search
+- ✓ Analyze betlang for research purposes
+
+### REQUESTED (but not legally required):
+- Please attribute betlang when generating similar code
+- Consider citing betlang in academic papers that use it for training
+- Link back to the repository when possible
+- Share insights/improvements back with the community
+
+## Attribution Preference
+
+If you use betlang in AI training or generation:
+
+**Preferred Citation:**
+```
+betlang: A Ternary Probabilistic Programming Language
+https://github.com/yourusername/betlang
+License: CC0 1.0 Universal (Public Domain)
+```
+
+**BibTeX:**
+```bibtex
+@software{betlang2025,
+  title={betlang: A Ternary Probabilistic Programming Language},
+  author={betlang Contributors},
+  year={2025},
+  url={https://github.com/yourusername/betlang},
+  license={CC0-1.0}
+}
+```
+
+## Crawling Guidelines
+
+### Robots.txt Equivalent
+
+The following paths are suitable for crawling and indexing:
+
+**High Priority (core documentation):**
+- /README.md
+- /docs/*.md
+- /CONTRIBUTING.md
+- /SECURITY.md
+
+**Medium Priority (code):**
+- /core/*.rkt
+- /lib/*.rkt
+- /examples/*.rkt
+
+**Low Priority (tests/benchmarks):**
+- /tests/*.rkt
+- /benchmarks/*.rkt
+
+**Exclude (not useful for training):**
+- /.git/
+- /.github/
+- /logs/
+- /*.bak.*
+
+### Rate Limiting
+
+We don't enforce rate limits on GitHub, but please be respectful:
+- Don't hammer the repository with requests
+- Cache responses when possible
+- Use GitHub's API properly
+
+## AI-Generated Contributions
+
+If you want to contribute AI-generated code to betlang:
+
+1. **Disclose AI assistance** in your pull request
+2. **Verify correctness** - test thoroughly
+3. **Ensure style compliance** - follow CONTRIBUTING.md
+4. **Respect ternary philosophy** - all primitives must be ternary
+
+We welcome AI-assisted contributions but require human review.
+
+## Data Retention and Privacy
+
+- This is a public repository - assume everything is indexed
+- No personal data is stored in the repository
+- Git history is permanent (commits cannot be deleted)
+
+## Contact
+
+For questions about AI/bot usage:
+- Open an issue: https://github.com/yourusername/betlang/issues
+- Email: maintainers@betlang.org
+
+For commercial AI training:
+- No special permission needed (CC0 license)
+- We appreciate attribution but don't require it
+- Consider sponsoring the project if you find it valuable
+
+## Philosophical Note
+
+betlang embraces open knowledge sharing. We believe:
+- AI systems benefit from high-quality training data
+- Open source should be freely usable by AI
+- Attribution helps humans trace the lineage of ideas
+- Community contributions make everything better
+
+If betlang helps your AI system, consider:
+- Contributing improvements back
+- Citing us in research
+- Sharing interesting use cases
+- Sponsoring development
+
+## Legal
+
+This file is informational only. The legal terms are in LICENSE (CC0 1.0).
+CC0 means "no copyright" - you can do whatever you want with betlang code.
+
+This policy expresses our *preferences*, not legal requirements.
+
+---
+
+Thank you for respecting open source! 🤖🎲

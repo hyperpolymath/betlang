@@ -1,0 +1,8 @@
+#lang racket
+(require rackunit)
+(require \"../core/betlang.rkt\")
+
+(module+ test
+  (define samples (for/list ([i (in-range 100)]) (bet \"A\" \"B\" \"C\")))
+  (for ([x '(\"A\" \"B\" \"C\")]) 
+    (check-true (member x samples))))

@@ -1,0 +1,108 @@
+% SPDX-License-Identifier: PMPL-1.0-or-later
+% Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
+% References for BetLang: probabilistic programming language with Racket+Rust
+
+@article{goodman2013principles,
+  author    = {Noah D. Goodman and Vikash K. Mansinghka and Daniel M. Roy and Keith Bonawitz and Joshua B. Tenenbaum},
+  title     = {Church: A Language for Generative Models},
+  booktitle = {Proceedings of the 24th Conference on Uncertainty in Artificial Intelligence},
+  pages     = {220--229},
+  year      = {2008},
+  note      = {Probabilistic programming via Church; foundational influence on BetLang generative model design}
+}
+
+@article{kozen1981semantics,
+  author    = {Dexter Kozen},
+  title     = {Semantics of Probabilistic Programs},
+  journal   = {Journal of Computer and System Sciences},
+  volume    = {22},
+  number    = {3},
+  pages     = {328--350},
+  year      = {1981},
+  note      = {Measure-theoretic semantics for probabilistic computation; mathematical foundation for BetLang}
+}
+
+@article{ramsey2002stochastic,
+  author    = {Norman Ramsey and Avi Pfeffer},
+  title     = {Stochastic Lambda Calculus and Monads of Probability Distributions},
+  booktitle = {Proceedings of the 29th ACM SIGPLAN-SIGACT Symposium on Principles of Programming Languages},
+  pages     = {154--165},
+  year      = {2002},
+  note      = {Stochastic lambda calculus; theoretical calculus underlying BetLang probabilistic expressions}
+}
+
+@book{pierce2002types,
+  author    = {Benjamin C. Pierce},
+  title     = {Types and Programming Languages},
+  publisher = {MIT Press},
+  year      = {2002},
+  note      = {Type theory foundations; reference for BetLang typed probabilistic constructs}
+}
+
+@book{felleisen2009semantics,
+  author    = {Matthias Felleisen and Robert Bruce Findler and Matthew Flatt},
+  title     = {Semantics Engineering with {PLT Redex}},
+  publisher = {MIT Press},
+  year      = {2009},
+  note      = {PLT Redex for language semantics modelling; tool for BetLang operational semantics on Racket}
+}
+
+@book{flatt2010racket,
+  author    = {Matthew Flatt and Robert Bruce Findler},
+  title     = {The Racket Guide},
+  publisher = {PLT Inc.},
+  year      = {2010},
+  note      = {Racket language and macro system; BetLang host language for front-end and DSL embedding}
+}
+
+@inproceedings{goodman2014design,
+  author    = {Noah D. Goodman and Andreas Stuhlm\"{u}ller},
+  title     = {The Design and Implementation of Probabilistic Programming Languages},
+  year      = {2014},
+  note      = {WebPPL design; practical probabilistic language design reference for BetLang}
+}
+
+@inproceedings{wood2014new,
+  author    = {Frank Wood and Jan Willem van de Meent and Vikash Mansinghka},
+  title     = {A New Approach to Probabilistic Programming Inference},
+  booktitle = {Proceedings of the 17th International Conference on Artificial Intelligence and Statistics},
+  pages     = {1024--1032},
+  year      = {2014},
+  note      = {Anglican probabilistic programming; inference engine design relevant to BetLang}
+}
+
+@inproceedings{carpenter2017stan,
+  author    = {Bob Carpenter and Andrew Gelman and Matthew D. Hoffman and Daniel Lee and Ben Goodrich and Michael Betancourt and Marcus Brubaker and Jiqiang Guo and Peter Li and Allen Riddell},
+  title     = {Stan: A Probabilistic Programming Language},
+  journal   = {Journal of Statistical Software},
+  volume    = {76},
+  number    = {1},
+  year      = {2017},
+  note      = {Stan language and HMC inference; practical PPL design comparison for BetLang}
+}
+
+@article{borgstrom2016lambda,
+  author    = {Johannes Borgstr\"{o}m and Ugo Dal Lago and Andrew D. Gordon and Marcin Szymczak},
+  title     = {A Lambda-Calculus Foundation for Universal Probabilistic Programming},
+  booktitle = {Proceedings of the 21st ACM SIGPLAN International Conference on Functional Programming},
+  pages     = {33--46},
+  year      = {2016},
+  note      = {Typed probabilistic lambda calculus; formal foundation for BetLang type-safe distributions}
+}
+
+@article{tobin2017language,
+  author    = {Sam Tobin-Hochstadt and Vincent St-Amour and Ryan Culpepper and Matthew Flatt and Matthias Felleisen},
+  title     = {Languages as Libraries},
+  booktitle = {Proceedings of the 32nd ACM SIGPLAN Conference on Programming Language Design and Implementation},
+  pages     = {132--141},
+  year      = {2011},
+  note      = {Racket language-as-library paradigm; enables BetLang DSL implementation as Racket language}
+}
+
+@article{devroye1986nonuniform,
+  author    = {Luc Devroye},
+  title     = {Non-Uniform Random Variate Generation},
+  publisher = {Springer-Verlag},
+  year      = {1986},
+  note      = {Sampling algorithms and distribution theory; reference for BetLang Rust-based sampling backend}
+}

@@ -1,0 +1,23 @@
+;; SPDX-License-Identifier: PMPL-1.0-or-later
+;; test.bet - Simple betlang test program
+
+;; Simple bet
+(display "Basic bet:")
+(define result (bet "heads" "tails" "edge"))
+(display result)
+
+;; Weighted bet
+(display "Weighted bet:")
+(define weighted (bet/weighted '(("common" 0.7) ("rare" 0.3))))
+(display weighted)
+
+;; Parallel bets
+(display "Ten parallel bets:")
+(define many (bet-parallel 10 "win" "draw" "lose"))
+(display many)
+
+;; Arithmetic
+(define x 5)
+(define y 3)
+(define sum (+ x y))
+(display sum)

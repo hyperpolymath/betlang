@@ -1,0 +1,36 @@
+= betlang - Citation Guide
+:toc:
+
+== BibTeX
+
+[source,bibtex]
+----
+@software{betlang_2025,
+  author = {Polymath, Hyper},
+  title = {betlang},
+  year = {2025},
+  url = {https://github.com/hyperpolymath/betlang},
+  license = {PMPL-1.0-or-later}
+}
+----
+
+== Harvard Style
+
+Polymath, H. (2025) _betlang_ [Computer software]. Available at: https://github.com/hyperpolymath/betlang
+
+== OSCOLA
+
+Hyper Polymath, 'betlang' (2025) <https://github.com/hyperpolymath/betlang>
+
+== MLA
+
+Polymath, Hyper. "betlang." 2025, github.com/hyperpolymath/betlang.
+
+== APA 7
+
+Polymath, H. (2025). _betlang_ [Computer software]. GitHub. https://github.com/hyperpolymath/betlang
+
+== See Also
+
+* link:../CITATION.cff[CITATION.cff]
+* link:../codemeta.json[codemeta.json]

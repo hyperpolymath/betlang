@@ -1,0 +1,12 @@
+body {
+  background: #000;
+  color: #ccc;
+  font-family: monospace;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 40px;
+}
+svg text:nth-child(2) {
+  fill: #999;
+}

@@ -1,0 +1,27 @@
+# SPDX-License-Identifier: MIT OR Apache-2.0
+# Optional tooling - NOT authoritative
+
+[package]
+name = "bet-dap"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[lib]
+name = "bet_dap"
+path = "src/lib.rs"
+
+[[bin]]
+name = "bet-dap"
+path = "src/main.rs"
+
+[dependencies]
+# DAP
+tokio = { version = "1", features = ["full"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+
+# Betlang compiler components
+bet-syntax = { path = "../../compiler/bet-syntax" }
+bet-core = { path = "../../compiler/bet-core" }

@@ -1,0 +1,12 @@
+# SPDX-License-Identifier: PMPL-1.0-or-later
+[package]
+name = "bet-check"
+description = "Type checker for Betlang — bidirectional checking with unification"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+bet-syntax = { path = "../bet-syntax" }
+bet-core = { path = "../bet-core" }
+thiserror.workspace = true

@@ -1,0 +1,13 @@
+[package]
+name = "bet-eval"
+description = "Interpreter for Betlang"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+bet-syntax = { path = "../bet-syntax" }
+bet-core = { path = "../bet-core" }
+rand.workspace = true
+rand_distr.workspace = true
+thiserror.workspace = true

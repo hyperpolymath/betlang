@@ -1,0 +1,22 @@
+{
+  "name": "betlang-ui",
+  "version": "0.1.0",
+  "sources": {
+    "dir": "src",
+    "subdirs": true
+  },
+  "package-specs": {
+    "module": "es6",
+    "in-source": true
+  },
+  "suffix": ".res.mjs",
+  "bs-dependencies": [
+    "rescript-tea"
+  ],
+  "bsc-flags": [
+    "-open Tea"
+  ],
+  "warnings": {
+    "number": "+A-42-48-9-30-4"
+  }
+}

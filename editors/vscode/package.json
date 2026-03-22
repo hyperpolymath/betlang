@@ -1,0 +1,125 @@
+{
+  "name": "betlang",
+  "displayName": "Betlang",
+  "description": "Language support for Betlang - a ternary probabilistic programming language",
+  "version": "0.1.0",
+  "publisher": "hyperpolymath",
+  "license": "MIT OR Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/hyperpolymath/betlang"
+  },
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Programming Languages",
+    "Linters",
+    "Formatters"
+  ],
+  "keywords": [
+    "betlang",
+    "probabilistic",
+    "ternary",
+    "functional"
+  ],
+  "activationEvents": [
+    "onLanguage:betlang"
+  ],
+  "main": "./src/Extension.res.js",
+  "contributes": {
+    "languages": [
+      {
+        "id": "betlang",
+        "aliases": ["Betlang", "bet"],
+        "extensions": [".bet", ".betlang"],
+        "configuration": "./language-configuration.json"
+      }
+    ],
+    "grammars": [
+      {
+        "language": "betlang",
+        "scopeName": "source.betlang",
+        "path": "./syntaxes/betlang.tmLanguage.json"
+      }
+    ],
+    "configuration": {
+      "type": "object",
+      "title": "Betlang",
+      "properties": {
+        "betlang.lspPath": {
+          "type": "string",
+          "default": "bet-lsp",
+          "description": "Path to the Betlang language server executable"
+        },
+        "betlang.enableDiagnostics": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable real-time diagnostics"
+        },
+        "betlang.enableCompletion": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable code completion"
+        },
+        "betlang.enableHover": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable hover information"
+        }
+      }
+    },
+    "commands": [
+      {
+        "command": "betlang.startRepl",
+        "title": "Start REPL",
+        "category": "Betlang"
+      },
+      {
+        "command": "betlang.stopRepl",
+        "title": "Stop REPL",
+        "category": "Betlang"
+      },
+      {
+        "command": "betlang.evalSelection",
+        "title": "Evaluate Selection",
+        "category": "Betlang"
+      },
+      {
+        "command": "betlang.restartServer",
+        "title": "Restart Language Server",
+        "category": "Betlang"
+      }
+    ],
+    "menus": {
+      "editor/context": [
+        {
+          "when": "editorLangId == betlang",
+          "command": "betlang.evalSelection",
+          "group": "betlang"
+        }
+      ]
+    },
+    "keybindings": [
+      {
+        "command": "betlang.evalSelection",
+        "key": "ctrl+enter",
+        "mac": "cmd+enter",
+        "when": "editorLangId == betlang"
+      }
+    ]
+  },
+  "scripts": {
+    "vscode:prepublish": "rescript build",
+    "compile": "rescript build",
+    "watch": "rescript build -w",
+    "clean": "rescript clean"
+  },
+  "devDependencies": {
+    "rescript": "^12.0.0"
+  },
+  "dependencies": {
+    "vscode-languageclient": "^9.0.0",
+    "@rescript/core": "^1.5.0"
+  }
+}

@@ -1,0 +1,20 @@
+#lang racket
+(require racket/readline)
+(require "../core/betlang.rkt")
+(define logfile \"../logs/session.log\")
+
+(define (log-line line)
+  (with-output-to-file logfile #:exists 'append
+    (lambda () (printf \"~a\n\" line))))
+
+(displayln \"🎰 Welcome to betlang REPL\")
+(displayln \"Type: (bet \\\"Win\\\" \\\"Retry\\\" \\\"Lose\\\")\")
+
+(let loop ()
+  (display \"betlang> \") (flush-output)
+  (define expr (read))
+  (unless (eof-object? expr)
+    (define result (eval expr))
+    (displayln result)
+    (log-line (format \"INPUT: ~a\\nOUTPUT: ~a\" expr result))
+    (loop)))

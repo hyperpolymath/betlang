@@ -1,0 +1,25 @@
+<!-- SPDX-License-Identifier: MIT OR Apache-2.0 -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="16" height="16">
+  <!-- REPL icon: Terminal with probability symbol -->
+  <defs>
+    <linearGradient id="terminal-bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#10b981;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#059669;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  <!-- Terminal background -->
+  <rect x="1" y="2" width="14" height="12" rx="2" ry="2" fill="url(#terminal-bg)"/>
+  <!-- Terminal top bar -->
+  <rect x="1" y="2" width="14" height="3" rx="2" ry="2" fill="#047857"/>
+  <rect x="1" y="4" width="14" height="1" fill="#047857"/>
+  <!-- Window dots -->
+  <circle cx="3.5" cy="3.5" r="0.8" fill="#ef4444"/>
+  <circle cx="5.5" cy="3.5" r="0.8" fill="#f59e0b"/>
+  <circle cx="7.5" cy="3.5" r="0.8" fill="#22c55e"/>
+  <!-- Prompt arrow -->
+  <path d="M3 9 L5 10.5 L3 12" stroke="white" stroke-width="1.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- Three dots for bet -->
+  <circle cx="8" cy="10.5" r="1" fill="white"/>
+  <circle cx="10.5" cy="10.5" r="1" fill="white"/>
+  <circle cx="13" cy="10.5" r="1" fill="white"/>
+</svg>
