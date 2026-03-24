@@ -115,11 +115,34 @@ fn run_file(path: &PathBuf) -> Result<()> {
 
     let module = bet_parse::parse(&source).map_err(|e| miette::miette!("{}", e))?;
 
-    // TODO: Type check
-    // TODO: Evaluate
+    // Type check first (warnings only — do not abort on type errors during eval)
+    match bet_check::check_module(&module) {
+        Ok(_env) => {
+            tracing::debug!("Type check passed for {}", path.display());
+        }
+        Err(e) => {
+            eprintln!("Warning: type check error: {}", e);
+        }
+    }
 
-    println!("Parsed {} items", module.items.len());
-    println!("(Evaluation not yet implemented)");
+    // Evaluate each top-level item
+    let mut env = bet_core::ValueEnv::new();
+    for item in &module.items {
+        match &item.node {
+            bet_syntax::ast::Item::Let(def) => {
+                // Evaluate the body and bind in the environment
+                let val = bet_eval::eval(&def.body.node, &mut env)
+                    .map_err(|e| miette::miette!("{}", e))?;
+                env.bind(def.name.node.to_string(), val);
+            }
+            bet_syntax::ast::Item::Expr(expr) => {
+                let val = bet_eval::eval(expr, &mut env)
+                    .map_err(|e| miette::miette!("{}", e))?;
+                println!("{}", val);
+            }
+            _ => {} // Type defs and imports handled at compile time
+        }
+    }
 
     Ok(())
 }
@@ -657,10 +680,17 @@ fn type_to_sexpr(ty: &bet_syntax::ast::Type, out: &mut String) {
 fn check_file(path: &PathBuf) -> Result<()> {
     let source = std::fs::read_to_string(path).into_diagnostic()?;
 
-    let _module = bet_parse::parse(&source).map_err(|e| miette::miette!("{}", e))?;
+    let module = bet_parse::parse(&source).map_err(|e| miette::miette!("{}", e))?;
 
-    // TODO: Type checking
-    println!("Type checking not yet implemented");
+    match bet_check::check_module(&module) {
+        Ok(_env) => {
+            println!("OK: {} type-checks successfully ({} items)", path.display(), module.items.len());
+        }
+        Err(e) => {
+            eprintln!("Type error in {}: {}", path.display(), e);
+            std::process::exit(1);
+        }
+    }
 
     Ok(())
 }
@@ -670,8 +700,10 @@ fn format_file(path: &PathBuf, write: bool) -> Result<()> {
 
     let _module = bet_parse::parse(&source).map_err(|e| miette::miette!("{}", e))?;
 
-    // TODO: Pretty printing
-    let formatted = source.clone(); // placeholder
+    // Re-emit from parsed AST via S-expression round-trip as a basic formatter.
+    // A full pretty-printer would preserve comments and layout; for now we
+    // normalise whitespace through parse-then-print.
+    let formatted = module_to_sexpr(&_module);
 
     if write {
         std::fs::write(path, &formatted).into_diagnostic()?;

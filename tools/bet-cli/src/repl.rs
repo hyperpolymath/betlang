@@ -1,9 +1,12 @@
-// SPDX-License-Identifier: MIT OR Apache-2.0
+// SPDX-License-Identifier: PMPL-1.0-or-later
+// Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
 //! Interactive REPL for Betlang
+//!
+//! Parses, type-checks, and evaluates expressions entered interactively.
 
 use miette::Result;
 use rustyline::error::ReadlineError;
-use rustyline::{DefaultEditor, Result as RlResult};
+use rustyline::DefaultEditor;
 
 const BANNER: &str = r#"
 ╔══════════════════════════════════════════════════════════════╗
@@ -38,6 +41,24 @@ Examples:
   do { x <- normal 0 1; return x }  -- Monadic sampling
 "#;
 
+/// Simple session statistics for the REPL.
+struct ReplStats {
+    /// Total expressions evaluated successfully.
+    evals: u64,
+    /// Total bet (probabilistic) expressions evaluated.
+    bets: u64,
+    /// Total type-check queries.
+    type_queries: u64,
+    /// Total parse errors encountered.
+    errors: u64,
+}
+
+impl ReplStats {
+    fn new() -> Self {
+        Self { evals: 0, bets: 0, type_queries: 0, errors: 0 }
+    }
+}
+
 pub fn run_repl() -> Result<()> {
     println!("{}", BANNER);
 
@@ -52,6 +73,8 @@ pub fn run_repl() -> Result<()> {
     }
 
     let mut line_count = 0;
+    let mut stats = ReplStats::new();
+    let mut eval_env = bet_core::ValueEnv::<bet_eval::Value>::new();
 
     loop {
         let prompt = format!("bet[{}]> ", line_count);
@@ -68,19 +91,24 @@ pub fn run_repl() -> Result<()> {
 
                 // Handle commands
                 if line.starts_with(':') {
-                    match handle_command(line) {
+                    match handle_command(line, &mut stats) {
                         CommandResult::Continue => continue,
                         CommandResult::Quit => break,
                     }
                 } else {
                     // Parse and evaluate expression
-                    match evaluate_line(line) {
-                        Ok(result) => {
+                    match evaluate_line(line, &mut eval_env) {
+                        Ok((result, was_bet)) => {
                             println!("=> {}", result);
+                            stats.evals += 1;
+                            if was_bet {
+                                stats.bets += 1;
+                            }
                             line_count += 1;
                         }
                         Err(e) => {
                             eprintln!("Error: {}", e);
+                            stats.errors += 1;
                         }
                     }
                 }
@@ -116,7 +144,7 @@ enum CommandResult {
     Quit,
 }
 
-fn handle_command(line: &str) -> CommandResult {
+fn handle_command(line: &str, stats: &mut ReplStats) -> CommandResult {
     let parts: Vec<&str> = line.splitn(2, ' ').collect();
     let cmd = parts[0];
     let arg = parts.get(1).map(|s| s.trim()).unwrap_or("");
@@ -137,19 +165,49 @@ fn handle_command(line: &str) -> CommandResult {
         }
         ":stats" => {
             println!("Betting statistics:");
-            println!("  (Statistics tracking not yet implemented)");
+            println!("  Expressions evaluated: {}", stats.evals);
+            println!("  Probabilistic (bet) evals: {}", stats.bets);
+            println!("  Type queries: {}", stats.type_queries);
+            println!("  Errors: {}", stats.errors);
         }
         ":type" | ":t" => {
             if arg.is_empty() {
                 println!("Usage: :type <expression>");
             } else {
+                stats.type_queries += 1;
                 match bet_parse::parse_expr(arg) {
                     Ok(expr) => {
-                        // TODO: Type inference
-                        if expr.is_probabilistic() {
-                            println!("Dist _  (probabilistic expression)");
-                        } else {
-                            println!("_  (type inference not yet implemented)");
+                        // Wrap the expression as a top-level module item for
+                        // the type checker, then infer its type.
+                        let spanned_expr = bet_syntax::span::Spanned::dummy(expr.clone());
+                        let module = bet_syntax::ast::Module {
+                            name: None,
+                            items: vec![bet_syntax::span::Spanned::dummy(
+                                bet_syntax::ast::Item::Expr(expr),
+                            )],
+                            span: bet_syntax::span::Span::dummy(),
+                        };
+                        match bet_check::check_module(&module) {
+                            Ok(_env) => {
+                                // The type checker seeds builtins; for a bare
+                                // expression the inferred type is the result of
+                                // the last item.  We re-check manually.
+                                let mut check_env = bet_check::CheckEnv::new();
+                                match bet_check::check_expr_public(&spanned_expr, &mut check_env) {
+                                    Ok(ty) => println!("{:?}", check_env.resolve(&ty)),
+                                    Err(_) => {
+                                        // Fallback: probabilistic heuristic
+                                        if spanned_expr.node.is_probabilistic() {
+                                            println!("Dist _  (probabilistic expression)");
+                                        } else {
+                                            println!("_  (could not fully infer type)");
+                                        }
+                                    }
+                                }
+                            }
+                            Err(e) => {
+                                eprintln!("Type error: {}", e);
+                            }
                         }
                     }
                     Err(e) => {
@@ -180,16 +238,19 @@ fn handle_command(line: &str) -> CommandResult {
     CommandResult::Continue
 }
 
-fn evaluate_line(source: &str) -> Result<String> {
+/// Evaluate a single line of input, returning the display string and whether
+/// the expression was probabilistic.
+fn evaluate_line(
+    source: &str,
+    env: &mut bet_core::ValueEnv<bet_eval::Value>,
+) -> Result<(String, bool)> {
     // Parse the expression
     let expr = bet_parse::parse_expr(source).map_err(|e| miette::miette!("{}", e))?;
 
-    // TODO: Actual evaluation
-    // For now, just print what we parsed
+    let is_bet = expr.is_probabilistic();
 
-    if expr.is_probabilistic() {
-        Ok(format!("<probabilistic: {:?}>", expr))
-    } else {
-        Ok(format!("<value: {:?}>", expr))
-    }
+    // Evaluate using the interpreter
+    let val = bet_eval::eval(&expr, env).map_err(|e| miette::miette!("{}", e))?;
+
+    Ok((format!("{}", val), is_bet))
 }

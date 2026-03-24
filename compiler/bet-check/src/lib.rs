@@ -16,7 +16,6 @@ use bet_core::error::{CompileError, CompileResult};
 use bet_core::types::Type;
 use bet_syntax::ast::*;
 use bet_syntax::span::{Span, Spanned};
-use bet_syntax::symbol::Symbol;
 use std::collections::HashMap;
 
 // ============================================
@@ -283,6 +282,13 @@ fn check_let_def(def: &LetDef, env: &mut CheckEnv) -> CompileResult<Type> {
 // ============================================
 // Expression Type Checking
 // ============================================
+
+/// Public entry point for inferring the type of a single expression.
+///
+/// Useful for REPL `:type` queries where a full module is not available.
+pub fn check_expr_public(expr: &Spanned<Expr>, env: &mut CheckEnv) -> CompileResult<Type> {
+    check_expr(expr, env)
+}
 
 /// Infer the type of an expression.
 fn check_expr(expr: &Spanned<Expr>, env: &mut CheckEnv) -> CompileResult<Type> {

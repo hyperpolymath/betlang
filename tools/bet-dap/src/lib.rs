@@ -1,7 +1,8 @@
+// SPDX-License-Identifier: PMPL-1.0-or-later
+// Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
 #![forbid(unsafe_code)]
-// SPDX-License-Identifier: MIT OR Apache-2.0
-//! Debug Adapter Protocol (DAP) library for Betlang
+//! Debug Adapter Protocol (DAP) library for Betlang.
 //!
-//! This library provides DAP support for Betlang.
+//! Provides DAP support so editors (VS Code, Neovim) can debug Betlang programs.
 
 pub mod dap;

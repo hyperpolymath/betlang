@@ -1,15 +1,12 @@
-// SPDX-License-Identifier: MIT OR Apache-2.0
-//! Debug Adapter Protocol (DAP) implementation for Betlang
+// SPDX-License-Identifier: PMPL-1.0-or-later
+// Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
+//! Debug Adapter Protocol (DAP) implementation for Betlang.
 //!
-//! This is a minimal DAP adapter for Betlang. It provides basic debugging
-//! capabilities like breakpoints, stepping, and variable inspection.
+//! Minimal DAP adapter providing breakpoints, stepping, and variable inspection.
 
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
-use std::path::PathBuf;
-use tokio::io::{AsyncBufReadExt, BufReader};
+use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
 use tokio::net::{TcpListener, TcpStream};
-use tokio::sync::mpsc;
 
 #[derive(Debug, Serialize, Deserialize)]
 struct InitializeRequest {

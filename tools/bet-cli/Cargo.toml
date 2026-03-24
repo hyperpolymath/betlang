@@ -12,6 +12,9 @@ path = "src/main.rs"
 [dependencies]
 bet-syntax = { path = "../../compiler/bet-syntax", features = ["serde"] }
 bet-parse = { path = "../../compiler/bet-parse" }
+bet-eval = { path = "../../compiler/bet-eval" }
+bet-check = { path = "../../compiler/bet-check" }
+bet-core = { path = "../../compiler/bet-core" }
 serde_json = "1.0"
 
 clap.workspace = true
