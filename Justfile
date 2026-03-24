@@ -175,3 +175,7 @@ first-run:
     @echo "1. Update SPEC/ROADMAP first"
     @echo "2. Add a just recipe (and tests)"
     @echo "3. Only then edit code"
+
+# Run panic-attacker pre-commit scan
+assail:
+    @command -v panic-attack >/dev/null 2>&1 && panic-attack assail . || echo "panic-attack not found — install from https://github.com/hyperpolymath/panic-attacker"
