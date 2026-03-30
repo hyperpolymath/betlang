@@ -228,4 +228,81 @@ mod lib_tests {
         let result = parse_expr("parallel 4 do x + 1 end");
         assert!(result.is_ok(), "Failed to parse parallel end: {:?}", result.err());
     }
+
+    #[test]
+    fn test_parse_field_access() {
+        let result = parse_expr("record.field");
+        assert!(result.is_ok(), "Failed to parse field access: {:?}", result.err());
+        match result.unwrap() {
+            bet_syntax::ast::Expr::Field(_, field) => {
+                assert_eq!(field.node.as_str(), "field");
+            }
+            other => panic!("Expected Field, got {:?}", other),
+        }
+    }
+
+    #[test]
+    fn test_parse_chained_field_access() {
+        let result = parse_expr("a.b.c");
+        assert!(result.is_ok(), "Failed to parse chained field access: {:?}", result.err());
+        // Should parse as (a.b).c
+        match result.unwrap() {
+            bet_syntax::ast::Expr::Field(base, field_c) => {
+                assert_eq!(field_c.node.as_str(), "c");
+                match &base.node {
+                    bet_syntax::ast::Expr::Field(_, field_b) => {
+                        assert_eq!(field_b.node.as_str(), "b");
+                    }
+                    other => panic!("Expected inner Field, got {:?}", other),
+                }
+            }
+            other => panic!("Expected Field, got {:?}", other),
+        }
+    }
+
+    #[test]
+    fn test_parse_index_access() {
+        let result = parse_expr("arr.[0]");
+        assert!(result.is_ok(), "Failed to parse index access: {:?}", result.err());
+        match result.unwrap() {
+            bet_syntax::ast::Expr::Index(_, _) => {}
+            other => panic!("Expected Index, got {:?}", other),
+        }
+    }
+
+    #[test]
+    fn test_parse_field_then_index() {
+        let result = parse_expr("record.items.[0]");
+        assert!(result.is_ok(), "Failed to parse field then index: {:?}", result.err());
+        // Should parse as (record.items).[0]
+        match result.unwrap() {
+            bet_syntax::ast::Expr::Index(base, _) => {
+                match &base.node {
+                    bet_syntax::ast::Expr::Field(_, field) => {
+                        assert_eq!(field.node.as_str(), "items");
+                    }
+                    other => panic!("Expected inner Field, got {:?}", other),
+                }
+            }
+            other => panic!("Expected Index, got {:?}", other),
+        }
+    }
+
+    #[test]
+    fn test_parse_field_access_in_binop() {
+        // Field access should have higher precedence than binary operators
+        let result = parse_expr("a.x + b.y");
+        assert!(result.is_ok(), "Failed to parse field in binop: {:?}", result.err());
+        match result.unwrap() {
+            bet_syntax::ast::Expr::BinOp(bet_syntax::ast::BinOp::Add, _, _) => {}
+            other => panic!("Expected BinOp(Add, ...), got {:?}", other),
+        }
+    }
+
+    #[test]
+    fn test_parse_field_access_in_match() {
+        // Field access on match scrutinee (keyword form)
+        let result = parse_expr("match x.y a -> 1; b -> 2 end");
+        assert!(result.is_ok(), "Failed to parse field in match: {:?}", result.err());
+    }
 }

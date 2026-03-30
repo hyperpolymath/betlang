@@ -479,6 +479,24 @@ ExprAtom: Expr = {
     // Holes
     "_" => Expr::Hole(None),
     "?" <name:IDENT> => Expr::Hole(Some(Symbol::intern(&name))),
+
+    // Field access: e.field (left-recursive via SpannedExprAtom).
+    // Chainable: a.b.c parses as (a.b).c.
+    <obj:SpannedExprAtom> "." <fl:@L> <field:IDENT> <fr:@R> =>
+        Expr::Field(
+            Box::new(obj),
+            Spanned::new(Symbol::intern(&field), Span::new(fl as u32, fr as u32)),
+        ),
+
+    // Index access: e.[i] (left-recursive via SpannedExprAtom).
+    // Uses dot-bracket syntax to avoid ambiguity with list literals/patterns.
+    // Chainable: a.[i].[j] parses as (a.[i]).[j].
+    // Also chains with field access: a.b.[i].c parses as ((a.b).[i]).c.
+    <obj:SpannedExprAtom> "." "[" <idx:SpannedExpr> "]" =>
+        Expr::Index(
+            Box::new(obj),
+            Box::new(idx),
+        ),
 };
 
 RecordField: (Spanned<Symbol>, Spanned<Expr>) = {
