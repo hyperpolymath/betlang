@@ -306,6 +306,26 @@ ExprOpen: Expr = {
     // Parallel (brace-delimited)
     "parallel" <n:SpannedExprAtom> "{" <body:SpannedExpr> "}" =>
         Expr::Parallel(Box::new(n), Box::new(body)),
+
+    // Observe: `observe(dist, value)` - condition on observed data
+    <l:@L> "observe" "(" <dist:SpannedExpr> "," <val:SpannedExpr> ")" <r:@R> =>
+        Expr::Observe(Box::new(dist), Box::new(val)),
+
+    // Infer with parameters: `infer MCMC { steps = 1000, warmup = 500 } model`
+    "infer" <method:InferMethod> "{" <params:InferParams> "}" <model:SpannedExprAtom> =>
+        Expr::Infer(InferExpr {
+            method,
+            params,
+            model: Box::new(model),
+        }),
+
+    // Infer without parameters: `infer MCMC model`
+    "infer" <method:InferMethod> <model:SpannedExprAtom> =>
+        Expr::Infer(InferExpr {
+            method,
+            params: Vec::new(),
+            model: Box::new(model),
+        }),
 };
 
 // Closed expressions: the operator precedence chain.
@@ -323,6 +343,13 @@ ExprOr: Expr = {
         Expr::BinOp(BinOp::Or,
             Box::new(Spanned::new(le, Span::new(l as u32, r as u32))),
             Box::new(Spanned::new(re, Span::new(l as u32, r as u32)))),
+    // Pipe application: `x |> f` desugars to `f(x)`.
+    // Sits at the same level as `||` so `a |> f || b` is `(a |> f) || b`.
+    <l:@L> <arg:ExprOr> "|>" <f:ExprAnd> <r:@R> =>
+        Expr::App(
+            Box::new(Spanned::new(f, Span::new(l as u32, r as u32))),
+            vec![Spanned::new(arg, Span::new(l as u32, r as u32))],
+        ),
     ExprAnd,
 };
 
@@ -546,6 +573,34 @@ TypeAtom: Type = {
 
 RecordTypeField: (Symbol, Spanned<Type>) = {
     <name:IDENT> ":" <ty:SpannedType> => (Symbol::intern(&name), ty),
+};
+
+// === Inference Helpers ===
+
+InferMethod: InferMethod = {
+    "MCMC" => InferMethod::MCMC,
+    "HMC" => InferMethod::HMC,
+    "SMC" => InferMethod::SMC,
+    "VI" => InferMethod::VI,
+};
+
+// Inference parameters: `steps = 1000, warmup = 500`.
+// Uses IDENT ":" SpannedExpr to avoid reduce/reduce with RecordField
+// (which uses IDENT "=" SpannedExpr).
+InferParams: Vec<(Spanned<Symbol>, Spanned<Expr>)> = {
+    => Vec::new(),
+    <v:InferParamsSep> => v,
+    <v:InferParamsSep> "," => v,
+};
+
+InferParamsSep: Vec<(Spanned<Symbol>, Spanned<Expr>)> = {
+    <e:InferParam> => vec![e],
+    <mut v:InferParamsSep> "," <e:InferParam> => { v.push(e); v },
+};
+
+InferParam: (Spanned<Symbol>, Spanned<Expr>) = {
+    <l:@L> <name:IDENT> <r:@R> ":" <val:SpannedExpr> =>
+        (Spanned::new(Symbol::intern(&name), Span::new(l as u32, r as u32)), val),
 };
 
 // === Helpers ===
