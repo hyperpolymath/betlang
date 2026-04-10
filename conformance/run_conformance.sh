@@ -28,7 +28,7 @@ TOTAL=0
 for f in "${SCRIPT_DIR}"/valid/*.bet; do
     TOTAL=$((TOTAL + 1))
     name="$(basename "$f")"
-    if eval "${PARSER}" < "$f" >/dev/null 2>&1; then
+    if "${PARSER_CMD[@]}" < "$f" >/dev/null 2>&1; then
         echo "  PASS  valid/${name}"
         PASS=$((PASS + 1))
     else
@@ -41,7 +41,7 @@ done
 for f in "${SCRIPT_DIR}"/invalid/*.bet; do
     TOTAL=$((TOTAL + 1))
     name="$(basename "$f")"
-    if eval "${PARSER}" < "$f" >/dev/null 2>&1; then
+    if "${PARSER_CMD[@]}" < "$f" >/dev/null 2>&1; then
         echo "  FAIL  invalid/${name}  (expected failure, got success)"
         FAIL=$((FAIL + 1))
     else
