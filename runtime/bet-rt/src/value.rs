@@ -483,7 +483,7 @@ mod tests {
             let sample = dist.sample().unwrap();
             match sample {
                 Value::Int(n) => assert!(n >= 1 && n <= 3),
-                _ => panic!("Expected Int"),
+                other => panic!("Expected Int, got {other:?}"),
             }
         }
     }

@@ -484,7 +484,7 @@ mod tests {
             let val = eval(&expr, &mut env).unwrap();
             match val {
                 Value::Int(n) => assert!(n >= 1 && n <= 3),
-                _ => panic!("Expected Int"),
+                other => panic!("Expected Int, got {other:?}"),
             }
         }
     }

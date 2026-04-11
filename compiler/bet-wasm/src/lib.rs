@@ -682,7 +682,7 @@ mod tests {
             Err(WasmError::HeapOverflow { requested, .. }) => {
                 assert_eq!(requested, 10000);
             }
-            _ => panic!("expected HeapOverflow"),
+            other => panic!("expected HeapOverflow, got {other:?}"),
         }
     }
 
