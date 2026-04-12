@@ -1,7 +1,7 @@
 ;; SPDX-FileCopyrightText: 2025 hyperpolymath
 ;; SPDX-License-Identifier: PMPL-1.0-or-later
 ;;
-;; SPEC.core.scm - Formal Semantics Specification for betlang
+;; SPEC.core.a2ml - Formal Semantics Specification for betlang
 ;;
 ;; This file defines the authoritative semantics for the core betlang primitives.
 ;; The Racket interpreter in core/betlang.rkt is the reference implementation.
