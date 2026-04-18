@@ -2,7 +2,7 @@
 //! Build script to generate C header for Chapel
 
 fn main() {
-    let crate_dir = std::env::var("CARGO_MANIFEST_DIR").unwrap();
+    let crate_dir = std::env::var("CARGO_MANIFEST_DIR").expect("TODO: handle error");
 
     cbindgen::Builder::new()
         .with_crate(crate_dir)

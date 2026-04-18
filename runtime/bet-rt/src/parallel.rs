@@ -36,7 +36,7 @@ where
         let f = f.clone();
 
         let handle = tokio::spawn(async move {
-            let _permit = sem.acquire().await.unwrap();
+            let _permit = sem.acquire().await.expect("TODO: handle error");
             let result = f(item).await;
             let mut guard = res.lock().await;
             guard.push((idx, result));
@@ -104,7 +104,7 @@ where
         let pred = predicate.clone();
 
         let handle = tokio::spawn(async move {
-            let _permit = sem.acquire().await.unwrap();
+            let _permit = sem.acquire().await.expect("TODO: handle error");
             if pred(item.clone()).await {
                 let mut guard = res.lock().await;
                 guard.push((idx, item));
@@ -559,7 +559,7 @@ mod tests {
     async fn test_channel() {
         let ch = Channel::new(10);
 
-        ch.send(Value::Int(42)).await.unwrap();
+        ch.send(Value::Int(42)).await.expect("TODO: handle error");
         let received = ch.recv().await;
 
         assert_eq!(received, Some(Value::Int(42)));

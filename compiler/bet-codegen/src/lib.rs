@@ -1262,42 +1262,42 @@ mod tests {
     #[test]
     fn test_codegen_int() {
         let expr = Expr::Int(42);
-        let output = codegen(&expr, Target::JavaScript).unwrap();
+        let output = codegen(&expr, Target::JavaScript).expect("TODO: handle error");
         assert!(output.code.contains("42"));
     }
 
     #[test]
     fn test_codegen_float() {
         let expr = Expr::Float(3.14);
-        let output = codegen(&expr, Target::JavaScript).unwrap();
+        let output = codegen(&expr, Target::JavaScript).expect("TODO: handle error");
         assert!(output.code.contains("3.14"));
     }
 
     #[test]
     fn test_codegen_string() {
         let expr = Expr::String("hello".to_string());
-        let output = codegen(&expr, Target::JavaScript).unwrap();
+        let output = codegen(&expr, Target::JavaScript).expect("TODO: handle error");
         assert!(output.code.contains("\"hello\""));
     }
 
     #[test]
     fn test_codegen_bool() {
         let expr = Expr::Bool(true);
-        let output = codegen(&expr, Target::JavaScript).unwrap();
+        let output = codegen(&expr, Target::JavaScript).expect("TODO: handle error");
         assert!(output.code.contains("true"));
     }
 
     #[test]
     fn test_codegen_ternary() {
         let expr = Expr::Ternary(TernaryValue::Unknown);
-        let output = codegen(&expr, Target::JavaScript).unwrap();
+        let output = codegen(&expr, Target::JavaScript).expect("TODO: handle error");
         assert!(output.code.contains("0"));
     }
 
     #[test]
     fn test_codegen_unit() {
         let expr = Expr::Unit;
-        let output = codegen(&expr, Target::JavaScript).unwrap();
+        let output = codegen(&expr, Target::JavaScript).expect("TODO: handle error");
         assert!(output.code.contains("null"));
     }
 
@@ -1312,7 +1312,7 @@ mod tests {
                 Box::new(dummy(Expr::Int(3))),
             ],
         });
-        let output = codegen(&expr, Target::JavaScript).unwrap();
+        let output = codegen(&expr, Target::JavaScript).expect("TODO: handle error");
         assert!(output.code.contains("__bet_uniform(1, 2, 3)"));
     }
 
@@ -1325,7 +1325,7 @@ mod tests {
                 (Box::new(dummy(Expr::Int(3))), Box::new(dummy(Expr::Float(0.2)))),
             ],
         });
-        let output = codegen(&expr, Target::JavaScript).unwrap();
+        let output = codegen(&expr, Target::JavaScript).expect("TODO: handle error");
         assert!(output.code.contains("__bet_weighted("));
         assert!(output.code.contains("[1, 2, 3]"));
         assert!(output.code.contains("[0.5, 0.3, 0.2]"));
@@ -1342,7 +1342,7 @@ mod tests {
                 Box::new(dummy(Expr::Int(3))),
             ],
         });
-        let output = codegen(&expr, Target::JavaScript).unwrap();
+        let output = codegen(&expr, Target::JavaScript).expect("TODO: handle error");
         assert!(output.code.contains("true ? 99 : __bet_uniform(1, 2, 3)"));
     }
 
@@ -1351,7 +1351,7 @@ mod tests {
     #[test]
     fn test_codegen_variable() {
         let expr = Expr::Var(Symbol::intern("x"));
-        let output = codegen(&expr, Target::JavaScript).unwrap();
+        let output = codegen(&expr, Target::JavaScript).expect("TODO: handle error");
         assert!(output.code.contains("x"));
     }
 
@@ -1365,7 +1365,7 @@ mod tests {
                 Box::new(dummy(Expr::Int(1))),
             ))),
         });
-        let output = codegen(&expr, Target::JavaScript).unwrap();
+        let output = codegen(&expr, Target::JavaScript).expect("TODO: handle error");
         assert!(output.code.contains("function(x)"));
         assert!(output.code.contains("x + 1"));
     }
@@ -1376,7 +1376,7 @@ mod tests {
             Box::new(dummy(Expr::Var(Symbol::intern("f")))),
             vec![dummy(Expr::Int(42))],
         );
-        let output = codegen(&expr, Target::JavaScript).unwrap();
+        let output = codegen(&expr, Target::JavaScript).expect("TODO: handle error");
         assert!(output.code.contains("f(42)"));
     }
 
@@ -1395,7 +1395,7 @@ mod tests {
             ))),
             is_rec: false,
         });
-        let output = codegen(&expr, Target::JavaScript).unwrap();
+        let output = codegen(&expr, Target::JavaScript).expect("TODO: handle error");
         assert!(output.code.contains("const x = 42"));
         assert!(output.code.contains("x + 1"));
     }
@@ -1409,7 +1409,7 @@ mod tests {
             Box::new(dummy(Expr::Int(3))),
             Box::new(dummy(Expr::Int(7))),
         );
-        let output = codegen(&expr, Target::JavaScript).unwrap();
+        let output = codegen(&expr, Target::JavaScript).expect("TODO: handle error");
         assert!(output.code.contains("3 * 7"));
     }
 
@@ -1420,7 +1420,7 @@ mod tests {
             Box::new(dummy(Expr::Var(Symbol::intern("a")))),
             Box::new(dummy(Expr::Var(Symbol::intern("b")))),
         );
-        let output = codegen(&expr, Target::JavaScript).unwrap();
+        let output = codegen(&expr, Target::JavaScript).expect("TODO: handle error");
         assert!(output.code.contains("a < b"));
     }
 
@@ -1434,7 +1434,7 @@ mod tests {
                 vec![dummy(Expr::Float(0.0)), dummy(Expr::Float(1.0))],
             ),
         )));
-        let output = codegen(&expr, Target::JavaScript).unwrap();
+        let output = codegen(&expr, Target::JavaScript).expect("TODO: handle error");
         assert!(output.code.contains("__bet_sample(__bet_dist_normal(0.0, 1.0)"));
     }
 
@@ -1447,7 +1447,7 @@ mod tests {
             ))),
             Box::new(dummy(Expr::Float(2.5))),
         );
-        let output = codegen(&expr, Target::JavaScript).unwrap();
+        let output = codegen(&expr, Target::JavaScript).expect("TODO: handle error");
         assert!(output.code.contains("__bet_observe("));
     }
 
@@ -1465,7 +1465,7 @@ mod tests {
                 ),
             ))))),
         });
-        let output = codegen(&expr, Target::JavaScript).unwrap();
+        let output = codegen(&expr, Target::JavaScript).expect("TODO: handle error");
         assert!(output.code.contains("__bet_infer('mcmc'"));
         assert!(output.code.contains("samples: 1000"));
     }
@@ -1481,7 +1481,7 @@ mod tests {
                 ),
             ))))),
         );
-        let output = codegen(&expr, Target::JavaScript).unwrap();
+        let output = codegen(&expr, Target::JavaScript).expect("TODO: handle error");
         assert!(output.code.contains("for (let __i = 0; __i < __n; __i++)"));
     }
 
@@ -1493,7 +1493,7 @@ mod tests {
             Box::new(dummy(Expr::Var(Symbol::intern("normal")))),
             vec![dummy(Expr::Float(0.0)), dummy(Expr::Float(1.0))],
         );
-        let output = codegen(&expr, Target::JavaScript).unwrap();
+        let output = codegen(&expr, Target::JavaScript).expect("TODO: handle error");
         assert!(output.code.contains("__bet_dist_normal(0.0, 1.0)"));
     }
 
@@ -1503,7 +1503,7 @@ mod tests {
             Box::new(dummy(Expr::Var(Symbol::intern("beta")))),
             vec![dummy(Expr::Float(2.0)), dummy(Expr::Float(5.0))],
         );
-        let output = codegen(&expr, Target::JavaScript).unwrap();
+        let output = codegen(&expr, Target::JavaScript).expect("TODO: handle error");
         assert!(output.code.contains("__bet_dist_beta(2.0, 5.0)"));
     }
 
@@ -1516,7 +1516,7 @@ mod tests {
             dummy(Expr::Int(2)),
             dummy(Expr::Int(3)),
         ]);
-        let output = codegen(&expr, Target::JavaScript).unwrap();
+        let output = codegen(&expr, Target::JavaScript).expect("TODO: handle error");
         assert!(output.code.contains("[1, 2, 3]"));
     }
 
@@ -1526,7 +1526,7 @@ mod tests {
             dummy(Expr::Float(1.0)),
             dummy(Expr::Float(2.0)),
         ]);
-        let output = codegen(&expr, Target::JavaScript).unwrap();
+        let output = codegen(&expr, Target::JavaScript).expect("TODO: handle error");
         assert!(output.code.contains("[1.0, 2.0]"));
     }
 
@@ -1536,7 +1536,7 @@ mod tests {
             (dummy(Symbol::intern("x")), dummy(Expr::Int(1))),
             (dummy(Symbol::intern("y")), dummy(Expr::Int(2))),
         ]);
-        let output = codegen(&expr, Target::JavaScript).unwrap();
+        let output = codegen(&expr, Target::JavaScript).expect("TODO: handle error");
         assert!(output.code.contains("x: 1"));
         assert!(output.code.contains("y: 2"));
     }
@@ -1550,7 +1550,7 @@ mod tests {
             then_branch: Box::new(dummy(Expr::Int(1))),
             else_branch: Box::new(dummy(Expr::Int(0))),
         });
-        let output = codegen(&expr, Target::JavaScript).unwrap();
+        let output = codegen(&expr, Target::JavaScript).expect("TODO: handle error");
         assert!(output.code.contains("true ? 1 : 0"));
     }
 
@@ -1571,7 +1571,7 @@ mod tests {
                 },
             ],
         });
-        let output = codegen(&expr, Target::JavaScript).unwrap();
+        let output = codegen(&expr, Target::JavaScript).expect("TODO: handle error");
         assert!(output.code.contains("=== 1"));
         assert!(output.code.contains("\"one\""));
         assert!(output.code.contains("\"other\""));
@@ -1601,7 +1601,7 @@ mod tests {
                 is_rec: false,
             }))),
         });
-        let output = codegen(&expr, Target::JavaScript).unwrap();
+        let output = codegen(&expr, Target::JavaScript).expect("TODO: handle error");
         assert!(output.code.contains("__bet_infer('rejection'"));
         assert!(output.code.contains("__bet_dist_beta(2.0, 2.0)"));
         assert!(output.code.contains("__bet_sample("));
@@ -1662,7 +1662,7 @@ mod tests {
             Box::new(dummy(inner)),
         );
 
-        let output = codegen(&expr, Target::JavaScript).unwrap();
+        let output = codegen(&expr, Target::JavaScript).expect("TODO: handle error");
         assert!(output.code.contains("__bet_dist_uniform(0.0, 1.0)"));
         assert!(output.code.contains("__bet_sample("));
         assert!(output.code.contains("x * x"));
@@ -1700,7 +1700,7 @@ mod tests {
             ],
         );
 
-        let output = codegen(&expr, Target::JavaScript).unwrap();
+        let output = codegen(&expr, Target::JavaScript).expect("TODO: handle error");
         assert!(output.code.contains("__bet_markov_chain("));
         assert!(output.code.contains("__bet_uniform("));
     }
@@ -1735,7 +1735,7 @@ mod tests {
             is_rec: false,
         });
 
-        let output = codegen(&expr, Target::JavaScript).unwrap();
+        let output = codegen(&expr, Target::JavaScript).expect("TODO: handle error");
         assert!(output.code.contains("__BetUncertain.from(10.0, 0.5)"));
         assert!(output.code.contains("__BetUncertain.from(20.0, 1.0)"));
         assert!(output.code.contains("a + b"));
@@ -1746,7 +1746,7 @@ mod tests {
     #[test]
     fn test_codegen_llvm_int() {
         let expr = Expr::Int(42);
-        let output = codegen(&expr, Target::Llvm).unwrap();
+        let output = codegen(&expr, Target::Llvm).expect("TODO: handle error");
         assert!(output.code.contains("ret i64 42"));
     }
 
@@ -1755,7 +1755,7 @@ mod tests {
     #[test]
     fn test_codegen_beam_int() {
         let expr = Expr::Int(42);
-        let output = codegen(&expr, Target::Beam).unwrap();
+        let output = codegen(&expr, Target::Beam).expect("TODO: handle error");
         assert!(output.code.contains("42"));
     }
 
@@ -1776,7 +1776,7 @@ mod tests {
             ],
             span: bet_syntax::Span::dummy(),
         };
-        let output = codegen_module(&module, Target::JavaScript).unwrap();
+        let output = codegen_module(&module, Target::JavaScript).expect("TODO: handle error");
         assert!(output.code.contains("const pi = 3.14159"));
     }
 
@@ -1802,7 +1802,7 @@ mod tests {
             ],
             span: bet_syntax::Span::dummy(),
         };
-        let output = codegen_module(&module, Target::JavaScript).unwrap();
+        let output = codegen_module(&module, Target::JavaScript).expect("TODO: handle error");
         assert!(output.code.contains("function add(x, y)"));
         assert!(output.code.contains("x + y"));
     }

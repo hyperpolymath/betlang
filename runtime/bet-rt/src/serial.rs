@@ -591,15 +591,15 @@ pub mod arrow {
         let mut pos = 0;
 
         // Read header
-        let col_count = u32::from_le_bytes(bytes[pos..pos + 4].try_into().unwrap()) as usize;
+        let col_count = u32::from_le_bytes(bytes[pos..pos + 4].try_into().expect("TODO: handle error")) as usize;
         pos += 4;
-        let row_count = u64::from_le_bytes(bytes[pos..pos + 8].try_into().unwrap()) as usize;
+        let row_count = u64::from_le_bytes(bytes[pos..pos + 8].try_into().expect("TODO: handle error")) as usize;
         pos += 8;
 
         // Read column metadata
         let mut columns_meta: Vec<(String, ColumnType)> = Vec::new();
         for _ in 0..col_count {
-            let name_len = u32::from_le_bytes(bytes[pos..pos + 4].try_into().unwrap()) as usize;
+            let name_len = u32::from_le_bytes(bytes[pos..pos + 4].try_into().expect("TODO: handle error")) as usize;
             pos += 4;
             let name = String::from_utf8_lossy(&bytes[pos..pos + name_len]).to_string();
             pos += name_len;
@@ -623,21 +623,21 @@ pub mod arrow {
             match col_type {
                 ColumnType::Int64 => {
                     for _ in 0..row_count {
-                        let n = i64::from_le_bytes(bytes[pos..pos + 8].try_into().unwrap());
+                        let n = i64::from_le_bytes(bytes[pos..pos + 8].try_into().expect("TODO: handle error"));
                         pos += 8;
                         data.push(Value::Int(n));
                     }
                 }
                 ColumnType::Float64 => {
                     for _ in 0..row_count {
-                        let n = f64::from_le_bytes(bytes[pos..pos + 8].try_into().unwrap());
+                        let n = f64::from_le_bytes(bytes[pos..pos + 8].try_into().expect("TODO: handle error"));
                         pos += 8;
                         data.push(Value::Float(n));
                     }
                 }
                 ColumnType::Utf8 => {
                     for _ in 0..row_count {
-                        let len = u32::from_le_bytes(bytes[pos..pos + 4].try_into().unwrap()) as usize;
+                        let len = u32::from_le_bytes(bytes[pos..pos + 4].try_into().expect("TODO: handle error")) as usize;
                         pos += 4;
                         let s = String::from_utf8_lossy(&bytes[pos..pos + len]).to_string();
                         pos += len;
@@ -906,8 +906,8 @@ mod tests {
             m
         });
 
-        let json_str = json::to_string(&value).unwrap();
-        let parsed = json::from_str(&json_str).unwrap();
+        let json_str = json::to_string(&value).expect("TODO: handle error");
+        let parsed = json::from_str(&json_str).expect("TODO: handle error");
 
         assert_eq!(value, parsed);
     }
@@ -920,8 +920,8 @@ mod tests {
             Value::Int(3),
         ]));
 
-        let bytes = msgpack::to_bytes(&value).unwrap();
-        let parsed = msgpack::from_bytes(&bytes).unwrap();
+        let bytes = msgpack::to_bytes(&value).expect("TODO: handle error");
+        let parsed = msgpack::from_bytes(&bytes).expect("TODO: handle error");
 
         assert_eq!(value, parsed);
     }
@@ -929,7 +929,7 @@ mod tests {
     #[test]
     fn test_csv_parse() {
         let csv_data = "name,age\nAlice,30\nBob,25";
-        let records = csv::parse(csv_data, true).unwrap();
+        let records = csv::parse(csv_data, true).expect("TODO: handle error");
 
         assert_eq!(records.len(), 2);
     }

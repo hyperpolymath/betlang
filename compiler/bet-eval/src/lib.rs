@@ -179,7 +179,7 @@ fn eval_bet(bet: &BetExpr, env: &mut ValueEnv<Value>) -> CompileResult<Value> {
         .collect::<Result<_, _>>()?;
 
     let idx = thread_rng().gen_range(0..3);
-    Ok(values.into_iter().nth(idx).unwrap())
+    Ok(values.into_iter().nth(idx).expect("TODO: handle error"))
 }
 
 fn eval_weighted_bet(wb: &WeightedBetExpr, env: &mut ValueEnv<Value>) -> CompileResult<Value> {
@@ -202,10 +202,10 @@ fn eval_weighted_bet(wb: &WeightedBetExpr, env: &mut ValueEnv<Value>) -> Compile
     for (i, w) in weights.iter().enumerate() {
         cumul += w;
         if r < cumul {
-            return Ok(values.into_iter().nth(i).unwrap());
+            return Ok(values.into_iter().nth(i).expect("TODO: handle error"));
         }
     }
-    Ok(values.into_iter().last().unwrap())
+    Ok(values.into_iter().last().expect("TODO: handle error"))
 }
 
 fn eval_conditional_bet(
@@ -222,7 +222,7 @@ fn eval_conditional_bet(
             .map(|alt| eval(&alt.node, env))
             .collect::<Result<_, _>>()?;
         let idx = thread_rng().gen_range(0..3);
-        Ok(values.into_iter().nth(idx).unwrap())
+        Ok(values.into_iter().nth(idx).expect("TODO: handle error"))
     }
 }
 
@@ -435,7 +435,7 @@ mod tests {
     #[test]
     fn test_eval_int() {
         let mut env = ValueEnv::new();
-        let val = eval(&Expr::Int(42), &mut env).unwrap();
+        let val = eval(&Expr::Int(42), &mut env).expect("TODO: handle error");
         assert!(matches!(val, Value::Int(42)));
     }
 
@@ -447,7 +447,7 @@ mod tests {
             Box::new(dummy(Expr::Int(3))),
             Box::new(dummy(Expr::Int(7))),
         );
-        let val = eval(&expr, &mut env).unwrap();
+        let val = eval(&expr, &mut env).expect("TODO: handle error");
         assert!(matches!(val, Value::Int(10)));
     }
 
@@ -465,7 +465,7 @@ mod tests {
             ))),
             is_rec: false,
         });
-        let val = eval(&expr, &mut env).unwrap();
+        let val = eval(&expr, &mut env).expect("TODO: handle error");
         assert!(matches!(val, Value::Int(10)));
     }
 
@@ -481,7 +481,7 @@ mod tests {
         });
         // Should return one of 1, 2, or 3
         for _ in 0..100 {
-            let val = eval(&expr, &mut env).unwrap();
+            let val = eval(&expr, &mut env).expect("TODO: handle error");
             match val {
                 Value::Int(n) => assert!(n >= 1 && n <= 3),
                 other => panic!("Expected Int, got {other:?}"),
@@ -497,7 +497,7 @@ mod tests {
             then_branch: Box::new(dummy(Expr::Int(1))),
             else_branch: Box::new(dummy(Expr::Int(0))),
         });
-        let val = eval(&expr, &mut env).unwrap();
+        let val = eval(&expr, &mut env).expect("TODO: handle error");
         assert!(matches!(val, Value::Int(1)));
     }
 
@@ -515,7 +515,7 @@ mod tests {
             }))),
             vec![dummy(Expr::Int(41))],
         );
-        let val = eval(&expr, &mut env).unwrap();
+        let val = eval(&expr, &mut env).expect("TODO: handle error");
         assert!(matches!(val, Value::Int(42)));
     }
 }

@@ -401,7 +401,7 @@ mod tests {
 
     #[test]
     fn test_lex_bet() {
-        let tokens = lex("bet { 1, 2, 3 }").unwrap();
+        let tokens = lex("bet { 1, 2, 3 }").expect("TODO: handle error");
         assert_eq!(tokens[0].token, Token::Bet);
         assert_eq!(tokens[1].token, Token::LBrace);
         assert_eq!(tokens[2].token, Token::Int(1));
@@ -409,13 +409,13 @@ mod tests {
 
     #[test]
     fn test_lex_weighted_bet() {
-        let tokens = lex("bet { a @ 0.5, b @ 0.3, c @ 0.2 }").unwrap();
+        let tokens = lex("bet { a @ 0.5, b @ 0.3, c @ 0.2 }").expect("TODO: handle error");
         assert!(tokens.iter().any(|t| matches!(t.token, Token::At)));
     }
 
     #[test]
     fn test_lex_ternary() {
-        let tokens = lex("true false unknown").unwrap();
+        let tokens = lex("true false unknown").expect("TODO: handle error");
         assert_eq!(tokens[0].token, Token::True);
         assert_eq!(tokens[1].token, Token::False);
         assert_eq!(tokens[2].token, Token::Unknown);
@@ -423,21 +423,21 @@ mod tests {
 
     #[test]
     fn test_lex_function() {
-        let tokens = lex("fun x -> x + 1").unwrap();
+        let tokens = lex("fun x -> x + 1").expect("TODO: handle error");
         assert_eq!(tokens[0].token, Token::Fun);
         assert_eq!(tokens[2].token, Token::RArrow);
     }
 
     #[test]
     fn test_lex_do_notation() {
-        let tokens = lex("do { x <- sample dist; return x }").unwrap();
+        let tokens = lex("do { x <- sample dist; return x }").expect("TODO: handle error");
         assert_eq!(tokens[0].token, Token::Do);
         assert!(tokens.iter().any(|t| matches!(t.token, Token::LArrow)));
     }
 
     #[test]
     fn test_lex_end_keyword() {
-        let tokens = lex("if x then y else z end").unwrap();
+        let tokens = lex("if x then y else z end").expect("TODO: handle error");
         assert!(tokens.iter().any(|t| matches!(t.token, Token::End)));
     }
 }

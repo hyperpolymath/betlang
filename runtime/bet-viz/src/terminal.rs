@@ -73,7 +73,7 @@ pub fn term_line_plot(x: &[f32], y: &[f32], config: &TermPlotConfig) -> VizResul
     }
 
     // Use textplots for ASCII rendering
-    let chart = Chart::new(config.width * 2, config.height, points[0].0, points.last().unwrap().0)
+    let chart = Chart::new(config.width * 2, config.height, points[0].0, points.last().expect("TODO: handle error").0)
         .lineplot(&Shape::Lines(&points));
 
     output.push_str(&format!("{}", chart));

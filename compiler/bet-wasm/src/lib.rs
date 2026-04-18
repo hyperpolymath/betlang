@@ -444,22 +444,22 @@ impl WasmBackend {
 
         if needs_probabilistic {
             // Look up type indices for each import signature.
-            let rt_void_i32 = *type_map.get(&(vec![], vec![ValType::I32])).unwrap();
+            let rt_void_i32 = *type_map.get(&(vec![], vec![ValType::I32])).expect("TODO: handle error");
             let rt_i32_f64 = *type_map
                 .get(&(vec![ValType::I32], vec![ValType::F64]))
-                .unwrap();
+                .expect("TODO: handle error");
             let rt_i32f64_void = *type_map
                 .get(&(vec![ValType::I32, ValType::F64], vec![]))
-                .unwrap();
+                .expect("TODO: handle error");
             let rt_i32_i32 = *type_map
                 .get(&(vec![ValType::I32], vec![ValType::I32]))
-                .unwrap();
+                .expect("TODO: handle error");
             let rt_i32f64f64_i32 = *type_map
                 .get(&(
                     vec![ValType::I32, ValType::F64, ValType::F64],
                     vec![ValType::I32],
                 ))
-                .unwrap();
+                .expect("TODO: handle error");
 
             imports.import(
                 "betlang",
@@ -486,7 +486,7 @@ impl WasmBackend {
                     vec![ValType::I32, ValType::I32, ValType::I32, ValType::I32],
                     vec![ValType::I32],
                 ))
-                .unwrap();
+                .expect("TODO: handle error");
             imports.import(
                 "wasi_snapshot_preview1",
                 "fd_write",
@@ -542,7 +542,7 @@ impl WasmBackend {
                             // For probabilistic functions, call random_ternary.
                             if let Some(_idx) = import_indices.random_ternary {
                                 func.instruction(&Instruction::Call(
-                                    import_indices.random_ternary.unwrap(),
+                                    import_indices.random_ternary.expect("TODO: handle error"),
                                 ));
                             } else {
                                 func.instruction(&Instruction::I32Const(0));
@@ -615,7 +615,7 @@ mod tests {
         let mut backend = WasmBackend::new();
         let result = backend.generate(&[]);
         assert!(result.is_ok());
-        let module = result.unwrap();
+        let module = result.expect("TODO: handle error");
         assert!(module.binary_size > 0);
         assert_eq!(module.functions.len(), 0);
         // WASM magic number: \0asm
@@ -634,7 +634,7 @@ mod tests {
         )];
         let result = backend.generate(&functions);
         assert!(result.is_ok());
-        let module = result.unwrap();
+        let module = result.expect("TODO: handle error");
         assert_eq!(module.functions.len(), 1);
         assert_eq!(module.functions[0].name, "add");
         assert_eq!(module.functions[0].uses_probabilistic_imports, false);
@@ -660,7 +660,7 @@ mod tests {
         ];
         let result = backend.generate(&functions);
         assert!(result.is_ok());
-        let module = result.unwrap();
+        let module = result.expect("TODO: handle error");
         assert_eq!(module.functions.len(), 2);
         assert!(module.functions[0].uses_probabilistic_imports);
         assert!(!module.functions[1].uses_probabilistic_imports);
@@ -698,7 +698,7 @@ mod tests {
         )];
         let result = backend.generate(&functions);
         assert!(result.is_ok());
-        let module = result.unwrap();
+        let module = result.expect("TODO: handle error");
         let bytes = module.to_bytes();
         // WASM magic: \0asm
         assert_eq!(&bytes[..4], b"\0asm");
@@ -720,7 +720,7 @@ mod tests {
         )];
         let result = backend.generate(&functions);
         assert!(result.is_ok());
-        let module = result.unwrap();
+        let module = result.expect("TODO: handle error");
         // Binary should be larger due to WASI import section.
         assert!(module.binary_size > 30);
     }
@@ -731,12 +731,12 @@ mod tests {
         let mut backend = WasmBackend::new().with_initial_memory(1);
         let offset1 = backend.intern_string("hello");
         assert!(offset1.is_ok());
-        assert_eq!(offset1.unwrap(), 0);
+        assert_eq!(offset1.expect("TODO: handle error"), 0);
 
         let offset2 = backend.intern_string("world");
         assert!(offset2.is_ok());
         // "hello" is 5 bytes, aligned to 4 -> offset 8.
-        assert_eq!(offset2.unwrap(), 8);
+        assert_eq!(offset2.expect("TODO: handle error"), 8);
     }
 
     /// Verify ternary type display.

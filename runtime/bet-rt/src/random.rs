@@ -151,7 +151,7 @@ pub fn normal(mean: f64, std_dev: f64) -> Result<Value, String> {
 
 /// Standard normal distribution (mean=0, std=1)
 pub fn standard_normal() -> Value {
-    let dist = Normal::new(0.0, 1.0).unwrap();
+    let dist = Normal::new(0.0, 1.0).expect("TODO: handle error");
     Value::Dist(Arc::new(Distribution {
         sampler: Box::new(move || Value::Float(dist.sample(&mut thread_rng()))),
         name: "standard_normal".to_string(),
@@ -408,7 +408,7 @@ pub fn median(samples: &[Value]) -> Option<f64> {
         return None;
     }
 
-    floats.sort_by(|a, b| a.partial_cmp(b).unwrap());
+    floats.sort_by(|a, b| a.partial_cmp(b).expect("TODO: handle error"));
     let mid = floats.len() / 2;
 
     if floats.len() % 2 == 0 {
@@ -433,7 +433,7 @@ pub fn percentile(samples: &[Value], p: f64) -> Option<f64> {
         return None;
     }
 
-    floats.sort_by(|a, b| a.partial_cmp(b).unwrap());
+    floats.sort_by(|a, b| a.partial_cmp(b).expect("TODO: handle error"));
     let idx = (p / 100.0 * (floats.len() - 1) as f64).round() as usize;
     Some(floats[idx])
 }
@@ -627,7 +627,7 @@ mod tests {
     fn test_bet() {
         let dist = bet(Value::Int(1), Value::Int(2), Value::Int(3));
         for _ in 0..100 {
-            let sample = dist.sample().unwrap();
+            let sample = dist.sample().expect("TODO: handle error");
             match sample {
                 Value::Int(n) => assert!((1..=3).contains(&n)),
                 other => panic!("Expected Int, got {other:?}"),
@@ -637,9 +637,9 @@ mod tests {
 
     #[test]
     fn test_normal() {
-        let dist = normal(0.0, 1.0).unwrap();
-        let samples = sample_n(&dist, 1000).unwrap();
-        let m = mean(&samples).unwrap();
+        let dist = normal(0.0, 1.0).expect("TODO: handle error");
+        let samples = sample_n(&dist, 1000).expect("TODO: handle error");
+        let m = mean(&samples).expect("TODO: handle error");
         // Mean should be close to 0
         assert!(m.abs() < 0.2);
     }

@@ -480,7 +480,7 @@ mod tests {
     fn test_bet_sampling() {
         let dist = Value::bet(Value::Int(1), Value::Int(2), Value::Int(3));
         for _ in 0..100 {
-            let sample = dist.sample().unwrap();
+            let sample = dist.sample().expect("TODO: handle error");
             match sample {
                 Value::Int(n) => assert!(n >= 1 && n <= 3),
                 other => panic!("Expected Int, got {other:?}"),

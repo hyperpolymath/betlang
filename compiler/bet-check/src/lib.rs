@@ -916,15 +916,15 @@ mod tests {
     #[test]
     fn test_literal_types() {
         let mut env = CheckEnv::new();
-        assert_eq!(check_expr(&dummy(Expr::Int(42)), &mut env).unwrap(), Type::Int);
-        assert_eq!(check_expr(&dummy(Expr::Float(3.14)), &mut env).unwrap(), Type::Float);
-        assert_eq!(check_expr(&dummy(Expr::Bool(true)), &mut env).unwrap(), Type::Bool);
+        assert_eq!(check_expr(&dummy(Expr::Int(42)), &mut env).expect("TODO: handle error"), Type::Int);
+        assert_eq!(check_expr(&dummy(Expr::Float(3.14)), &mut env).expect("TODO: handle error"), Type::Float);
+        assert_eq!(check_expr(&dummy(Expr::Bool(true)), &mut env).expect("TODO: handle error"), Type::Bool);
         assert_eq!(
-            check_expr(&dummy(Expr::Ternary(TernaryValue::Unknown)), &mut env).unwrap(),
+            check_expr(&dummy(Expr::Ternary(TernaryValue::Unknown)), &mut env).expect("TODO: handle error"),
             Type::Ternary
         );
-        assert_eq!(check_expr(&dummy(Expr::String("hi".into())), &mut env).unwrap(), Type::String);
-        assert_eq!(check_expr(&dummy(Expr::Unit), &mut env).unwrap(), Type::Unit);
+        assert_eq!(check_expr(&dummy(Expr::String("hi".into())), &mut env).expect("TODO: handle error"), Type::String);
+        assert_eq!(check_expr(&dummy(Expr::Unit), &mut env).expect("TODO: handle error"), Type::Unit);
     }
 
     #[test]
@@ -939,7 +939,7 @@ mod tests {
         let mut env = CheckEnv::new();
         env.bind("x".to_string(), Type::Int);
         let result = check_expr(&dummy(Expr::Var(Symbol::intern("x"))), &mut env);
-        assert_eq!(result.unwrap(), Type::Int);
+        assert_eq!(result.expect("TODO: handle error"), Type::Int);
     }
 
     #[test]
@@ -953,7 +953,7 @@ mod tests {
             ],
         };
         let result = check_expr(&dummy(Expr::Bet(bet)), &mut env);
-        assert_eq!(result.unwrap(), Type::Int);
+        assert_eq!(result.expect("TODO: handle error"), Type::Int);
     }
 
     #[test]
@@ -1003,7 +1003,7 @@ mod tests {
             else_branch: Box::new(dummy(Expr::Int(2))),
         };
         let result = check_expr(&dummy(Expr::If(if_expr)), &mut env);
-        assert_eq!(result.unwrap(), Type::Int);
+        assert_eq!(result.expect("TODO: handle error"), Type::Int);
     }
 
     #[test]
@@ -1012,7 +1012,7 @@ mod tests {
         env.bind("d".to_string(), Type::Dist(Box::new(Type::Float)));
         let sample = Expr::Sample(Box::new(dummy(Expr::Var(Symbol::intern("d")))));
         let result = check_expr(&dummy(sample), &mut env);
-        assert_eq!(result.unwrap(), Type::Float);
+        assert_eq!(result.expect("TODO: handle error"), Type::Float);
     }
 
     #[test]
@@ -1033,7 +1033,7 @@ mod tests {
             Box::new(dummy(Expr::Int(5))),
         );
         let result = check_expr(&dummy(observe), &mut env);
-        assert_eq!(result.unwrap(), Type::Unit);
+        assert_eq!(result.expect("TODO: handle error"), Type::Unit);
     }
 
     #[test]
@@ -1057,7 +1057,7 @@ mod tests {
             Box::new(dummy(Expr::Int(1))),
             Box::new(dummy(Expr::Int(2))),
         );
-        assert_eq!(check_expr(&dummy(add), &mut env).unwrap(), Type::Int);
+        assert_eq!(check_expr(&dummy(add), &mut env).expect("TODO: handle error"), Type::Int);
 
         // Float * Int = Float
         let mul = Expr::BinOp(
@@ -1065,7 +1065,7 @@ mod tests {
             Box::new(dummy(Expr::Float(1.0))),
             Box::new(dummy(Expr::Int(2))),
         );
-        assert_eq!(check_expr(&dummy(mul), &mut env).unwrap(), Type::Float);
+        assert_eq!(check_expr(&dummy(mul), &mut env).expect("TODO: handle error"), Type::Float);
     }
 
     #[test]
@@ -1076,7 +1076,7 @@ mod tests {
             Box::new(dummy(Expr::Int(1))),
             Box::new(dummy(Expr::Int(2))),
         );
-        assert_eq!(check_expr(&dummy(cmp), &mut env).unwrap(), Type::Bool);
+        assert_eq!(check_expr(&dummy(cmp), &mut env).expect("TODO: handle error"), Type::Bool);
     }
 
     #[test]
@@ -1087,14 +1087,14 @@ mod tests {
             Box::new(dummy(Expr::Bool(true))),
             Box::new(dummy(Expr::Ternary(TernaryValue::Unknown))),
         );
-        assert_eq!(check_expr(&dummy(and), &mut env).unwrap(), Type::Ternary);
+        assert_eq!(check_expr(&dummy(and), &mut env).expect("TODO: handle error"), Type::Ternary);
     }
 
     #[test]
     fn test_unify_basic() {
         let mut env = CheckEnv::new();
         let a = env.fresh_var();
-        env.unify(&a, &Type::Int, None).unwrap();
+        env.unify(&a, &Type::Int, None).expect("TODO: handle error");
         assert_eq!(env.resolve(&a), Type::Int);
     }
 
@@ -1113,7 +1113,7 @@ mod tests {
             dummy(Expr::Int(2)),
             dummy(Expr::Int(3)),
         ]);
-        let result = check_expr(&dummy(list), &mut env).unwrap();
+        let result = check_expr(&dummy(list), &mut env).expect("TODO: handle error");
         assert_eq!(result, Type::List(Box::new(Type::Int)));
     }
 
@@ -1124,7 +1124,7 @@ mod tests {
             dummy(Expr::Int(1)),
             dummy(Expr::String("hi".into())),
         ]);
-        let result = check_expr(&dummy(tuple), &mut env).unwrap();
+        let result = check_expr(&dummy(tuple), &mut env).expect("TODO: handle error");
         assert_eq!(result, Type::Tuple(vec![Type::Int, Type::String]));
     }
 
@@ -1132,14 +1132,14 @@ mod tests {
     fn test_negation_numeric() {
         let mut env = CheckEnv::new();
         let neg = Expr::UnOp(UnOp::Neg, Box::new(dummy(Expr::Int(5))));
-        assert_eq!(check_expr(&dummy(neg), &mut env).unwrap(), Type::Int);
+        assert_eq!(check_expr(&dummy(neg), &mut env).expect("TODO: handle error"), Type::Int);
     }
 
     #[test]
     fn test_not_on_bool() {
         let mut env = CheckEnv::new();
         let not = Expr::UnOp(UnOp::Not, Box::new(dummy(Expr::Bool(true))));
-        assert_eq!(check_expr(&dummy(not), &mut env).unwrap(), Type::Ternary);
+        assert_eq!(check_expr(&dummy(not), &mut env).expect("TODO: handle error"), Type::Ternary);
     }
 
     #[test]
@@ -1149,7 +1149,7 @@ mod tests {
             Box::new(dummy(Expr::Int(100))),
             Box::new(dummy(Expr::Float(3.14))),
         );
-        let result = check_expr(&dummy(par), &mut env).unwrap();
+        let result = check_expr(&dummy(par), &mut env).expect("TODO: handle error");
         assert_eq!(result, Type::List(Box::new(Type::Float)));
     }
 }

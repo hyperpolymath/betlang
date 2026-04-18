@@ -121,7 +121,7 @@ pub extern "C" fn bet_uniform(low: c_double, high: c_double) -> c_double {
 
 #[no_mangle]
 pub extern "C" fn bet_standard_normal() -> c_double {
-    Normal::new(0.0, 1.0).unwrap().sample(&mut thread_rng())
+    Normal::new(0.0, 1.0).expect("TODO: handle error").sample(&mut thread_rng())
 }
 
 #[no_mangle]

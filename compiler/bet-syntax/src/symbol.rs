@@ -61,12 +61,12 @@ impl Interner {
 impl Symbol {
     /// Intern a string, returning a symbol
     pub fn intern(s: &str) -> Self {
-        interner().write().unwrap().intern(s)
+        interner().write().expect("TODO: handle error").intern(s)
     }
 
     /// Get the string representation of a symbol
     pub fn as_str(&self) -> String {
-        interner().read().unwrap().resolve(*self).to_owned()
+        interner().read().expect("TODO: handle error").resolve(*self).to_owned()
     }
 
     /// Get the numeric index of this symbol

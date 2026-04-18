@@ -418,7 +418,7 @@ impl BoxStats {
         }
 
         let mut sorted = data.to_vec();
-        sorted.sort_by(|a, b| a.partial_cmp(b).unwrap());
+        sorted.sort_by(|a, b| a.partial_cmp(b).expect("TODO: handle error"));
 
         let n = sorted.len();
         let min = sorted[0];
@@ -683,7 +683,7 @@ mod tests {
     #[test]
     fn test_box_stats() {
         let data = vec![1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0];
-        let stats = BoxStats::from_data(&data).unwrap();
+        let stats = BoxStats::from_data(&data).expect("TODO: handle error");
 
         assert_eq!(stats.min, 1.0);
         assert_eq!(stats.max, 10.0);

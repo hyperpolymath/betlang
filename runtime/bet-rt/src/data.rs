@@ -235,7 +235,7 @@ pub mod list {
         for item in list.iter() {
             if current_group.is_empty() {
                 current_group.push_back(item.clone());
-            } else if eq(current_group.last().unwrap(), item) {
+            } else if eq(current_group.last().expect("TODO: handle error"), item) {
                 current_group.push_back(item.clone());
             } else {
                 result.push_back(Value::List(current_group));
@@ -968,10 +968,10 @@ mod tests {
             .enqueue(Value::Int(2))
             .enqueue(Value::Int(3));
 
-        let (v1, q) = q.dequeue().unwrap();
+        let (v1, q) = q.dequeue().expect("TODO: handle error");
         assert_eq!(v1, Value::Int(1));
 
-        let (v2, _) = q.dequeue().unwrap();
+        let (v2, _) = q.dequeue().expect("TODO: handle error");
         assert_eq!(v2, Value::Int(2));
     }
 
@@ -982,10 +982,10 @@ mod tests {
             .push(Value::Int(2))
             .push(Value::Int(3));
 
-        let (v1, s) = s.pop().unwrap();
+        let (v1, s) = s.pop().expect("TODO: handle error");
         assert_eq!(v1, Value::Int(3));
 
-        let (v2, _) = s.pop().unwrap();
+        let (v2, _) = s.pop().expect("TODO: handle error");
         assert_eq!(v2, Value::Int(2));
     }
 }

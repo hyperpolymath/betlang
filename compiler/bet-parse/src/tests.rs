@@ -279,7 +279,7 @@ fn lex_whitespace_variants() {
 
 #[test]
 fn lex_span_positions() {
-    let spanned = lex("let x = 42").unwrap();
+    let spanned = lex("let x = 42").expect("TODO: handle error");
     // "let" is at bytes 0..3
     assert_eq!(spanned[0].span.start, 0);
     assert_eq!(spanned[0].span.end, 3);
@@ -303,7 +303,7 @@ fn lex_bet_expression_tokens() {
     assert_eq!(toks[1], Token::LBrace);
     assert!(toks.iter().any(|t| matches!(t, Token::At)));
     assert!(toks.iter().any(|t| matches!(t, Token::Comma)));
-    assert_eq!(*toks.last().unwrap(), Token::RBrace);
+    assert_eq!(*toks.last().expect("TODO: handle error"), Token::RBrace);
 }
 
 #[test]
@@ -338,43 +338,43 @@ fn lex_invalid_token_in_middle() {
 
 #[test]
 fn parse_int_literal() {
-    let expr = parse_expr("42").unwrap();
+    let expr = parse_expr("42").expect("TODO: handle error");
     assert!(matches!(expr, Expr::Int(42)));
 }
 
 #[test]
 fn parse_float_literal() {
-    let expr = parse_expr("3.14").unwrap();
+    let expr = parse_expr("3.14").expect("TODO: handle error");
     assert!(matches!(expr, Expr::Float(f) if (f - 3.14).abs() < 1e-10));
 }
 
 #[test]
 fn parse_string_literal() {
-    let expr = parse_expr(r#""hello""#).unwrap();
+    let expr = parse_expr(r#""hello""#).expect("TODO: handle error");
     assert!(matches!(expr, Expr::String(ref s) if s == "hello"));
 }
 
 #[test]
 fn parse_true_literal() {
-    let expr = parse_expr("true").unwrap();
+    let expr = parse_expr("true").expect("TODO: handle error");
     assert!(matches!(expr, Expr::Ternary(TernaryValue::True)));
 }
 
 #[test]
 fn parse_false_literal() {
-    let expr = parse_expr("false").unwrap();
+    let expr = parse_expr("false").expect("TODO: handle error");
     assert!(matches!(expr, Expr::Ternary(TernaryValue::False)));
 }
 
 #[test]
 fn parse_unknown_literal() {
-    let expr = parse_expr("unknown").unwrap();
+    let expr = parse_expr("unknown").expect("TODO: handle error");
     assert!(matches!(expr, Expr::Ternary(TernaryValue::Unknown)));
 }
 
 #[test]
 fn parse_unit_literal() {
-    let expr = parse_expr("()").unwrap();
+    let expr = parse_expr("()").expect("TODO: handle error");
     assert!(matches!(expr, Expr::Unit));
 }
 
@@ -382,7 +382,7 @@ fn parse_unit_literal() {
 
 #[test]
 fn parse_variable() {
-    let expr = parse_expr("x").unwrap();
+    let expr = parse_expr("x").expect("TODO: handle error");
     match expr {
         Expr::Var(sym) => assert_eq!(sym.as_str(), "x"),
         other => panic!("Expected Var, got {:?}", other),
@@ -393,19 +393,19 @@ fn parse_variable() {
 
 #[test]
 fn parse_bet_braces() {
-    let expr = parse_expr("bet { 1, 2, 3 }").unwrap();
+    let expr = parse_expr("bet { 1, 2, 3 }").expect("TODO: handle error");
     assert!(matches!(expr, Expr::Bet(_)));
 }
 
 #[test]
 fn parse_bet_end() {
-    let expr = parse_expr("bet 1, 2, 3 end").unwrap();
+    let expr = parse_expr("bet 1, 2, 3 end").expect("TODO: handle error");
     assert!(matches!(expr, Expr::Bet(_)));
 }
 
 #[test]
 fn parse_bet_with_vars() {
-    let expr = parse_expr("bet { x, y, z }").unwrap();
+    let expr = parse_expr("bet { x, y, z }").expect("TODO: handle error");
     match &expr {
         Expr::Bet(BetExpr { alternatives }) => {
             assert!(matches!(alternatives[0].node, Expr::Var(_)));
@@ -418,13 +418,13 @@ fn parse_bet_with_vars() {
 
 #[test]
 fn parse_weighted_bet() {
-    let expr = parse_expr("bet { 1 @ 0.5, 2 @ 0.3, 3 @ 0.2 }").unwrap();
+    let expr = parse_expr("bet { 1 @ 0.5, 2 @ 0.3, 3 @ 0.2 }").expect("TODO: handle error");
     assert!(matches!(expr, Expr::WeightedBet(_)));
 }
 
 #[test]
 fn parse_weighted_bet_alternatives() {
-    let expr = parse_expr("bet { 10 @ 0.6, 20 @ 0.3, 30 @ 0.1 }").unwrap();
+    let expr = parse_expr("bet { 10 @ 0.6, 20 @ 0.3, 30 @ 0.1 }").expect("TODO: handle error");
     match &expr {
         Expr::WeightedBet(WeightedBetExpr { alternatives }) => {
             assert!(matches!(alternatives[0].0.node, Expr::Int(10)));
@@ -439,97 +439,97 @@ fn parse_weighted_bet_alternatives() {
 
 #[test]
 fn parse_addition() {
-    let expr = parse_expr("1 + 2").unwrap();
+    let expr = parse_expr("1 + 2").expect("TODO: handle error");
     assert!(matches!(expr, Expr::BinOp(BinOp::Add, _, _)));
 }
 
 #[test]
 fn parse_subtraction() {
-    let expr = parse_expr("5 - 3").unwrap();
+    let expr = parse_expr("5 - 3").expect("TODO: handle error");
     assert!(matches!(expr, Expr::BinOp(BinOp::Sub, _, _)));
 }
 
 #[test]
 fn parse_multiplication() {
-    let expr = parse_expr("4 * 2").unwrap();
+    let expr = parse_expr("4 * 2").expect("TODO: handle error");
     assert!(matches!(expr, Expr::BinOp(BinOp::Mul, _, _)));
 }
 
 #[test]
 fn parse_division() {
-    let expr = parse_expr("8 / 2").unwrap();
+    let expr = parse_expr("8 / 2").expect("TODO: handle error");
     assert!(matches!(expr, Expr::BinOp(BinOp::Div, _, _)));
 }
 
 #[test]
 fn parse_modulo() {
-    let expr = parse_expr("7 % 3").unwrap();
+    let expr = parse_expr("7 % 3").expect("TODO: handle error");
     assert!(matches!(expr, Expr::BinOp(BinOp::Mod, _, _)));
 }
 
 #[test]
 fn parse_concat() {
-    let expr = parse_expr(r#""a" ++ "b""#).unwrap();
+    let expr = parse_expr(r#""a" ++ "b""#).expect("TODO: handle error");
     assert!(matches!(expr, Expr::BinOp(BinOp::Concat, _, _)));
 }
 
 #[test]
 fn parse_comparison_eq() {
-    let expr = parse_expr("x == y").unwrap();
+    let expr = parse_expr("x == y").expect("TODO: handle error");
     assert!(matches!(expr, Expr::BinOp(BinOp::Eq, _, _)));
 }
 
 #[test]
 fn parse_comparison_ne() {
-    let expr = parse_expr("x != y").unwrap();
+    let expr = parse_expr("x != y").expect("TODO: handle error");
     assert!(matches!(expr, Expr::BinOp(BinOp::Ne, _, _)));
 }
 
 #[test]
 fn parse_comparison_lt() {
-    let expr = parse_expr("x < y").unwrap();
+    let expr = parse_expr("x < y").expect("TODO: handle error");
     assert!(matches!(expr, Expr::BinOp(BinOp::Lt, _, _)));
 }
 
 #[test]
 fn parse_comparison_le() {
-    let expr = parse_expr("x <= y").unwrap();
+    let expr = parse_expr("x <= y").expect("TODO: handle error");
     assert!(matches!(expr, Expr::BinOp(BinOp::Le, _, _)));
 }
 
 #[test]
 fn parse_comparison_gt() {
-    let expr = parse_expr("x > y").unwrap();
+    let expr = parse_expr("x > y").expect("TODO: handle error");
     assert!(matches!(expr, Expr::BinOp(BinOp::Gt, _, _)));
 }
 
 #[test]
 fn parse_comparison_ge() {
-    let expr = parse_expr("x >= y").unwrap();
+    let expr = parse_expr("x >= y").expect("TODO: handle error");
     assert!(matches!(expr, Expr::BinOp(BinOp::Ge, _, _)));
 }
 
 #[test]
 fn parse_logical_and() {
-    let expr = parse_expr("x && y").unwrap();
+    let expr = parse_expr("x && y").expect("TODO: handle error");
     assert!(matches!(expr, Expr::BinOp(BinOp::And, _, _)));
 }
 
 #[test]
 fn parse_logical_or() {
-    let expr = parse_expr("x || y").unwrap();
+    let expr = parse_expr("x || y").expect("TODO: handle error");
     assert!(matches!(expr, Expr::BinOp(BinOp::Or, _, _)));
 }
 
 #[test]
 fn parse_logical_and_keyword() {
-    let expr = parse_expr("x and y").unwrap();
+    let expr = parse_expr("x and y").expect("TODO: handle error");
     assert!(matches!(expr, Expr::BinOp(BinOp::And, _, _)));
 }
 
 #[test]
 fn parse_logical_or_keyword() {
-    let expr = parse_expr("x or y").unwrap();
+    let expr = parse_expr("x or y").expect("TODO: handle error");
     assert!(matches!(expr, Expr::BinOp(BinOp::Or, _, _)));
 }
 
@@ -537,13 +537,13 @@ fn parse_logical_or_keyword() {
 
 #[test]
 fn parse_negation() {
-    let expr = parse_expr("-1").unwrap();
+    let expr = parse_expr("-1").expect("TODO: handle error");
     assert!(matches!(expr, Expr::UnOp(UnOp::Neg, _)));
 }
 
 #[test]
 fn parse_not() {
-    let expr = parse_expr("not true").unwrap();
+    let expr = parse_expr("not true").expect("TODO: handle error");
     assert!(matches!(expr, Expr::UnOp(UnOp::Not, _)));
 }
 
@@ -552,7 +552,7 @@ fn parse_not() {
 #[test]
 fn parse_precedence_mul_before_add() {
     // 1 + 2 * 3 should parse as 1 + (2 * 3)
-    let expr = parse_expr("1 + 2 * 3").unwrap();
+    let expr = parse_expr("1 + 2 * 3").expect("TODO: handle error");
     match expr {
         Expr::BinOp(BinOp::Add, lhs, rhs) => {
             assert!(matches!(lhs.node, Expr::Int(1)));
@@ -565,7 +565,7 @@ fn parse_precedence_mul_before_add() {
 #[test]
 fn parse_precedence_compare_before_logical() {
     // x && y == z should parse as x && (y == z)
-    let expr = parse_expr("x && y == z").unwrap();
+    let expr = parse_expr("x && y == z").expect("TODO: handle error");
     assert!(matches!(expr, Expr::BinOp(BinOp::And, _, _)));
 }
 
@@ -573,7 +573,7 @@ fn parse_precedence_compare_before_logical() {
 
 #[test]
 fn parse_lambda_single_param() {
-    let expr = parse_expr("fun x -> x").unwrap();
+    let expr = parse_expr("fun x -> x").expect("TODO: handle error");
     match expr {
         Expr::Lambda(LambdaExpr { params, body }) => {
             assert_eq!(params.len(), 1);
@@ -585,7 +585,7 @@ fn parse_lambda_single_param() {
 
 #[test]
 fn parse_lambda_multiple_params() {
-    let expr = parse_expr("fun x y z -> x").unwrap();
+    let expr = parse_expr("fun x y z -> x").expect("TODO: handle error");
     match expr {
         Expr::Lambda(LambdaExpr { params, .. }) => {
             assert_eq!(params.len(), 3);
@@ -598,7 +598,7 @@ fn parse_lambda_multiple_params() {
 
 #[test]
 fn parse_let_in_expr() {
-    let expr = parse_expr("let x = 1 in x").unwrap();
+    let expr = parse_expr("let x = 1 in x").expect("TODO: handle error");
     match expr {
         Expr::Let(LetExpr { is_rec, .. }) => assert!(!is_rec),
         other => panic!("Expected Let, got {:?}", other),
@@ -607,7 +607,7 @@ fn parse_let_in_expr() {
 
 #[test]
 fn parse_let_rec_in_expr() {
-    let expr = parse_expr("let rec f = fun x -> x in f").unwrap();
+    let expr = parse_expr("let rec f = fun x -> x in f").expect("TODO: handle error");
     match expr {
         Expr::Let(LetExpr { is_rec, .. }) => assert!(is_rec),
         other => panic!("Expected Let(rec), got {:?}", other),
@@ -616,7 +616,7 @@ fn parse_let_rec_in_expr() {
 
 #[test]
 fn parse_let_with_type_annotation() {
-    let expr = parse_expr("let x : Int = 42 in x").unwrap();
+    let expr = parse_expr("let x : Int = 42 in x").expect("TODO: handle error");
     match expr {
         Expr::Let(LetExpr { type_ann, .. }) => assert!(type_ann.is_some()),
         other => panic!("Expected Let with type_ann, got {:?}", other),
@@ -627,13 +627,13 @@ fn parse_let_with_type_annotation() {
 
 #[test]
 fn parse_if_then_else_end() {
-    let expr = parse_expr("if true then 1 else 0 end").unwrap();
+    let expr = parse_expr("if true then 1 else 0 end").expect("TODO: handle error");
     assert!(matches!(expr, Expr::If(_)));
 }
 
 #[test]
 fn parse_nested_if() {
-    let expr = parse_expr("if x then if y then 1 else 2 end else 3 end").unwrap();
+    let expr = parse_expr("if x then if y then 1 else 2 end else 3 end").expect("TODO: handle error");
     match expr {
         Expr::If(IfExpr { then_branch, .. }) => {
             assert!(matches!(then_branch.node, Expr::If(_)));
@@ -646,7 +646,7 @@ fn parse_nested_if() {
 
 #[test]
 fn parse_match_braces() {
-    let expr = parse_expr("match x { a -> 1, b -> 2 }").unwrap();
+    let expr = parse_expr("match x { a -> 1, b -> 2 }").expect("TODO: handle error");
     match expr {
         Expr::Match(MatchExpr { arms, .. }) => assert_eq!(arms.len(), 2),
         other => panic!("Expected Match, got {:?}", other),
@@ -655,7 +655,7 @@ fn parse_match_braces() {
 
 #[test]
 fn parse_match_end() {
-    let expr = parse_expr("match x a -> 1; b -> 2 end").unwrap();
+    let expr = parse_expr("match x a -> 1; b -> 2 end").expect("TODO: handle error");
     match expr {
         Expr::Match(MatchExpr { arms, .. }) => assert_eq!(arms.len(), 2),
         other => panic!("Expected Match, got {:?}", other),
@@ -664,7 +664,7 @@ fn parse_match_end() {
 
 #[test]
 fn parse_match_three_arms() {
-    let expr = parse_expr("match x { true -> 1, false -> 0, unknown -> 2 }").unwrap();
+    let expr = parse_expr("match x { true -> 1, false -> 0, unknown -> 2 }").expect("TODO: handle error");
     match expr {
         Expr::Match(MatchExpr { arms, .. }) => assert_eq!(arms.len(), 3),
         other => panic!("Expected Match, got {:?}", other),
@@ -673,7 +673,7 @@ fn parse_match_three_arms() {
 
 #[test]
 fn parse_match_wildcard_pattern() {
-    let expr = parse_expr("match x { _ -> 0 }").unwrap();
+    let expr = parse_expr("match x { _ -> 0 }").expect("TODO: handle error");
     match expr {
         Expr::Match(MatchExpr { arms, .. }) => {
             assert!(matches!(arms[0].pattern.node, Pattern::Wildcard));
@@ -687,7 +687,7 @@ fn parse_match_wildcard_pattern() {
 #[test]
 fn parse_do_braces() {
     // `return` is just a variable (not special syntax), `x` is a bind target
-    let expr = parse_expr("do { x <- sample normal; x }").unwrap();
+    let expr = parse_expr("do { x <- sample normal; x }").expect("TODO: handle error");
     match expr {
         Expr::Do(DoExpr { statements }) => assert_eq!(statements.len(), 2),
         other => panic!("Expected Do, got {:?}", other),
@@ -696,7 +696,7 @@ fn parse_do_braces() {
 
 #[test]
 fn parse_do_end() {
-    let expr = parse_expr("do x <- sample normal; x end").unwrap();
+    let expr = parse_expr("do x <- sample normal; x end").expect("TODO: handle error");
     match expr {
         Expr::Do(DoExpr { statements }) => assert_eq!(statements.len(), 2),
         other => panic!("Expected Do, got {:?}", other),
@@ -705,7 +705,7 @@ fn parse_do_end() {
 
 #[test]
 fn parse_do_let_statement() {
-    let expr = parse_expr("do { let y = 10; y }").unwrap();
+    let expr = parse_expr("do { let y = 10; y }").expect("TODO: handle error");
     match expr {
         Expr::Do(DoExpr { statements }) => {
             assert_eq!(statements.len(), 2);
@@ -720,26 +720,26 @@ fn parse_do_let_statement() {
 
 #[test]
 fn parse_sample() {
-    let expr = parse_expr("sample normal").unwrap();
+    let expr = parse_expr("sample normal").expect("TODO: handle error");
     assert!(matches!(expr, Expr::Sample(_)));
 }
 
 #[test]
 fn parse_sample_parenthesized() {
     // sample takes an atom; wrap complex exprs in parens
-    let expr = parse_expr("sample (normal)").unwrap();
+    let expr = parse_expr("sample (normal)").expect("TODO: handle error");
     assert!(matches!(expr, Expr::Sample(_)));
 }
 
 #[test]
 fn parse_parallel_braces() {
-    let expr = parse_expr("parallel 4 { x + 1 }").unwrap();
+    let expr = parse_expr("parallel 4 { x + 1 }").expect("TODO: handle error");
     assert!(matches!(expr, Expr::Parallel(_, _)));
 }
 
 #[test]
 fn parse_parallel_end() {
-    let expr = parse_expr("parallel 4 do x + 1 end").unwrap();
+    let expr = parse_expr("parallel 4 do x + 1 end").expect("TODO: handle error");
     assert!(matches!(expr, Expr::Parallel(_, _)));
 }
 
@@ -747,7 +747,7 @@ fn parse_parallel_end() {
 
 #[test]
 fn parse_tuple() {
-    let expr = parse_expr("(1, 2, 3)").unwrap();
+    let expr = parse_expr("(1, 2, 3)").expect("TODO: handle error");
     match expr {
         Expr::Tuple(elems) => assert_eq!(elems.len(), 3),
         other => panic!("Expected Tuple, got {:?}", other),
@@ -756,7 +756,7 @@ fn parse_tuple() {
 
 #[test]
 fn parse_pair() {
-    let expr = parse_expr("(1, 2)").unwrap();
+    let expr = parse_expr("(1, 2)").expect("TODO: handle error");
     match expr {
         Expr::Tuple(elems) => assert_eq!(elems.len(), 2),
         other => panic!("Expected Tuple, got {:?}", other),
@@ -765,7 +765,7 @@ fn parse_pair() {
 
 #[test]
 fn parse_list_empty() {
-    let expr = parse_expr("[]").unwrap();
+    let expr = parse_expr("[]").expect("TODO: handle error");
     match expr {
         Expr::List(elems) => assert!(elems.is_empty()),
         other => panic!("Expected List, got {:?}", other),
@@ -774,7 +774,7 @@ fn parse_list_empty() {
 
 #[test]
 fn parse_list_with_elements() {
-    let expr = parse_expr("[1, 2, 3]").unwrap();
+    let expr = parse_expr("[1, 2, 3]").expect("TODO: handle error");
     match expr {
         Expr::List(elems) => assert_eq!(elems.len(), 3),
         other => panic!("Expected List, got {:?}", other),
@@ -783,7 +783,7 @@ fn parse_list_with_elements() {
 
 #[test]
 fn parse_list_trailing_comma() {
-    let expr = parse_expr("[1, 2, 3,]").unwrap();
+    let expr = parse_expr("[1, 2, 3,]").expect("TODO: handle error");
     match expr {
         Expr::List(elems) => assert_eq!(elems.len(), 3),
         other => panic!("Expected List, got {:?}", other),
@@ -792,7 +792,7 @@ fn parse_list_trailing_comma() {
 
 #[test]
 fn parse_record() {
-    let expr = parse_expr("{ x = 1, y = 2 }").unwrap();
+    let expr = parse_expr("{ x = 1, y = 2 }").expect("TODO: handle error");
     match expr {
         Expr::Record(fields) => assert_eq!(fields.len(), 2),
         other => panic!("Expected Record, got {:?}", other),
@@ -803,13 +803,13 @@ fn parse_record() {
 
 #[test]
 fn parse_parenthesized() {
-    let expr = parse_expr("(1 + 2)").unwrap();
+    let expr = parse_expr("(1 + 2)").expect("TODO: handle error");
     assert!(matches!(expr, Expr::BinOp(BinOp::Add, _, _)));
 }
 
 #[test]
 fn parse_type_annotation_expr() {
-    let expr = parse_expr("(x : Int)").unwrap();
+    let expr = parse_expr("(x : Int)").expect("TODO: handle error");
     assert!(matches!(expr, Expr::Annotate(_, _)));
 }
 
@@ -817,13 +817,13 @@ fn parse_type_annotation_expr() {
 
 #[test]
 fn parse_anonymous_hole() {
-    let expr = parse_expr("_").unwrap();
+    let expr = parse_expr("_").expect("TODO: handle error");
     assert!(matches!(expr, Expr::Hole(None)));
 }
 
 #[test]
 fn parse_named_hole() {
-    let expr = parse_expr("?myhole").unwrap();
+    let expr = parse_expr("?myhole").expect("TODO: handle error");
     match expr {
         Expr::Hole(Some(sym)) => assert_eq!(sym.as_str(), "myhole"),
         other => panic!("Expected named Hole, got {:?}", other),
@@ -835,14 +835,14 @@ fn parse_named_hole() {
 #[test]
 fn parse_variable_reference() {
     // Without juxtaposition application, `f` is just a variable
-    let expr = parse_expr("f").unwrap();
+    let expr = parse_expr("f").expect("TODO: handle error");
     assert!(matches!(expr, Expr::Var(_)));
 }
 
 #[test]
 fn parse_complex_expression() {
     // More complex expressions use operators, not juxtaposition
-    let expr = parse_expr("f + g").unwrap();
+    let expr = parse_expr("f + g").expect("TODO: handle error");
     assert!(matches!(expr, Expr::BinOp(BinOp::Add, _, _)));
 }
 
@@ -854,14 +854,14 @@ fn parse_complex_expression() {
 
 #[test]
 fn parse_module_let_binding() {
-    let module = parse("let x = 42").unwrap();
+    let module = parse("let x = 42").expect("TODO: handle error");
     assert_eq!(module.items.len(), 1);
     assert!(matches!(module.items[0].node, Item::Let(_)));
 }
 
 #[test]
 fn parse_module_let_rec() {
-    let module = parse("let rec fact n = n").unwrap();
+    let module = parse("let rec fact n = n").expect("TODO: handle error");
     assert_eq!(module.items.len(), 1);
     match &module.items[0].node {
         Item::Let(LetDef { is_rec, .. }) => assert!(is_rec),
@@ -873,13 +873,13 @@ fn parse_module_let_rec() {
 
 #[test]
 fn parse_module_function() {
-    let module = parse("let add = fun x y -> x + y").unwrap();
+    let module = parse("let add = fun x y -> x + y").expect("TODO: handle error");
     assert_eq!(module.items.len(), 1);
 }
 
 #[test]
 fn parse_module_function_with_params() {
-    let module = parse("let add x y = x + y").unwrap();
+    let module = parse("let add x y = x + y").expect("TODO: handle error");
     assert_eq!(module.items.len(), 1);
     match &module.items[0].node {
         Item::Let(LetDef { params, .. }) => assert_eq!(params.len(), 2),
@@ -889,7 +889,7 @@ fn parse_module_function_with_params() {
 
 #[test]
 fn parse_module_function_with_type_ann() {
-    let module = parse("let double x : Int = x + x").unwrap();
+    let module = parse("let double x : Int = x + x").expect("TODO: handle error");
     assert_eq!(module.items.len(), 1);
     match &module.items[0].node {
         Item::Let(LetDef { type_ann, .. }) => assert!(type_ann.is_some()),
@@ -901,14 +901,14 @@ fn parse_module_function_with_type_ann() {
 
 #[test]
 fn parse_type_alias() {
-    let module = parse("type Probability = Float").unwrap();
+    let module = parse("type Probability = Float").expect("TODO: handle error");
     assert_eq!(module.items.len(), 1);
     assert!(matches!(module.items[0].node, Item::TypeDef(_)));
 }
 
 #[test]
 fn parse_type_with_params() {
-    let module = parse("type Maybe 'a = 'a").unwrap();
+    let module = parse("type Maybe 'a = 'a").expect("TODO: handle error");
     assert_eq!(module.items.len(), 1);
     match &module.items[0].node {
         Item::TypeDef(TypeDef { params, .. }) => assert_eq!(params.len(), 1),
@@ -918,7 +918,7 @@ fn parse_type_with_params() {
 
 #[test]
 fn parse_function_type_definition() {
-    let module = parse("type Transformer 'a 'b = 'a -> 'b").unwrap();
+    let module = parse("type Transformer 'a 'b = 'a -> 'b").expect("TODO: handle error");
     assert_eq!(module.items.len(), 1);
     match &module.items[0].node {
         Item::TypeDef(TypeDef { params, body, .. }) => {
@@ -933,7 +933,7 @@ fn parse_function_type_definition() {
 
 #[test]
 fn parse_import_simple() {
-    let module = parse("import Stats").unwrap();
+    let module = parse("import Stats").expect("TODO: handle error");
     assert_eq!(module.items.len(), 1);
     match &module.items[0].node {
         Item::Import(Import { path, items }) => {
@@ -946,7 +946,7 @@ fn parse_import_simple() {
 
 #[test]
 fn parse_import_qualified() {
-    let module = parse("import Stats Distributions").unwrap();
+    let module = parse("import Stats Distributions").expect("TODO: handle error");
     assert_eq!(module.items.len(), 1);
     match &module.items[0].node {
         Item::Import(Import { path, items }) => {
@@ -959,11 +959,11 @@ fn parse_import_qualified() {
 
 #[test]
 fn parse_import_selective() {
-    let module = parse("import Stats . { normal, uniform }").unwrap();
+    let module = parse("import Stats . { normal, uniform }").expect("TODO: handle error");
     assert_eq!(module.items.len(), 1);
     match &module.items[0].node {
         Item::Import(Import { items, .. }) => {
-            let items = items.as_ref().unwrap();
+            let items = items.as_ref().expect("TODO: handle error");
             assert_eq!(items.len(), 2);
         }
         other => panic!("Expected Import with items, got {:?}", other),
@@ -979,7 +979,7 @@ fn parse_module_multiple_items() {
         let x = 42
         let f x = x + 1
     "#;
-    let module = parse(src).unwrap();
+    let module = parse(src).expect("TODO: handle error");
     assert_eq!(module.items.len(), 3);
     assert!(matches!(module.items[0].node, Item::TypeDef(_)));
     assert!(matches!(module.items[1].node, Item::Let(_)));
@@ -988,7 +988,7 @@ fn parse_module_multiple_items() {
 
 #[test]
 fn parse_empty_module() {
-    let module = parse("").unwrap();
+    let module = parse("").expect("TODO: handle error");
     assert!(module.items.is_empty());
     assert!(module.name.is_none());
 }
@@ -998,7 +998,7 @@ fn parse_empty_module() {
 #[test]
 fn parse_module_expr_via_let() {
     // Top-level expressions require wrapping in `let _ = expr`
-    let module = parse("let result = 42").unwrap();
+    let module = parse("let result = 42").expect("TODO: handle error");
     assert_eq!(module.items.len(), 1);
     assert!(matches!(module.items[0].node, Item::Let(_)));
 }
@@ -1009,7 +1009,7 @@ fn parse_module_expr_via_let() {
 
 #[test]
 fn parse_pattern_wildcard_in_match() {
-    let expr = parse_expr("match x { _ -> 1 }").unwrap();
+    let expr = parse_expr("match x { _ -> 1 }").expect("TODO: handle error");
     match expr {
         Expr::Match(MatchExpr { arms, .. }) => {
             assert!(matches!(arms[0].pattern.node, Pattern::Wildcard));
@@ -1020,7 +1020,7 @@ fn parse_pattern_wildcard_in_match() {
 
 #[test]
 fn parse_pattern_literal_int() {
-    let expr = parse_expr("match x { 42 -> 1 }").unwrap();
+    let expr = parse_expr("match x { 42 -> 1 }").expect("TODO: handle error");
     match expr {
         Expr::Match(MatchExpr { arms, .. }) => {
             assert!(matches!(arms[0].pattern.node, Pattern::Literal(Literal::Int(42))));
@@ -1031,7 +1031,7 @@ fn parse_pattern_literal_int() {
 
 #[test]
 fn parse_pattern_literal_string() {
-    let expr = parse_expr(r#"match x { "hi" -> 1 }"#).unwrap();
+    let expr = parse_expr(r#"match x { "hi" -> 1 }"#).expect("TODO: handle error");
     match expr {
         Expr::Match(MatchExpr { arms, .. }) => {
             assert!(matches!(arms[0].pattern.node, Pattern::Literal(Literal::String(_))));
@@ -1042,7 +1042,7 @@ fn parse_pattern_literal_string() {
 
 #[test]
 fn parse_pattern_ternary_true() {
-    let expr = parse_expr("match x { true -> 1 }").unwrap();
+    let expr = parse_expr("match x { true -> 1 }").expect("TODO: handle error");
     match expr {
         Expr::Match(MatchExpr { arms, .. }) => {
             assert!(matches!(
@@ -1056,7 +1056,7 @@ fn parse_pattern_ternary_true() {
 
 #[test]
 fn parse_pattern_tuple() {
-    let expr = parse_expr("match x { (a, b) -> a }").unwrap();
+    let expr = parse_expr("match x { (a, b) -> a }").expect("TODO: handle error");
     match expr {
         Expr::Match(MatchExpr { arms, .. }) => {
             assert!(matches!(arms[0].pattern.node, Pattern::Tuple(_)));
@@ -1067,7 +1067,7 @@ fn parse_pattern_tuple() {
 
 #[test]
 fn parse_pattern_list() {
-    let expr = parse_expr("match x { [a, b] -> a }").unwrap();
+    let expr = parse_expr("match x { [a, b] -> a }").expect("TODO: handle error");
     match expr {
         Expr::Match(MatchExpr { arms, .. }) => {
             assert!(matches!(arms[0].pattern.node, Pattern::List(_, _)));
@@ -1078,7 +1078,7 @@ fn parse_pattern_list() {
 
 #[test]
 fn parse_pattern_unit() {
-    let expr = parse_expr("match x { () -> 1 }").unwrap();
+    let expr = parse_expr("match x { () -> 1 }").expect("TODO: handle error");
     match expr {
         Expr::Match(MatchExpr { arms, .. }) => {
             assert!(matches!(arms[0].pattern.node, Pattern::Literal(Literal::Unit)));
@@ -1090,7 +1090,7 @@ fn parse_pattern_unit() {
 #[test]
 fn parse_pattern_or_ternary() {
     // Ternary or-pattern: p1 | p2 | p3
-    let expr = parse_expr("match x { a | b | c -> 1 }").unwrap();
+    let expr = parse_expr("match x { a | b | c -> 1 }").expect("TODO: handle error");
     match expr {
         Expr::Match(MatchExpr { arms, .. }) => {
             assert!(matches!(arms[0].pattern.node, Pattern::Or(_, _, _)));
@@ -1105,7 +1105,7 @@ fn parse_pattern_or_ternary() {
 
 #[test]
 fn parse_type_named() {
-    let module = parse("type X = Int").unwrap();
+    let module = parse("type X = Int").expect("TODO: handle error");
     match &module.items[0].node {
         Item::TypeDef(TypeDef { body, .. }) => {
             assert!(matches!(body.node, Type::Named(_)));
@@ -1116,7 +1116,7 @@ fn parse_type_named() {
 
 #[test]
 fn parse_type_arrow() {
-    let module = parse("type F = Int -> Float").unwrap();
+    let module = parse("type F = Int -> Float").expect("TODO: handle error");
     match &module.items[0].node {
         Item::TypeDef(TypeDef { body, .. }) => {
             assert!(matches!(body.node, Type::Arrow(_, _)));
@@ -1127,7 +1127,7 @@ fn parse_type_arrow() {
 
 #[test]
 fn parse_type_tuple() {
-    let module = parse("type Pair = (Int, Float)").unwrap();
+    let module = parse("type Pair = (Int, Float)").expect("TODO: handle error");
     match &module.items[0].node {
         Item::TypeDef(TypeDef { body, .. }) => {
             assert!(matches!(body.node, Type::Tuple(_)));
@@ -1138,7 +1138,7 @@ fn parse_type_tuple() {
 
 #[test]
 fn parse_type_record() {
-    let module = parse("type Point = { x : Float, y : Float }").unwrap();
+    let module = parse("type Point = { x : Float, y : Float }").expect("TODO: handle error");
     match &module.items[0].node {
         Item::TypeDef(TypeDef { body, .. }) => {
             assert!(matches!(body.node, Type::Record(_)));
@@ -1149,7 +1149,7 @@ fn parse_type_record() {
 
 #[test]
 fn parse_type_variable() {
-    let module = parse("type Identity 'a = 'a").unwrap();
+    let module = parse("type Identity 'a = 'a").expect("TODO: handle error");
     match &module.items[0].node {
         Item::TypeDef(TypeDef { body, .. }) => {
             assert!(matches!(body.node, Type::Var(_)));
@@ -1160,7 +1160,7 @@ fn parse_type_variable() {
 
 #[test]
 fn parse_type_application() {
-    let module = parse("type IntList = List Int").unwrap();
+    let module = parse("type IntList = List Int").expect("TODO: handle error");
     match &module.items[0].node {
         Item::TypeDef(TypeDef { body, .. }) => {
             assert!(matches!(body.node, Type::App(_, _)));
@@ -1171,7 +1171,7 @@ fn parse_type_application() {
 
 #[test]
 fn parse_type_hole() {
-    let module = parse("type Inferred = _").unwrap();
+    let module = parse("type Inferred = _").expect("TODO: handle error");
     match &module.items[0].node {
         Item::TypeDef(TypeDef { body, .. }) => {
             assert!(matches!(body.node, Type::Hole));
@@ -1214,7 +1214,7 @@ fn parse_with_line_comments() {
         -- this is a comment
         let x = 42
     "#;
-    let module = parse(src).unwrap();
+    let module = parse(src).expect("TODO: handle error");
     assert_eq!(module.items.len(), 1);
 }
 
@@ -1224,7 +1224,7 @@ fn parse_with_block_comments() {
         {- a block comment -}
         let y = 99
     "#;
-    let module = parse(src).unwrap();
+    let module = parse(src).expect("TODO: handle error");
     assert_eq!(module.items.len(), 1);
 }
 
@@ -1237,7 +1237,7 @@ fn parse_probabilistic_model() {
     let src = r#"
         let coin = bet { true, false, unknown }
     "#;
-    let module = parse(src).unwrap();
+    let module = parse(src).expect("TODO: handle error");
     assert_eq!(module.items.len(), 1);
     match &module.items[0].node {
         Item::Let(LetDef { body, .. }) => {
@@ -1250,7 +1250,7 @@ fn parse_probabilistic_model() {
 #[test]
 fn parse_do_sampling_pipeline() {
     let src = "do { x <- sample normal; let y = x + 1; y }";
-    let expr = parse_expr(src).unwrap();
+    let expr = parse_expr(src).expect("TODO: handle error");
     match expr {
         Expr::Do(DoExpr { statements }) => {
             assert_eq!(statements.len(), 3);
@@ -1264,7 +1264,7 @@ fn parse_do_sampling_pipeline() {
 
 #[test]
 fn parse_match_with_guard() {
-    let expr = parse_expr("match x { n if n > 0 -> n, _ -> 0 }").unwrap();
+    let expr = parse_expr("match x { n if n > 0 -> n, _ -> 0 }").expect("TODO: handle error");
     match expr {
         Expr::Match(MatchExpr { arms, .. }) => {
             assert_eq!(arms.len(), 2);
