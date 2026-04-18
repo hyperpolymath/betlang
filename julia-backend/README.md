@@ -149,7 +149,7 @@ julia-backend/
 │   └── test.bet         # BetLang source
 ├── compiler/
 │   └── betlang-to-julia.rkt  # Compiler
-└── justfile             # Build recipes
+└── Justfile             # Build recipes
 ```
 
 ### Adding New Features
