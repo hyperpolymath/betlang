@@ -32,7 +32,7 @@ jobs:
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v4
       - name: Secret scanning
-        uses: trufflesecurity/trufflehog@main
+        uses: trufflesecurity/trufflehog@37835157ba6190a612501a35f7959b8eb3009581 # v3.82.13
         continue-on-error: true
       - name: Dependency vulnerabilities
         run: |
@@ -43,7 +43,7 @@ jobs:
             pip install safety && safety check -r requirements.txt || true
           fi
       - name: SAST scan
-        uses: returntocorp/semgrep-action@v1
+        uses: returntocorp/semgrep-action@73f32468d6f519542a17585b5463b2f542475476 # v1.11.0
         continue-on-error: true
 
   # INTEROPERABILITY - API and format compatibility

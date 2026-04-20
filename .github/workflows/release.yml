@@ -32,7 +32,7 @@ jobs:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v4
 
       - name: Install Rust
-        uses: dtolnay/rust-action@stable
+        uses: dtolnay/rust-action@43388701980327f2ec9d300445d44007802f06c1 # v1.0.0
         with:
           targets: ${{ matrix.target }}
 
@@ -66,7 +66,7 @@ jobs:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v4
 
       - name: Install Rust
-        uses: dtolnay/rust-action@stable
+        uses: dtolnay/rust-action@43388701980327f2ec9d300445d44007802f06c1 # v1.0.0
         with:
           targets: ${{ matrix.target }}
 
@@ -92,7 +92,7 @@ jobs:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v4
 
       - name: Install Rust
-        uses: dtolnay/rust-action@stable
+        uses: dtolnay/rust-action@43388701980327f2ec9d300445d44007802f06c1 # v1.0.0
 
       - name: Build
         run: cargo build --release
@@ -117,7 +117,7 @@ jobs:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v4
 
       - name: Install Gleam
-        uses: erlef/setup-beam@v1
+        uses: erlef/setup-beam@53eca37a5015e5c7075c3d9b4b08705001f35835 # v1.18.2
         with:
           otp-version: '26'
           gleam-version: 'latest'
@@ -153,7 +153,7 @@ jobs:
           sha256sum * > SHA256SUMS.txt
 
       - name: Create Release
-        uses: softprops/action-gh-release@v3
+        uses: softprops/action-gh-release@c87adaf44f9b5c94295d4615a639679203028d77 # v2.2.1
         with:
           files: release/*
           generate_release_notes: true

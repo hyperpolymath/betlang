@@ -25,7 +25,7 @@ jobs:
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
 
       - name: Setup Racket
-        uses: Bogdanp/setup-racket@v1.15
+        uses: Bogdanp/setup-racket@67838a16f2122684177c86729eb9cf0438ec677b # v1.15
         with:
           version: ${{ matrix.racket-version }}
           packages: 'rackunit'
@@ -75,7 +75,7 @@ jobs:
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
 
       - name: Setup Racket
-        uses: Bogdanp/setup-racket@v1.15
+        uses: Bogdanp/setup-racket@67838a16f2122684177c86729eb9cf0438ec677b # v1.15
         with:
           version: 'current'
 
