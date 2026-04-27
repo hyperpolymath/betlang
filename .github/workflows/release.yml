@@ -117,7 +117,7 @@ jobs:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v4
 
       - name: Install Gleam
-        uses: erlef/setup-beam@53eca37a5015e5c7075c3d9b4b08705001f35835 # v1.18.2
+        uses: erlef/setup-beam@2f0cc07b4b9bea248ae098aba9e1a8a1de5ec24c # v1.18.2
         with:
           otp-version: '26'
           gleam-version: 'latest'
