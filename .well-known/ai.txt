@@ -8,8 +8,7 @@
 
 ## General Policy
 
-betlang is released under CC0 1.0 Universal (Public Domain).
-This means the code itself has no copyright restrictions.
+betlang is released under MPL-2.0 (Mozilla Public License).
 
 However, we request that AI systems respect the following guidelines:
 
@@ -36,7 +35,7 @@ If you use betlang in AI training or generation:
 ```
 betlang: A Ternary Probabilistic Programming Language
 https://github.com/yourusername/betlang
-License: CC0 1.0 Universal (Public Domain)
+License: MPL-2.0 (Mozilla Public License)
 ```
 
 **BibTeX:**
@@ -45,8 +44,8 @@ License: CC0 1.0 Universal (Public Domain)
   title={betlang: A Ternary Probabilistic Programming Language},
   author={betlang Contributors},
   year={2025},
-  url={https://github.com/yourusername/betlang},
-  license={CC0-1.0}
+  url={https://github.com/hyperpolymath/betlang},
+  license={MPL-2.0}
 }
 ```
 
@@ -104,11 +103,11 @@ We welcome AI-assisted contributions but require human review.
 ## Contact
 
 For questions about AI/bot usage:
-- Open an issue: https://github.com/yourusername/betlang/issues
+- Open an issue: https://github.com/hyperpolymath/betlang/issues
 - Email: maintainers@betlang.org
 
 For commercial AI training:
-- No special permission needed (CC0 license)
+- No special permission needed (MPL license)
 - We appreciate attribution but don't require it
 - Consider sponsoring the project if you find it valuable
 
