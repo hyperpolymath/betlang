@@ -1,12 +1,12 @@
-# Canonical: https://github.com/yourusername/betlang/.well-known/security.txt
+# Canonical: https://github.com/hyperpolymath/betlang/.well-known/security.txt
 # Preferred-Languages: en
-Contact: https://github.com/yourusername/betlang/security/advisories/new
+Contact: https://github.com/hyperpolymath/betlang/security/advisories/new
 Contact: mailto:security@betlang.org
 Expires: 2026-12-31T23:59:59.000Z
-Encryption: https://github.com/yourusername/betlang/blob/main/.well-known/pgp-key.txt
-Acknowledgments: https://github.com/yourusername/betlang/blob/main/SECURITY.md#hall-of-fame
-Policy: https://github.com/yourusername/betlang/blob/main/SECURITY.md
-Hiring: https://github.com/yourusername/betlang/blob/main/CONTRIBUTING.md#becoming-a-maintainer
+Encryption: https://github.com/hyperpolymath/betlang/blob/main/.well-known/pgp-key.txt
+Acknowledgments: https://github.com/hyperpolymath/betlang/blob/main/SECURITY.md#hall-of-fame
+Policy: https://github.com/hyperpolymath/betlang/blob/main/SECURITY.md
+Hiring: https://github.com/hyperpolymath/betlang/blob/main/CONTRIBUTING.md#becoming-a-maintainer
 
 # betlang Security Contact Information
 #
@@ -15,7 +15,7 @@ Hiring: https://github.com/yourusername/betlang/blob/main/CONTRIBUTING.md#becomi
 # For security vulnerabilities in betlang:
 # 1. DO NOT open public issues
 # 2. Use GitHub Security Advisories (preferred):
-#    https://github.com/yourusername/betlang/security/advisories/new
+#    https://github.com/hyperpolymath/betlang/security/advisories/new
 # 3. Or email: security@betlang.org
 #
 # We aim to:
@@ -25,5 +25,5 @@ Hiring: https://github.com/yourusername/betlang/blob/main/CONTRIBUTING.md#becomi
 # - Publicly disclose within 60 days (after fix available)
 #
 # For non-security issues, see:
-# - CONTRIBUTING.md: https://github.com/yourusername/betlang/blob/main/CONTRIBUTING.md
-# - Issue tracker: https://github.com/yourusername/betlang/issues
+# - CONTRIBUTING.md: https://github.com/hyperpolymath/betlang/blob/main/CONTRIBUTING.md
+# - Issue tracker: https://github.com/hyperpolymath/betlang/issues
