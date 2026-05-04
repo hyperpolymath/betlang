@@ -1,6 +1,6 @@
 /* TEAM */
 
-Lead Developer: [TO BE CONFIGURED]
+Lead Developer: Jonathan D.A. Jewell
 Contact: maintainer [at] betlang.org
 From: Earth
 GitHub: @username
@@ -34,7 +34,7 @@ Tagline: A Ternary Probabilistic Programming Language
 Version: 0.1.0
 Status: Active Development
 License: CC0 1.0 Universal (Public Domain)
-Repository: https://github.com/yourusername/betlang
+Repository: https://github.com/hyperpolymath/betlang
 
 /* FEATURES */
 
@@ -134,8 +134,8 @@ Ways to Contribute:
 
 /* CONTACT */
 
-Issues: https://github.com/yourusername/betlang/issues
-Discussions: https://github.com/yourusername/betlang/discussions
+Issues: https://github.com/hyperpolymath/betlang/issues
+Discussions: https://github.com/hyperpolymath/betlang/discussions
 Email: [contact@betlang.org]
 Security: security@betlang.org (see SECURITY.md)
 
@@ -162,7 +162,7 @@ Music Theory:
 /* FUTURE */
 
 Planned Features:
-  - Enhanced type safety (Typed Racket)
+  - Enhanced type safety (when compiled)
   - More distributions
   - Visualization tools
   - IDE integrations
@@ -185,10 +185,6 @@ Dream Goals:
 - Inspired by coin flips but uses three-sided coins
 - Created during exploration of ternary logic
 - Public domain - truly free
-
-/* RANDOM QUOTE */
-
-"All models are wrong, but some are useful." - George Box
 
 In betlang, we embrace uncertainty.
 Every bet is a model of reality.
