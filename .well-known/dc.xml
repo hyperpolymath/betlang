@@ -18,6 +18,6 @@
   <source>https://github.com/hyperpolymath/betlang</source>
   <language>en</language>
   <relation>https://rhodium.sh</relation>
-  <rights>AGPL-3.0-or-later OR LicenseRef-Palimpsest-0.5</rights>
-  <dcterms:license>https://spdx.org/licenses/AGPL-3.0-or-later.html</dcterms:license>
+  <rights>MPL-2.0.html OR LicenseRef-Palimpsest-1.0-or-later</rights>
+  <dcterms:license>https://spdx.org/licenses/MPL-2.0.html</dcterms:license>
 </metadata>
