@@ -1,0 +1,398 @@
+// SPDX-License-Identifier: PMPL-1.0-or-later
+= Betlang Playground Launcher
+:toc:
+:toclevels: 3
+:sectnums:
+:source-highlighter: rouge
+:icons: font
+
+== Overview
+
+This directory contains the **standards-compliant launcher** for the Betlang Playground, following the specification at:
+
+* https://github.com/hyperpolymath/standards/tree/main/launcher/launcher-standard.a2ml
+* https://github.com/hyperpolymath/standards/blob/main/launcher/README.adoc
+
+== Launcher Standard Compliance
+
+This launcher implements **launcher-standard v0.2.0** and provides:
+
+=== Required Modes
+
+| Mode | Description | Status |
+|------|-------------|--------|
+| `--start` | Start application in background | ✅ Implemented |
+| `--stop` | Stop running application | ✅ Implemented |
+| `--status` | Check if running | ✅ Implemented |
+| `--auto` | Auto-select based on environment | ✅ Implemented |
+| `--browser` | Open in browser | ✅ Implemented |
+
+=== Integration Modes
+
+| Mode | Description | Status |
+|------|-------------|--------|
+| `--integ` | Install desktop integration | ✅ Implemented |
+| `--disinteg` | Remove desktop integration | ✅ Implemented |
+
+=== Meta Modes
+
+| Mode | Description | Status |
+|------|-------------|--------|
+| `--help` | Show help | ✅ Implemented |
+
+=== Optional Modes (Developer)
+
+| Mode | Description | Status |
+|------|-------------|--------|
+| `--debug` | Start with debug output | ✅ Implemented |
+| `--logs` | Show application logs | ✅ Implemented |
+| `--tail` | Tail application log file | ✅ Implemented |
+
+== Fallback Ladder
+
+The launcher implements the **389 system** (K9 trust model) with a **fallback ladder**:
+
+[source]
+----
+Stage 1: GUI (yellow banner)
+    ↓ on failure
+Stage 2: TUI (red banner)
+    ↓ on failure
+Stage 3: Shell (green banner) → Interactive bash at repo root
+----
+
+The `keepopen.sh` wrapper ensures that **every failure is visible** through:
+
+1. **Loud console banners** (intentionally ugly - visibility > aesthetics)
+2. **GUI dialogs** (kdialog, zenity, notify-send, xmessage - whichever is available)
+3. **Always-also-to-stderr** logging
+
+== Files
+
+[source]
+----
+launcher/
+├── betlang-playground.sh    # Primary launcher entry point
+├── keepopen.sh                      # Fallback ladder wrapper
+└── README.adoc                      # This file
+----
+
+=== betlang-playground.sh
+
+The primary launcher script that implements all required modes.
+
+**Key Features:**
+
+* Mode dispatch based on command-line arguments
+* Process management (start/stop/status)
+* Environment detection (GUI vs TUI)
+* Browser auto-detection and launching
+* Desktop integration (install/uninstall)
+* Log management
+
+=== keepopen.sh
+
+The fallback ladder wrapper that ensures failures are visible.
+
+**Calling Convention:**
+
+[source,bash]
+----
+keepopen.sh APP_NAME REPO_DIR "GUI_CMD" "TUI_CMD" [LOG_FILE]
+----
+
+**Example:**
+
+[source,bash]
+----
+keepopen.sh betlang-playground /opt/betlang/ui \
+    "deno task dev" \
+    "deno task dev --no-browser" \
+    /tmp/betlang-playground.log
+----
+
+== Usage
+
+=== Basic Commands
+
+[source,bash]
+----
+# Show help
+./launcher/betlang-playground.sh --help
+
+# Start in background
+./launcher/betlang-playground.sh --start
+
+# Auto-start (default - starts and opens browser in GUI)
+./launcher/betlang-playground.sh --auto
+
+# Check status
+./launcher/betlang-playground.sh --status
+
+# Stop
+./launcher/betlang-playground.sh --stop
+
+# Open browser (if already running)
+./launcher/betlang-playground.sh --browser
+----
+
+=== Desktop Integration
+
+[source,bash]
+----
+# Install desktop shortcuts, icons, and menu entries
+./launcher/betlang-playground.sh --integ
+
+# Remove desktop integration
+./launcher/betlang-playground.sh --disinteg
+----
+
+=== Developer Commands
+
+[source,bash]
+----
+# Start with debug output
+./launcher/betlang-playground.sh --debug
+
+# Show logs
+./launcher/betlang-playground.sh --logs
+
+# Tail logs in real-time
+./launcher/betlang-playground.sh --tail
+----
+
+=== Environment Variables
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `BETLANG_PORT` | Port to use for dev server | 3000 |
+| `BETLANG_BROWSER` | Browser command to use | auto-detect |
+| `DISPLAY` | X11 display | (system) |
+| `WAYLAND_DISPLAY` | Wayland display | (system) |
+
+== Desktop Integration Details
+
+=== Installation (`--integ`)
+
+Creates the following files:
+
+[source]
+----
+~/.local/share/applications/betlang-playground.desktop
+~/.local/share/icons/hicolor/256x256/apps/betlang-playground.png
+~/Desktop/betlang-playground.desktop
+~/.local/bin/betlang-playground
+----
+
+The desktop file includes:
+
+* Application name and description
+* Exec line pointing to the launcher script
+* Icon reference
+* Categories (Development, Education, Science, Math)
+* MIME type association
+
+=== Uninstallation (`--disinteg`)
+
+Removes all installed files:
+
+* Desktop file from `~/.local/share/applications/`
+* Desktop shortcut from `~/Desktop/`
+* Icon from `~/.local/share/icons/`
+* Binary symlink from `~/.local/bin/`
+
+== Containerisation (Podman with Chainguard)
+
+For a **complete standalone package**, use the Chainguard-based container images.
+
+=== Why Chainguard?
+
+Chainguard images are:
+
+* **Minimal** - Only essential packages, tiny attack surface
+* **Distroless** - No shell, no package managers in production
+* **SBOM-enabled** - Full Software Bill of Materials
+* **Signed** - Cosign signatures for supply chain security
+* **Wolfi-based** - Alpine-derived, musl libc
+
+=== Containerfile (Chainguard)
+
+See `containers/Containerfile.chainguard` for a Chainguard-based build.
+
+**Key differences from Debian-based:**
+
+* Uses `cgr.dev/chainguard/deno` instead of `deno:alpine`
+* Uses `cgr.dev/chainguard/node` for Node.js dependencies
+* Minimal base with only required packages
+* Non-root user by default
+* Distroless final image
+
+=== Building with Podman
+
+[source,bash]
+----
+# Build the Chainguard-based image
+cd /home/hyperpolymath/dev/betlang
+podman build -t betlang-playground -f containers/Containerfile.chainguard .
+
+# Run it
+podman run -it --rm -p 3000:3000 betlang-playground
+----
+
+=== Stapeln (Podman Pods)
+
+For a **stapeln-reinforced** setup with multiple containers:
+
+[source,bash]
+----
+# Create a pod for the playground
+podman pod create --name betlang-pod -p 3000:3000
+
+# Add the playground container
+podman run -d --pod betlang-pod --name betlang-ui \
+    -v /home/hyperpolymath/dev/betlang/ui:/app \
+    cgr.dev/chainguard/deno:latest \
+    deno task dev --host 0.0.0.0 --port 3000
+
+# Open in browser
+xdg-open http://localhost:3000
+----
+
+== Single-File Download Package
+
+For users who want a **complete self-contained package**:
+
+=== Package Structure
+
+[source]
+----
+betlang-playground-v1.0.0/
+├── README.adoc                          # Instructions
+├── launcher/
+│   ├── betlang-playground.sh    # Launcher script
+│   └── keepopen.sh                      # Fallback wrapper
+├── ui/
+│   ├── src/App.res                      # Plain JavaScript source
+│   ├── public/                          # Static assets
+│   │   ├── index.html
+│   │   └── styles.css
+│   ├── deno.json
+│   ├── .json
+│   └── vite.config.js
+├── Containerfile                        # For container builds
+├── INSTALL.sh                           # Installation script
+└── LICENSE                              # PMPL-1.0-or-later
+----
+
+=== Installation Script (INSTALL.sh)
+
+[source,bash]
+----
+#!/bin/bash
+# Self-extracting installation script
+
+# Detect platform
+PLATFORM=$(uname -s)
+ARCH=$(uname -m)
+
+# Install to /opt/betlang-playground
+INSTALL_DIR="/opt/betlang-playground"
+
+# Create directories
+sudo mkdir -p "$INSTALL_DIR/launcher" "$INSTALL_DIR/ui"
+
+# Copy files
+sudo cp -r launcher/* "$INSTALL_DIR/launcher/"
+sudo cp -r ui/* "$INSTALL_DIR/ui/"
+sudo cp Containerfile "$INSTALL_DIR/"
+
+# Make scripts executable
+sudo chmod +x "$INSTALL_DIR/launcher/"*.sh
+
+# Create symlink in PATH
+sudo ln -sf "$INSTALL_DIR/launcher/betlang-playground.sh" /usr/local/bin/betlang-playground
+
+# Install desktop integration
+sudo "$INSTALL_DIR/launcher/betlang-playground.sh" --integ
+
+echo "Installation complete!"
+echo "Run: betlang-playground --auto"
+----
+
+== Complete Package Requirements
+
+For a **truly complete package** with no external dependencies:
+
+[source]
+----
+Prerequisites (handled by package):
+├── Podman (container runtime)
+│   ├── Install from: https://podman.io/
+│   └── Or use: nerdctl (containerd-native)
+├── Deno (JavaScript/TypeScript runtime)
+│   └── Bundled in Chainguard image
+└── Browser (for GUI mode)
+    └── User-provided or system default
+
+Package provides:
+├── All source code
+├── All configuration
+├── Launcher scripts
+├── Container images (optional)
+└── Desktop integration (optional)
+----
+
+== Compliance Checklist
+
+- [x] SPDX license headers in all files
+- [x] Required modes implemented (`--start`, `--stop`, `--status`, `--auto`, `--browser`)
+- [x] Integration modes implemented (`--integ`, `--disinteg`)
+- [x] Meta mode implemented (`--help`)
+- [x] Optional modes implemented (`--debug`, `--logs`, `--tail`)
+- [x] Fallback ladder (keepopen.sh)
+- [x] Loud banner visibility
+- [x] GUI dialog support
+- [x] Always-also-to-stderr
+- [x] Desktop file creation
+- [x] Icon installation
+- [x] Menu entry creation
+
+== Testing
+
+=== Test Fallback Ladder
+
+[source,bash]
+----
+# Force a failure to test fallback
+./launcher/keepopen.sh betlang-test /opt/betlang/ui \
+    "false" \  # GUI command that will fail
+    "false" \  # TUI command that will fail
+    /tmp/betlang-test.log
+
+# Expected: Yellow banner → Red banner → Green banner → Shell
+----
+
+=== Test Desktop Integration
+
+[source,bash]
+----
+# Install
+./launcher/betlang-playground.sh --integ
+
+# Verify
+ls ~/.local/share/applications/betlang-playground.desktop
+ls ~/.local/bin/betlang-playground
+
+# Uninstall
+./launcher/betlang-playground.sh --disinteg
+
+# Verify removal
+ls ~/.local/share/applications/betlang-playground.desktop 2>&1 || echo "Removed"
+----
+
+== See Also
+
+* link:../README.adoc[Betlang UI README]
+* link:../../README.adoc[Main Betlang README]
+* https://github.com/hyperpolymath/standards/tree/main/launcher/[Launcher Standard]
+* https://github.com/hyperpolymath/standards/blob/main/launcher/launcher-standard.a2ml[Launcher Standard (A2ML)]
