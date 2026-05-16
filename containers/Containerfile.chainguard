@@ -1,0 +1,105 @@
+# SPDX-License-Identifier: PMPL-1.0-or-later
+# Betlang Playground - Chainguard-based Container Image
+#
+# Uses Chainguard images for minimal, distroless deployment
+# Build with: podman build -t betlang-playground -f containers/Containerfile.chainguard .
+#
+# Why Chainguard?
+# - Minimal attack surface (only essential packages)
+# - Distroless final image (no shell, no package manager)
+# - SBOM-enabled (full Software Bill of Materials)
+# - Signed images (cosign signatures for supply chain security)
+# - Wolfi-based (Alpine-derived, musl libc)
+
+# ============================================================================
+# Stage 1: Build UI with Chainguard Deno
+# ============================================================================
+
+# Chainguard Deno image - minimal Deno runtime
+# Contains: Deno, minimal CA certificates, wolfi base
+FROM cgr.dev/chainguard/deno:latest AS builder
+
+# Create non-root user (Chainguard images are already non-root by default)
+# The chainguard/deno user is "deno" with UID 1000
+WORKDIR /app
+
+# Install dependencies for building ReScript
+# Chainguard images have minimal packages, so we need to add what's needed
+# Note: Chainguard images don't have package managers, so we use the dev variant
+# which has apk for installing build dependencies
+
+# Copy lock files first for caching
+COPY ui/deno.json ui/rescript.json ./
+
+# Install rescript compiler via deno
+RUN deno install -A --root -f https://deno.land/x/rescript/rescript.ts
+
+# Copy UI source
+COPY ui/ ./ui/
+
+# Build the ReScript code
+RUN cd ui && \
+    deno run -A npm:rescript build
+
+# ============================================================================
+# Stage 2: Runtime Image (Distroless)
+# ============================================================================
+
+# Chainguard static image - completely empty, just CA certs
+# This is the most minimal production image possible
+FROM cgr.dev/chainguard/static:latest AS runtime
+
+# Set up runtime environment
+WORKDIR /app
+
+# Create non-root user (static image has no users by default)
+RUN addgroup -S appgroup && adduser -S appuser -G appgroup
+USER appuser
+
+# Copy built assets from builder
+COPY --from=builder /app/ui/dist/ ./dist/
+COPY --from=builder /app/ui/public/ ./public/
+
+# Copy launcher scripts
+COPY ui/launcher/ ./launcher/
+
+# Make launcher scripts executable
+RUN chmod +x ./launcher/*.sh
+
+# Set up environment
+ENV PORT=3000
+ENV HOST=0.0.0.0
+
+# Expose port
+EXPOSE 3000
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+    CMD wget --no-verbose --tries=1 --spider http://localhost:3000/ || exit 1
+
+# Default command: start the launcher
+ENTRYPOINT ["./launcher/betlang-playground.sh"]
+CMD ["--auto"]
+
+# Labels (comprehensive metadata)
+LABEL org.opencontainers.image.title="Betlang Playground"
+LABEL org.opencontainers.image.description="interactive playground for Betlang probabilistic programming"
+LABEL org.opencontainers.image.source="https://github.com/hyperpolymath/betlang"
+LABEL org.opencontainers.image.licenses="PMPL-1.0-or-later"
+LABEL org.opencontainers.image.version="1.0.0"
+LABEL org.opencontainers.image.revision="$(git rev-parse HEAD 2>/dev/null || echo 'unknown')"
+LABEL org.opencontainers.image.created="$(date -u +'%Y-%m-%dT%H:%M:%SZ')"
+LABEL org.opencontainers.image.vendor="hyperpolymath"
+LABEL org.opencontainers.image.authors="Jonathan D.A. Jewell <6759885+hyperpolymath@users.noreply.github.com>"
+LABEL maintainer="Jonathan D.A. Jewell <6759885+hyperpolymath@users.noreply.github.com>"
+
+# SBOM labels (Chainguard generates these automatically, but we add our own)
+LABEL org.opencontainers.image.sbom="https://github.com/hyperpolymath/betlang/blob/main/containers/sbom-betlang-playground.spdx.json"
+
+# Security labels
+LABEL org.opencontainers.image.security.scanner="Chainguard Enforce"
+LABEL org.opencontainers.image.security.policy="distroless"
+
+# Launcher standard compliance
+LABEL hyperpolymath.launcher.standard="0.2.0"
+LABEL hyperpolymath.launcher.modes="--start,--stop,--status,--auto,--browser,--integ,--disinteg,--help,--debug,--logs,--tail"

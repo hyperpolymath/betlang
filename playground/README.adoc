@@ -1,0 +1,445 @@
+// SPDX-License-Identifier: PMPL-1.0-or-later
+= Betlang Playground Directory
+:toc:
+:toclevels: 3
+:sectnums:
+:source-highlighter: rouge
+:icons: font
+:description: Playground directory for Betlang - FFI, experimental features, and configuration
+
+== Overview
+
+The `playground/` directory serves as a **sandbox and experimental workspace** for Betlang development, separate from the main language implementation in `compiler/` and the web-based UI in `ui/`.
+
+This directory contains:
+
+* **FFI bindings** - Foreign Function Interface for integrating Betlang with other languages/runtimes
+* **Configuration files** - Project configuration using Nickel, Must, Just
+* **Experimental code** - New features under development
+* **Documentation** - Architecture and design documents
+* **Examples** - Standalone code samples
+
+== Purpose
+
+The playground directory is intentionally **decoupled** from the main compiler to allow:
+
+* Rapid experimentation without affecting core stability
+* Testing of new language features
+* FFI development across multiple targets (Zig, WASM, etc.)
+* Configuration management for the broader project
+
+== Structure
+
+[source]
+----
+playground/
+├── ARCHITECTURE.adoc          # System architecture documentation
+├── Justfile                   # Task runner configuration
+├── config.ncl                 # Nickel-based project configuration
+├── deno.json                  # Deno runtime configuration
+├── mustfile.toml              # Must framework configuration (RSR compliance)
+├── rescript.json              # ReScript project configuration
+├── docs/
+│   ├── .gitkeep
+│   └── CITATIONS.adoc          # Academic references
+├── examples/
+│   ├── 01_experiment.bet      # Experimental Betlang code
+│   ├── SafeDOMExample.res     # ReScript DOM example
+│   └── web-project-deno.json  # Deno web project config
+├── ffi/
+│   └── zig/
+│       ├── build.zig          # Zig build configuration
+│       ├── src/main.zig       # Zig FFI bindings
+│       └── test/integration_test.zig  # Integration tests
+├── scripts/
+│   └── .gitkeep
+├── src/
+│   └── .gitkeep
+└── test/
+    └── .gitkeep
+----
+
+== Configuration Files
+
+=== config.ncl (Nickel Configuration)
+
+Project metadata and configuration using the Nickel configuration language.
+
+[source,nickel]
+----
+{
+  project = {
+    name = "betlang-playground",
+    version = "1.0.0",
+    description = "Playground for Betlang Playground",
+    license = "PMPL-1.0-or-later",
+    author = "Jonathan D.A. Jewell",
+    repository = "https://github.com/hyperpolymath/betlang-playground",
+  },
+  development = {
+    default_tasks = ["build", "lint", "fmt", "test"],
+  },
+}
+----
+
+=== mustfile.toml (Must Framework)
+
+RSR (Responsible Specification and Release) compliance configuration.
+
+Features:
+
+* **Must-have files**: Enforces presence of LICENSE, README, etc.
+* **Must-not-have files**: Blocks banned files (Makefile, Dockerfile, etc.)
+* **Content requirements**: Validates file contents against patterns
+* **Enforcement rules**: Line length, no trailing whitespace, etc.
+
+=== deno.json (Deno Configuration)
+
+Deno task runner and TypeScript configuration for playground scripts.
+
+[source,json]
+----
+{
+  "tasks": {
+    "dev": "deno run --watch src/main.ts",
+    "test": "deno test --allow-read",
+    "lint": "deno lint",
+    "fmt": "deno fmt",
+    "check": "deno check src/**/*.ts",
+    "probability": "deno run --allow-read src/probability.ts"
+  }
+}
+----
+
+=== Justfile (Just Task Runner)
+
+Comprehensive task automation with:
+
+* Build automation
+* Development server
+* Testing pipeline
+* Linting and formatting
+* Documentation building
+* Ternary logic demos
+* Probabilistic programming examples
+* RSR compliance checks
+
+See `just --list` for all available tasks.
+
+== FFI (Foreign Function Interface)
+
+The `ffi/` directory contains bindings for integrating Betlang with other languages.
+
+=== Zig FFI (ffi/zig/)
+
+Zig language bindings for Betlang:
+
+[source,zig]
+----
+// build.zig - Build configuration
+// src/main.zig - Main FFI entry points
+// test/integration_test.zig - Integration tests
+----
+
+The Zig FFI provides:
+
+* Low-level memory management
+* Type conversions between Betlang and Zig
+* Error handling across language boundaries
+* Performance-optimized bindings
+
+=== WASM Integration (Future)
+
+Planned integration with `compiler/bet-wasm` for:
+
+* Web-based execution
+* Browser-compatible FFI
+* JavaScript interoperability
+* Edge computing deployment
+
+== Examples
+
+=== 01_experiment.bet
+
+Demonstrates experimental Betlang features:
+
+[source]
+----
+#![feature(linear_types)]
+#![feature(dependent_types)]
+#![feature(effect_system)]
+
+@linear
+fn example_linear():
+    let resource = acquire()
+    use(resource)
+
+syntax_variant A:
+    let x = 5
+    let y = x + 10
+
+syntax_variant B:
+    x := 5
+    y := x + 10
+----
+
+=== SafeDOMExample.res
+
+ReScript example demonstrating formally verified DOM mounting:
+
+* Type-safe DOM manipulation
+* Error handling with proofs
+* Batch mounting operations
+* TEA (The Elm Architecture) integration
+
+=== web-project-deno.json
+
+Example Deno configuration for ReScript web projects:
+
+* Deno task definitions
+* ReScript dependency management
+* Safe DOM library integration
+
+== Shareable URLs & Ecosystem Integration
+
+=== URL Encoding for Playground Examples
+
+Individual examples can be encoded and shared via URL:
+
+[source]
+----
+# Example: Sharing a specific bet expression
+https://betlang.org/playground?example=01_experiment
+
+# Example: Sharing with custom code
+https://betlang.org/playground#code=<base64:YmV0IHsgMSwgMiwgM30=>
+----
+
+=== QR Code Generation
+
+For physical sharing (workshops, presentations, print):
+
+[source,bash]
+----
+# Generate QR code from URL (requires qrencode)
+qrencode -t ANSIUTF8 "https://betlang.org/playground#code=$(echo 'bet {1,2,3}' | base64)"
+----
+
+=== Social Media Cards
+
+OpenGraph and Twitter Card metadata for social sharing:
+
+[source,html]
+----
+<meta property="og:title" content="Betlang Playground" />
+<meta property="og:description" content="Ternary probabilistic programming with quantum-inspired features" />
+<meta property="og:image" content="https://betlang.org/og-image.png" />
+<meta name="twitter:card" content="summary_large_image" />
+----
+
+== Integration with 389, AD, K9 Systems
+
+=== K9 Contractiles
+
+K9 (Kennel-Yard-Hunt) self-validating contractiles provide:
+
+* **Kennel Level**: Pure data configuration (no execution)
+* **Yard Level**: Validated configuration with Nickel contracts
+* **Hunt Level**: Full execution with Just recipes (requires signature)
+
+The playground integrates with K9 for:
+
+[source]
+----
+.machine_readable/svc/k9/
+├── examples/
+│   ├── project-metadata.k9.ncl
+│   ├── ci-config.k9.ncl
+│   └── deployment.k9.ncl
+└── README.adoc
+----
+
+=== ADR (Architecture Decision Records)
+
+All architectural decisions are documented as ADRs:
+
+* ADR-001: K9 service component organization
+* ADR-002: RSR compliance enforcement
+* ADR-003: Machine-readable metadata first
+
+ADR files are stored in `.machine_readable/svc/` and referenced in code.
+
+=== 389 System Integration
+
+The "389" refers to the three-level trust model in K9:
+
+| Level | Trust | Execution | Use Case |
+|-------|-------|-----------|----------|
+| Kennel | High | None | Configuration, schemas |
+| Yard | Medium | Nickel eval | Validated configs |
+| Hunt | Low | Full | Deployment, execution |
+
+Playground components map to these levels:
+
+* `config.ncl` → Yard (validated configuration)
+* `mustfile.toml` → Yard (contract enforcement)
+* `Justfile` → Hunt (task execution)
+
+== Ecosystem Integration
+
+=== GitHub Integration
+
+* GitHub Actions for CI/CD
+* Issue templates for feature requests
+* Pull request templates
+* Security policy enforcement
+
+=== GitLab Compatibility
+
+The playground maintains compatibility with GitLab:
+
+* CI/CD pipeline files
+* Merge request templates
+* Security scanning
+
+=== IPFS / Decentralized
+
+For decentralized sharing:
+
+[source,bash]
+----
+# Add playground to IPFS
+ipfs add -r playground/
+
+# Share via IPFS gateway
+ipfs name publish <cid>
+# Result: /ipns/<peer-id>
+----
+
+=== Matrix / Element
+
+Share via Matrix:
+
+[source]
+----
+https://matrix.to/#/#betlang:matrix.org?web-instance[element.io]=https://betlang.org/playground
+----
+
+=== Discord
+
+Rich embed sharing:
+
+[source]
+----
+https://discord.com/app?url=https://betlang.org/playground
+----
+
+=== Bluesky
+
+[source]
+----
+https://bsky.app/intent/compose?text=Check%20out%20Betlang%20Playground%20https://betlang.org/playground
+----
+
+== Machine-Readable Metadata
+
+The playground integrates with the machine-readable metadata system:
+
+[source]
+----
+.machine_readable/
+├── 6a2/
+│   ├── AGENTIC.a2ml      # AI agent constraints
+│   ├── ECOSYSTEM.a2ml     # Project ecosystem position
+│   ├── META.a2ml          # Project metadata
+│   ├── NEUROSYM.a2ml      # Neural symbolic integration
+│   ├── PLAYBOOK.a2ml      # Operational playbook
+│   └── STATE.a2ml         # Current project state
+└── svc/
+    └── k9/
+        └── README.adoc      # K9 contractiles
+----
+
+Each `.a2ml` file provides machine-readable configuration for:
+
+* AI agent interactions
+* Project positioning in the ecosystem
+* Operational procedures
+* State tracking
+
+== Development Workflow
+
+=== Adding New Features
+
+1. Create feature branch from `main`
+2. Add code to appropriate `playground/` subdirectory
+3. Update `ARCHITECTURE.adoc` with design decisions
+4. Add tests in `test/` directory
+5. Update `mustfile.toml` with new requirements
+6. Run `just check` to verify RSR compliance
+
+=== FFI Development
+
+For new FFI bindings:
+
+1. Create language-specific directory under `ffi/`
+2. Add build configuration (`build.zig`, `CMakeLists.txt`, etc.)
+3. Implement bindings in `src/`
+4. Add integration tests in `test/`
+5. Document in `ffi/<lang>/README.adoc`
+
+=== Configuration Changes
+
+For configuration updates:
+
+1. Modify `config.ncl` with new settings
+2. Update `mustfile.toml` with new requirements
+3. Add validation in `Justfile`
+4. Test with `just validate`
+
+== RSR Compliance
+
+The playground enforces RSR (Responsible Specification and Release) standards:
+
+=== Bronze Level (Current)
+
+* SPDX license headers in all files
+* README.adoc present
+* LICENSE file present
+* .gitignore configured
+* Basic project structure
+
+=== Silver Level (Target)
+
+* Complete documentation
+* Test coverage ≥ 80%
+* CI/CD pipeline
+* Security policy
+* Code of conduct
+
+=== Gold Level (Future)
+
+* Formal specifications
+* Complete test suite
+* Security audits
+* Accessibility compliance
+* Internationalization
+
+== License
+
+This project is licensed under PMPL-1.0-or-later (Palimpsest Metadata Public License).
+
+All files must include the SPDX license header:
+
+[source]
+----
+// SPDX-License-Identifier: PMPL-1.0-or-later
+----
+
+== See Also
+
+* link:../README.adoc[Main Betlang README]
+* link:../ui/README.adoc[Quantum Playground README]
+* link:../0-AI-MANIFEST.a2ml[AI Agent Manifest]
+* link:.machine_readable/6a2/ECOSYSTEM.a2ml[Ecosystem Position]
+* link:https://github.com/hyperpolymath/betlang[GitHub Repository]

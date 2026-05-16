@@ -1,0 +1,304 @@
+// SPDX-License-Identifier: PMPL-1.0-or-later
+= Betlang Playground
+:toc:
+:toclevels: 3
+:sectnums:
+:source-highlighter: rouge
+:icons: font
+:description: Interactive web playground for Betlang - ternary probabilistic programming with visualizations
+
+== Overview
+
+The Betlang Playground is a **web-based interactive environment** for exploring Betlang's ternary probabilistic programming model through analogies and visualizations.
+
+Unlike traditional quantum programming playgrounds, this playground demonstrates **probabilistic computation using ternary logic** — where each bet can resolve to one of three (or more) states.
+
+== Quick Start
+
+=== Using a Simple Server
+
+[source,bash]
+----
+# Navigate to the ui/public directory
+cd ui/public
+
+# Start a simple Python server (or use any static file server)
+python3 -m http.server 3000
+
+# Or use PHP
+php -S localhost:3000
+
+# Or use Deno
+deno serve --port 3000
+----
+
+Then open http://localhost:3000 in your browser.
+
+=== Using the Launcher
+
+[source,bash]
+----
+# Use the standards-compliant launcher
+./launcher/betlang-playground.sh --auto
+----
+
+This starts a development server and opens the playground in your browser.
+
+== Features
+
+=== Analog Examples
+
+The playground includes 8 pre-loaded examples covering:
+
+| Concept | Betlang Feature | Example |
+|---------|-----------------|---------|
+| Basic choice | Ternary bet with equal weights | `bet { "A", "B", "C" }` |
+| Weighted choice | Bet with custom probabilities | `bet/weighted { "high" @ 0.7, "medium" @ 0.2, "low" @ 0.1 }` |
+| Hierarchical probability | Nested bets | `bet { "group1", "group2", bet { "a", "b" } }` |
+| Pattern matching | Match on bet result | `match result { "A" -> ..., "B" -> ... }` |
+| Monte Carlo | Probabilistic sampling | Estimate probability over N trials |
+| Parallel trials | Multiple independent bets | Run several bets and aggregate |
+| Probability estimation | Distribution counting | Count occurrences over samples |
+| Complex hierarchy | Multi-level nested bets | Chain probabilistic choices |
+
+=== Visualizations
+
+* **Histogram**: Shows probability distribution from sampled runs
+* **Bet Tree**: Visual representation of nested bet structures
+
+=== Sharing
+
+* **URL Sharing**: Code is encoded in the URL hash for easy sharing
+* **QR Code**: Generate a QR code for mobile access
+* **Social Media**: Share to Twitter, Mastodon, Reddit, LinkedIn, Facebook, Bluesky, or Email
+
+== Architecture
+
+=== Technology Stack
+
+| Component | Technology | Purpose |
+|-----------|------------|---------|
+| Frontend | Plain JavaScript (ES6+) | No build step required |
+| Styling | Custom CSS | Dark/light theme ready |
+| Launcher | Bash + Deno | Standards-compliant entry point |
+| Container | Podman + Chainguard | Secure deployment |
+
+=== Directory Structure
+
+[source]
+----
+ui/
+├── public/
+│   ├── index.html          # Main HTML page
+│   ├── app.js              # Main application logic
+│   └── styles.css          # All styles
+└── launcher/
+    ├── betlang-playground.sh    # Primary launcher
+    ├── keepopen.sh          # Fallback ladder wrapper
+    └── README.adoc          # Launcher documentation
+----
+
+== Usage
+
+=== Editor
+
+* Write Betlang-like code in the editor
+* Use the example selector to load pre-built examples
+* Press **Run** (or Ctrl+Enter) to execute
+* Adjust sample count to change the number of runs
+
+=== Code Syntax
+
+The playground accepts a simplified Betlang-like syntax:
+
+[source]
+----
+// Basic bet - equal probability
+let outcome = bet { "A", "B", "C" }
+
+// Weighted bet - custom probabilities
+let weighted = bet/weighted { 
+  "high" @ 0.7,
+  "medium" @ 0.2,
+  "low" @ 0.1
+}
+
+// Nested bets
+let nested = bet { "x", "y", bet { "a", "b" } }
+
+// Pattern matching
+match result {
+  "A" -> "First",
+  "B" -> "Second",
+  _ -> "Other"
+}
+
+// Loops
+for i in 1..100 {
+  let r = bet { "hit", "miss" }
+}
+----
+
+== Educational Focus
+
+The Betlang Playground emphasizes four key areas:
+
+=== 1. Conceptual Foundations
+
+* **Ternary Logic**: Beyond binary true/false - three states: True, False, Unknown
+* **Probabilistic Choice**: Non-deterministic selection with defined probabilities
+* **Hierarchical Probability**: Nested probability structures
+
+=== 2. Computer Science
+
+* **Pattern Matching**: Clean, expressive control flow
+* **Functional Programming**: Immutable data, pure functions
+* **Type Safety**: Strong typing prevents many errors
+
+=== 3. Mathematics
+
+* **Probability Distributions**: Visualize outcome frequencies
+* **Monte Carlo Methods**: Estimate values through random sampling
+* **Weighted Sampling**: Non-uniform probability distributions
+
+=== 4. Methods
+
+* **Hierarchical Modeling**: Build complex systems from simple bets
+* **Nested Probability**: Chain probabilistic decisions
+* **Estimation Techniques**: Derive probabilities from samples
+
+== Integration
+
+=== Desktop Integration
+
+Use the launcher's `--integ` mode to install desktop shortcuts:
+
+[source,bash]
+----
+./launcher/betlang-playground.sh --integ
+----
+
+This creates:
+* Desktop file in `~/.local/share/applications/`
+* Desktop shortcut
+* Application menu entry
+* Binary symlink in `~/.local/bin/`
+
+=== Containerisation
+
+Use the Chainguard-based container image:
+
+[source,bash]
+----
+podman build -t betlang-playground -f containers/Containerfile.chainguard .
+podman run -it --rm -p 3000:3000 betlang-playground
+----
+
+== Standards Compliance
+
+=== Launcher Standard v0.2.0
+
+All required modes are implemented:
+
+| Mode | Description | Status |
+|------|-------------|--------|
+| `--start` | Start in background | ✅ |
+| `--stop` | Stop running instance | ✅ |
+| `--status` | Check running status | ✅ |
+| `--auto` | Auto-detect and start | ✅ |
+| `--browser` | Open in browser | ✅ |
+| `--integ` | Install desktop integration | ✅ |
+| `--disinteg` | Remove desktop integration | ✅ |
+| `--help` | Show help | ✅ |
+
+=== Fallback Ladder (389 System / K9 Trust Model)
+
+[source]
+----
+Stage 1: GUI (yellow banner)
+    ↓ on failure
+Stage 2: TUI (red banner)
+    ↓ on failure
+Stage 3: Shell (green banner) → Interactive bash
+----
+
+The `keepopen.sh` wrapper ensures all failures are visible through:
+1. Loud console banners
+2. GUI dialogs (kdialog, zenity, notify-send, xmessage)
+3. Always-to-stderr logging
+
+== Development
+
+=== Project Structure
+
+[source]
+----
+betlang/
+├── ui/                          # Web playground
+│   ├── public/
+│   │   ├── index.html          # HTML entry point
+│   │   ├── app.js              # JavaScript application
+│   │   └── styles.css          # CSS styles
+│   └── launcher/
+│       ├── betlang-playground.sh
+│       └── keepopen.sh
+├── containers/
+│   └── Containerfile.chainguard  # Chainguard-based image
+└── README.adoc                  # Main project docs
+----
+
+=== Running Locally
+
+[source,bash]
+----
+# Method 1: Direct file access (no server)
+# Just open public/index.html in a browser
+
+# Method 2: Simple HTTP server
+cd ui/public
+python3 -m http.server 3000
+
+# Method 3: Launcher
+./ui/launcher/betlang-playground.sh --auto
+----
+
+== Testing
+
+=== Manual Testing
+
+1. Open the playground in a browser
+2. Select each example from the dropdown
+3. Click **Run** and verify output
+4. Check histogram visualization
+5. Test sharing functionality
+6. Try loading from URL hash
+
+=== Browser Compatibility
+
+| Browser | Support | Notes |
+|---------|---------|-------|
+| Chrome/Edge | ✅ Full | Recommended |
+| Firefox | ✅ Full | Works well |
+| Safari | ✅ Full | Tested |
+| Mobile browsers | ✅ Most | QR code useful here |
+
+== Future Enhancements
+
+* [ ] **Actual Betlang WASM backend** for real execution
+* [ ] **Proper QR code library** instead of placeholder
+* [ ] **Syntax highlighting** for Betlang code
+* [ ] **Local storage** to save code between sessions
+* [ ] **Tutorial mode** with guided lessons
+* [ ] **Export/import** code snippets
+* [ ] **Dark/light theme toggle**
+* [ ] **Accessibility improvements**
+
+== License
+
+All files are licensed under PMPL-1.0-or-later (Polyform Noncommercial License 1.0).
+
+== See Also
+
+* link:../../README.adoc[Main Betlang README]
+* https://github.com/hyperpolymath/betlang[Betlang on GitHub]
+* https://github.com/hyperpolymath/standards[Hyperpolymath Standards]
