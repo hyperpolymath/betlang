@@ -1,0 +1,15 @@
+-- SPDX-License-Identifier: PMPL-1.0-or-later
+package playground-tests
+
+sourcedir = "tests/idris2"
+
+depends = base
+
+modules = Test.Spec
+        , PlaygroundTernaryTest
+        , PlaygroundProbabilityTest
+        , PlaygroundStructureTest
+        , Main
+
+main = Main
+executable = "playground-tests"
