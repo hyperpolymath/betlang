@@ -303,59 +303,65 @@ theorem canonical_dist {v : Expr} {T : Ty} :
     This is one half of type safety. -/
 theorem progress {e : Expr} {T : Ty} (ht : HasType [] e T) :
     IsValue e ∨ ∃ e', Step e e' := by
+  generalize hΓ : ([] : Ctx) = Γ at ht
   induction ht with
   | tInt => left; exact IsValue.litInt
   | tFloat => left; exact IsValue.litFloat
   | tBool => left; exact IsValue.litBool
   | tString => left; exact IsValue.litString
   | tUnit => left; exact IsValue.litUnit
-  | tVar h => simp [Ctx.lookup] at h
+  | tVar hl =>
+    subst hΓ
+    simp [Ctx.lookup] at hl
   | tLam _ _ => left; exact IsValue.lam
-  | @tApp _ e₁ e₂ S T ht1 ht2 ih1 ih2 =>
+  | tApp ht1 _ ih1 ih2 =>
     right
-    rcases ih1 with hv1 | ⟨e₁', hs1⟩
-    · rcases ih2 with hv2 | ⟨e₂', hs2⟩
-      · obtain ⟨body, rfl⟩ := canonical_arrow ht1 hv1
+    rcases ih1 hΓ with hv1 | ⟨_, hs1⟩
+    · rcases ih2 hΓ with hv2 | ⟨_, hs2⟩
+      · subst hΓ
+        obtain ⟨_, rfl⟩ := canonical_arrow ht1 hv1
         exact ⟨_, Step.appLam hv2⟩
       · exact ⟨_, Step.appArg hv1 hs2⟩
     · exact ⟨_, Step.appFun hs1⟩
-  | @tLet _ _ _ S T ht1 ht2 ih1 ih2 =>
+  | tLet _ _ ih1 _ =>
     right
-    rcases ih1 with hv1 | ⟨e₁', hs1⟩
+    rcases ih1 hΓ with hv1 | ⟨_, hs1⟩
     · exact ⟨_, Step.letVal hv1⟩
     · exact ⟨_, Step.letStep hs1⟩
-  | @tIf _ c t e T htc htt hte ihc iht ihe =>
+  | @tIf Γ c t T e htc _ _ ihc _ _ =>
     right
-    rcases ihc with hvc | ⟨c', hsc⟩
-    · obtain ⟨b, rfl⟩ := canonical_bool htc hvc
+    rcases ihc hΓ with hvc | ⟨_, hsc⟩
+    · subst hΓ
+      obtain ⟨b, rfl⟩ := canonical_bool htc hvc
       cases b with
       | true  => exact ⟨t, Step.ifTrue⟩
       | false => exact ⟨e, Step.ifFalse⟩
     · exact ⟨_, Step.ifCond hsc⟩
-  | @tBet _ e₁ e₂ e₃ T ht1 ht2 ht3 ih1 ih2 ih3 =>
+  | tBet _ _ _ ih1 ih2 ih3 =>
     right
-    rcases ih1 with hv1 | ⟨e₁', hs1⟩
-    · rcases ih2 with hv2 | ⟨e₂', hs2⟩
-      · rcases ih3 with hv3 | ⟨e₃', hs3⟩
-        · -- All three are values: bet reduces non-deterministically (pick first)
-          exact ⟨_, Step.betFirst hv1 hv2 hv3⟩
+    rcases ih1 hΓ with hv1 | ⟨_, hs1⟩
+    · rcases ih2 hΓ with hv2 | ⟨_, hs2⟩
+      · rcases ih3 hΓ with hv3 | ⟨_, hs3⟩
+        · exact ⟨_, Step.betFirst hv1 hv2 hv3⟩
         · exact ⟨_, Step.betStep3 hv1 hv2 hs3⟩
       · exact ⟨_, Step.betStep2 hv1 hs2⟩
     · exact ⟨_, Step.betStep1 hs1⟩
-  | @tSample _ e T hte ihe =>
+  | tSample hte ihe =>
     right
-    rcases ihe with hve | ⟨e', hse⟩
-    · obtain ⟨w, rfl, hvw⟩ := canonical_dist hte hve
+    rcases ihe hΓ with hve | ⟨_, hse⟩
+    · subst hΓ
+      obtain ⟨w, rfl, hvw⟩ := canonical_dist hte hve
       exact ⟨w, Step.samplePure hvw⟩
     · exact ⟨_, Step.sampleStep hse⟩
-  | @tDistPure _ e T hte ihe =>
-    rcases ihe with hve | ⟨e', hse⟩
+  | tDistPure _ ihe =>
+    rcases ihe hΓ with hve | ⟨_, hse⟩
     · left; exact IsValue.distPure hve
     · right; exact ⟨_, Step.distPureStep hse⟩
-  | @tDistBind _ e₁ e₂ A B ht1 ht2 ih1 ih2 =>
+  | tDistBind ht1 _ ih1 _ =>
     right
-    rcases ih1 with hv1 | ⟨e₁', hs1⟩
-    · obtain ⟨w, rfl, hvw⟩ := canonical_dist ht1 hv1
+    rcases ih1 hΓ with hv1 | ⟨_, hs1⟩
+    · subst hΓ
+      obtain ⟨_, rfl, hvw⟩ := canonical_dist ht1 hv1
       exact ⟨_, Step.distBindPure hvw⟩
     · exact ⟨_, Step.distBindStep1 hs1⟩
 
@@ -363,43 +369,9 @@ theorem progress {e : Expr} {T : Ty} (ht : HasType [] e T) :
 -- Section 8. Weakening and substitution lemmas
 -- ════════════════════════════════════════════════════════════════════════════
 
-/-- Context extension preserves lookup at positions beyond the insertion point. -/
-theorem lookup_extend_ge {Γ : Ctx} {n : Nat} {U : Ty} (h : n ≥ Γ.length) :
-    Ctx.lookup (Γ ++ [U]) n = if n == Γ.length then some U else none := by
-  induction Γ with
-  | nil =>
-    simp [List.length] at h
-    simp [Ctx.lookup, List.nil_append]
-    omega
-  | cons t Γ' ih =>
-    simp [List.length] at h
-    have hge : n ≥ 1 := by omega
-    match n with
-    | 0 => omega
-    | n' + 1 =>
-      simp [Ctx.lookup, List.cons_append]
-      have : n' ≥ Γ'.length := by omega
-      rw [ih this]
-      simp [List.length]
-      omega
-
-/-- Inserting a type into the context at position `k` preserves typing
-    when variables are shifted accordingly. This is the key structural lemma.
-
-    For the full substitution and preservation proof, we work with a simpler
-    approach: we establish preservation directly by induction on the step
-    relation, using the substitution lemma only for beta-reduction. -/
-
-/-- The substitution lemma: if Γ,x:S ⊢ e : T and Γ ⊢ v : S, then Γ ⊢ e[x↦v] : T.
-
-    We prove a restricted version sufficient for our needs: top-level
-    substitution in a closed context (empty Γ extension). The general version
-    would require a full de Bruijn shifting/substitution calculus; here we
-    state the property axiomatically for the substTop operation and validate
-    it via the specific cases that arise in preservation. -/
-
--- For preservation, we need the substitution property. We prove it by
--- establishing that each specific reduction rule preserves types.
+-- The substitution lemmas live in Section 8.5 below (insertAt-based de Bruijn
+-- weakening + generalised substitution). `substTop_preserves_typing` is the
+-- corollary preservation needs.
 
 -- ════════════════════════════════════════════════════════════════════════════
 -- Section 9. Preservation theorem
