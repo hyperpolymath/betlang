@@ -50,7 +50,7 @@ jobs:
           cd release
           tar -czvf betlang-${{ github.ref_name }}-${{ matrix.target }}.tar.gz *
 
-      - uses: actions/upload-artifact@ea165f8d65b6db9a8b71b5c2d1a090c0daf9c8bb # v4
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: betlang-${{ matrix.target }}
           path: release/*.tar.gz
@@ -81,7 +81,7 @@ jobs:
           cd release
           tar -czvf betlang-${{ github.ref_name }}-${{ matrix.target }}.tar.gz *
 
-      - uses: actions/upload-artifact@ea165f8d65b6db9a8b71b5c2d1a090c0daf9c8bb # v4
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: betlang-${{ matrix.target }}
           path: release/*.tar.gz
@@ -106,7 +106,7 @@ jobs:
           cd release
           7z a betlang-${{ github.ref_name }}-x86_64-pc-windows-msvc.zip *
 
-      - uses: actions/upload-artifact@ea165f8d65b6db9a8b71b5c2d1a090c0daf9c8bb # v4
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: betlang-windows
           path: release/*.zip
@@ -130,7 +130,7 @@ jobs:
           cd build
           tar -czvf bet-lsp-${{ github.ref_name }}.tar.gz erlang-shipment
 
-      - uses: actions/upload-artifact@ea165f8d65b6db9a8b71b5c2d1a090c0daf9c8bb # v4
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: bet-lsp
           path: lsp/bet-lsp/build/*.tar.gz
