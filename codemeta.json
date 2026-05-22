@@ -7,7 +7,7 @@
   "version": "0.1.0",
   "dateCreated": "2025-12-10",
   "dateModified": "2025-12-10",
-  "license": "https://spdx.org/licenses/PMPL-1.0-or-later.html",
+  "license": "https://spdx.org/licenses/MPL-2.0.html",
   "codeRepository": "https://github.com/hyperpolymath/betlang",
   "issueTracker": "https://github.com/hyperpolymath/betlang/issues",
   "programmingLanguage": ["Guile Scheme"],

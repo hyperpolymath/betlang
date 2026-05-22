@@ -1,4 +1,4 @@
-;; SPDX-License-Identifier: PMPL-1.0-or-later
+;; SPDX-License-Identifier: MPL-2.0
 ;; Conformance: lazy bet with thunks (type-like abstraction)
 
 (bet-with-seed 77 (lambda ()

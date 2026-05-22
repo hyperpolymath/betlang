@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: PMPL-1.0-or-later
+// SPDX-License-Identifier: MPL-2.0
 //! Comprehensive lexer and parser tests for Betlang.
 //!
 //! These tests exercise all token types in the logos lexer and all major

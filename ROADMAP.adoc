@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: PMPL-1.0-or-later
+// SPDX-License-Identifier: MPL-2.0
 = BetLang Roadmap
 
 == Current Status
@@ -127,4 +127,4 @@ See `CONTRIBUTING.adoc` for how to contribute to betlang development.
 
 == License
 
-PMPL-1.0-or-later (Palimpsest License)
+MPL-2.0 (Palimpsest License)

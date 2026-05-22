@@ -1,5 +1,5 @@
 #lang racket
-;; SPDX-License-Identifier: PMPL-1.0-or-later
+;; SPDX-License-Identifier: MPL-2.0
 ;; betlang-to-julia.rkt - Compile betlang (Racket) to Julia
 ;; Copyright (C) 2026 Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
 
@@ -155,7 +155,7 @@
 (define (compile-to-julia forms)
   "Compile a list of betlang forms to Julia code (as string)"
   (define header
-    "# SPDX-License-Identifier: PMPL-1.0-or-later\n# Generated from betlang source\n\nusing BetLang\n\n")
+    "# SPDX-License-Identifier: MPL-2.0\n# Generated from betlang source\n\nusing BetLang\n\n")
 
   (define body
     (string-join

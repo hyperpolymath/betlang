@@ -227,7 +227,7 @@ See `../CONTRIBUTING.adoc` for contribution guidelines.
 
 ## License
 
-PMPL-1.0-or-later (Palimpsest License)
+MPL-2.0 (Palimpsest License)
 
 ## Authors
 

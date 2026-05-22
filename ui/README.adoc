@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: PMPL-1.0-or-later
+// SPDX-License-Identifier: MPL-2.0
 = Betlang Playground
 :toc:
 :toclevels: 3
@@ -295,7 +295,7 @@ python3 -m http.server 3000
 
 == License
 
-All files are licensed under PMPL-1.0-or-later (Polyform Noncommercial License 1.0).
+All files are licensed under MPL-2.0 (Polyform Noncommercial License 1.0).
 
 == See Also
 

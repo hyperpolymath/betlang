@@ -1,4 +1,4 @@
--- SPDX-License-Identifier: PMPL-1.0-or-later
+-- SPDX-License-Identifier: MPL-2.0
 -- betlang Idris2 test suite. Estate port 5a/11 - both .rkt test families
 -- ported (basics + conformance) as content-validation (file-read +
 -- substring matching) since Racket's (random 3) has no pure Idris2 analogue.

@@ -1,4 +1,4 @@
--- SPDX-License-Identifier: PMPL-1.0-or-later
+-- SPDX-License-Identifier: MPL-2.0
 -- Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
 --
 -- Port of betlang Racket DSL test suite to Idris2 (estate-rollout port 5a/11).
@@ -79,7 +79,7 @@ allSuites =
       -- the rest of the .rkt corpus is tracked separately.
       d <- readFileToString "conformance/deterministic.rkt"
       s <- readFileToString "conformance/stochastic-seeded.rkt"
-      let spdx = "SPDX-License-Identifier: PMPL-1.0-or-later"
+      let spdx = "SPDX-License-Identifier: MPL-2.0"
       allPass
         [ assertTrue "deterministic.rkt SPDX" (isInfixOf spdx d)
         , assertTrue "stochastic-seeded.rkt SPDX" (isInfixOf spdx s)

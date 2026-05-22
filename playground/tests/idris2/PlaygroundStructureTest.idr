@@ -1,4 +1,4 @@
--- SPDX-License-Identifier: PMPL-1.0-or-later
+-- SPDX-License-Identifier: MPL-2.0
 -- Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
 --
 -- Content-validation tests for the playground sub-project, estate-rollout 5b/11.
@@ -26,7 +26,7 @@ fileExists path = do
   pure True
 
 spdxLine : String
-spdxLine = "SPDX-License-Identifier: PMPL-1.0-or-later"
+spdxLine = "SPDX-License-Identifier: MPL-2.0"
 
 public export
 allSuites : List TestCase

@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: PMPL-1.0-or-later
+// SPDX-License-Identifier: MPL-2.0
 // bench_parser.rs -- Parser benchmark harness for BetLang
 //
 // Generates a large synthetic BetLang program and measures

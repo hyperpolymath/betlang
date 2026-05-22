@@ -1,4 +1,4 @@
-;; SPDX-License-Identifier: PMPL-1.0-or-later
+;; SPDX-License-Identifier: MPL-2.0
 ;; Conformance: parallel bets and entropy (library usage)
 
 (bet-with-seed 2025 (lambda () (bet-parallel 5 'win 'draw 'lose)))

@@ -1,5 +1,5 @@
 #lang racket
-;; SPDX-License-Identifier: PMPL-1.0-or-later
+;; SPDX-License-Identifier: MPL-2.0
 ;; Dutch Book Prevention
 ;;
 ;; Validates that probabilities in bets sum to 1.0 to prevent arbitrage opportunities.

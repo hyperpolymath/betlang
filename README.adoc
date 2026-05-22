@@ -424,7 +424,7 @@ BetLang is built on three principles:
 ----
 betlang/
 ├── README.adoc                    # This file
-├── LICENSE                       # PMPL-1.0-or-later
+├── LICENSE                       # MPL-2.0
 ├── 0-AI-MANIFEST.a2ml            # AI agent guidance
 ├── .machine_readable/             # Machine-readable metadata
 │   ├── 6a2/                       # Project state and config

@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: PMPL-1.0-or-later
+// SPDX-License-Identifier: MPL-2.0
 = Betlang Playground Directory
 :toc:
 :toclevels: 3
@@ -72,7 +72,7 @@ Project metadata and configuration using the Nickel configuration language.
     name = "betlang-playground",
     version = "1.0.0",
     description = "Playground for Betlang Playground",
-    license = "PMPL-1.0-or-later",
+    license = "MPL-2.0",
     author = "Jonathan D.A. Jewell",
     repository = "https://github.com/hyperpolymath/betlang-playground",
   },
@@ -427,13 +427,13 @@ The playground enforces RSR (Responsible Specification and Release) standards:
 
 == License
 
-This project is licensed under PMPL-1.0-or-later (Palimpsest Metadata Public License).
+This project is licensed under MPL-2.0 (Palimpsest Metadata Public License).
 
 All files must include the SPDX license header:
 
 [source]
 ----
-// SPDX-License-Identifier: PMPL-1.0-or-later
+// SPDX-License-Identifier: MPL-2.0
 ----
 
 == See Also

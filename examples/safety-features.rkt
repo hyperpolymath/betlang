@@ -1,5 +1,5 @@
 #lang racket
-;; SPDX-License-Identifier: PMPL-1.0-or-later
+;; SPDX-License-Identifier: MPL-2.0
 ;; BetLang Safety Features Demonstration
 ;;
 ;; This example demonstrates all four safety pillars:

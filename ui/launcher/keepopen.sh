@@ -1,5 +1,5 @@
 #!/bin/bash
-# SPDX-License-Identifier: PMPL-1.0-or-later
+# SPDX-License-Identifier: MPL-2.0
 # keepopen.sh - Fallback ladder wrapper for Betlang Playground
 # Compliant with: https://github.com/hyperpolymath/standards/tree/main/launcher/launcher-standard.a2ml
 

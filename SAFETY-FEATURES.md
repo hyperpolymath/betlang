@@ -270,7 +270,7 @@ BetLang's safety features are based on:
 
 ## License
 
-PMPL-1.0-or-later (Palimpsest License)
+MPL-2.0 (Palimpsest License)
 
 ## Authors
 

@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: PMPL-1.0-or-later
+// SPDX-License-Identifier: MPL-2.0
 //! Type checker for Betlang
 //!
 //! Implements bidirectional type checking for Betlang's probabilistic type

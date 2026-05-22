@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: PMPL-1.0-or-later
+// SPDX-License-Identifier: MPL-2.0
 //! Code generation for Betlang
 //!
 //! Generates JavaScript output from the Betlang AST, with full coverage of
