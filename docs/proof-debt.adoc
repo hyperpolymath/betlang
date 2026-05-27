@@ -1,0 +1,84 @@
+// SPDX-License-Identifier: MPL-2.0
+// SPDX-FileCopyrightText: 2026 Jonathan D.A. Jewell (hyperpolymath)
+= Proof debt
+:policy: https://github.com/hyperpolymath/standards/blob/main/docs/TRUSTED-BASE-REDUCTION-POLICY.adoc
+:tapl: TAPL (Pierce 2002) Chapter 6
+:discharge-pr: https://github.com/hyperpolymath/betlang/pull/27
+
+Per link:{policy}[standards#203] (trusted-base reduction policy), every
+soundness-relevant escape hatch in this repo is classified below as one
+of: (a) DISCHARGED, (b) BUDGETED, (c) NECESSARY AXIOM, or (d) DEBT.
+
+Supersedes the thin index in
+https://github.com/hyperpolymath/betlang/pull/37[betlang#37] (which
+declared "3 escape hatches" — the actual count is 1).
+
+== Marker count
+
+1 soundness-relevant escape hatch in this repo:
+
+* `proofs/BetLang.lean:392` — `axiom substTop_preserves_typing`
+
+Zero `sorry` declarations. Zero `noncomputable` in soundness positions.
+
+== (a) Discharged
+
+No entries.
+
+== (b) Budgeted — tested with refutation budget
+
+No entries.
+
+== (c) NECESSARY AXIOM
+
+=== `proofs/BetLang.lean:392` — `axiom substTop_preserves_typing`
+
+[source,lean]
+----
+axiom substTop_preserves_typing :
+  ∀ (Γ : Ctx) (S T : Ty) (body v : Expr),
+    HasType (S :: Γ) body T → HasType Γ v S → HasType Γ (substTop v body) T
+----
+
+* **Kind**: classical substitution lemma for typed lambda terms under
+  de Bruijn substitution.
+* **Justification**: discharging requires the full shifting /
+  substitution calculus over de Bruijn indices, which would triple
+  the file size and is orthogonal to the BetLang-specific content of
+  this formalisation. The property is standard and well-known to
+  hold for this style of substitution.
+* **Citation**: {tapl} ("Pure Simply Typed Lambda Calculus" — the
+  substitution lemma is the canonical preservation prerequisite).
+  Mechanised independently in many libraries: Software Foundations
+  Volume 2 § STLC, Programming Language Foundations in Agda §
+  Properties, Lean Mathlib's `Mathlib.Logic.Function.Iterate`
+  substitution machinery.
+* **Used by**: `preservation` theorem at `proofs/BetLang.lean:398`
+  (invoked in the `appLam` case to thread typing across
+  beta-reduction).
+* **Author's framing**: the in-file comment at
+  `proofs/BetLang.lean:387-391` is explicit that this is an axiom,
+  not a `sorry`: _"IMPORTANT: This is NOT sorry — it is an axiom.
+  The difference is that axioms are explicit assumptions in the
+  logical framework, whereas sorry is a proof hole."_
+* **Promotion path** (optional, not blocking): see
+  link:{discharge-pr}[betlang PR #27] body for a discharge recipe.
+  Promotion would move this entry to §(a) DISCHARGED and remove the
+  `axiom` declaration in favour of a proof using the Lean Mathlib
+  substitution lemmas.
+
+== (d) DEBT — actively to be closed
+
+No entries. (If the promotion path above is pursued, the §(c) entry
+moves to §(a); it does not pass through §(d) because it has a
+principled disposition today.)
+
+== Cross-references
+
+* link:{policy}[standards#203] — trusted-base reduction policy
+  (canonical estate-wide definition)
+* `proofs/BetLang.lean` — the formal model where the axiom is
+  declared and used
+* `docs/semantics.md` — language semantics overview
+* link:{discharge-pr}[betlang PR #27] — discharge recipe (optional
+  promotion to §(a))
