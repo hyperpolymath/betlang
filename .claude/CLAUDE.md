@@ -72,6 +72,16 @@ Both are FOSS with independent governance (no Big Tech).
 - **Fallback**: Nix (flake.nix)
 - **JS deps**: Deno (deno.json imports)
 
+### TypeScript Exemptions (Approved)
+
+The hyperpolymath "no new TypeScript" policy has the following approved exemptions in this repo. These are *not* policy violations — they are documented carve-outs.
+
+| Path | Files | Rationale | Unblock condition |
+|---|---|---|---|
+| `playground/**` | 6 (`src/probability.ts`, `src/ternary.ts`, `src/main.ts`, `test/ternary_test.ts`, `test/probability_test.ts`, `examples/uncertainty.ts`) | Per `playground/README.adoc`, the directory is an **intentional experimental sandbox** "decoupled from the main compiler to allow rapid experimentation". TypeScript was chosen as one of several languages explored alongside Deno/Nickel/Idris2/Zig in the sandbox. The primary Betlang implementation in `core/`, `lib/`, and `tests/` remains Racket-only. | Owner decision to either (a) migrate the playground sample to AffineScript, or (b) delete the TypeScript files once the experimental questions they answer are settled. No scheduled issue. |
+
+Adding to this list requires explicit user approval and an unblock condition. New TypeScript files outside this list are blocked by the RSR antipattern check (`governance / Language / package anti-pattern policy`).
+
 ### Security Requirements
 
 - No MD5/SHA1 for security (use SHA256+)
