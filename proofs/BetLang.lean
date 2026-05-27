@@ -369,9 +369,532 @@ theorem progress {e : Expr} {T : Ty} (ht : HasType [] e T) :
 -- Section 8. Weakening and substitution lemmas
 -- ════════════════════════════════════════════════════════════════════════════
 
--- The substitution lemmas live in Section 8.5 below (insertAt-based de Bruijn
--- weakening + generalised substitution). `substTop_preserves_typing` is the
--- corollary preservation needs.
+-- This section discharges the de Bruijn machinery needed to prove that the
+-- top-level substitution operator `substTop` preserves typing. The pattern is
+-- the standard TAPL Ch. 9 mechanisation:
+--
+--   1. A context-insertion operator `Ctx.insertAt Γ k U` with three lookup
+--      lemmas (n < k, n = k, n > k).
+--   2. `shift_preserves_typing`: weakening for `shift 1 k` — inserting one
+--      type into the context at position k preserves typing of `shift 1 k e`.
+--   3. Two arithmetic lemmas on shift:
+--      - `shift_down_shift_up`: `shift (-1) k (shift 1 k e) = e`.
+--      - `shift_one_comm`:      `shift 1 0 (shift 1 k e) = shift 1 (k+1) (shift 1 0 e)`.
+--   4. `substAt_preserves_typing`: the generalised substitution lemma,
+--      proved by induction on `body` (not on the typing derivation).
+--   5. `substTop_preserves_typing`: the corollary at k = 0.
+
+/-- Insert a type `U` into context `Γ` at position `k`. -/
+def Ctx.insertAt (Γ : Ctx) (k : Nat) (U : Ty) : Ctx :=
+  Γ.take k ++ U :: Γ.drop k
+
+/-- Computational lemma: `insertAt Γ 0 U = U :: Γ`. -/
+theorem Ctx.insertAt_zero (Γ : Ctx) (U : Ty) :
+    Ctx.insertAt Γ 0 U = U :: Γ := by
+  simp [Ctx.insertAt]
+
+/-- Computational lemma: `insertAt (T :: Γ) (k+1) U = T :: insertAt Γ k U`. -/
+theorem Ctx.insertAt_cons_succ (T : Ty) (Γ : Ctx) (k : Nat) (U : Ty) :
+    Ctx.insertAt (T :: Γ) (k + 1) U = T :: Ctx.insertAt Γ k U := by
+  simp [Ctx.insertAt]
+
+/-- Lookup below the insertion point is unchanged. -/
+theorem Ctx.lookup_insertAt_lt :
+    ∀ (Γ : Ctx) (k : Nat) (U : Ty) (n : Nat),
+      k ≤ Γ.length → n < k →
+      Ctx.lookup (Ctx.insertAt Γ k U) n = Ctx.lookup Γ n
+  | _, 0, _, _, _, h => by omega
+  | [], k+1, _, _, hk, _ => by simp at hk
+  | T :: Γ, k+1, U, 0, _, _ => by
+    simp [Ctx.insertAt, Ctx.lookup]
+  | T :: Γ, k+1, U, n+1, hk, h => by
+    rw [Ctx.insertAt_cons_succ]
+    show Ctx.lookup (Ctx.insertAt Γ k U) n = Ctx.lookup Γ n
+    exact Ctx.lookup_insertAt_lt Γ k U n (by simp at hk; omega) (by omega)
+
+/-- Lookup at the insertion point returns the inserted type. -/
+theorem Ctx.lookup_insertAt_eq :
+    ∀ (Γ : Ctx) (k : Nat) (U : Ty),
+      k ≤ Γ.length → Ctx.lookup (Ctx.insertAt Γ k U) k = some U
+  | [], 0, U, _ => by simp [Ctx.insertAt, Ctx.lookup]
+  | [], k+1, U, h => by simp at h
+  | T :: Γ, 0, U, _ => by simp [Ctx.insertAt, Ctx.lookup]
+  | T :: Γ, k+1, U, h => by
+    rw [Ctx.insertAt_cons_succ]
+    show Ctx.lookup (Ctx.insertAt Γ k U) k = some U
+    exact Ctx.lookup_insertAt_eq Γ k U (by simp at h; omega)
+
+/-- Lookup above the insertion point shifts down by 1. -/
+theorem Ctx.lookup_insertAt_gt :
+    ∀ (Γ : Ctx) (k : Nat) (U : Ty) (n : Nat),
+      n > k → Ctx.lookup (Ctx.insertAt Γ k U) n = Ctx.lookup Γ (n - 1)
+  | _, _, _, 0, h => by omega
+  | [], k, U, n+1, _ => by
+    -- Γ = []: lookup [] (n) = none for all n. We need to show
+    -- lookup (insertAt [] k U) (n+1) = lookup [] n = none.
+    -- insertAt [] k U = [].take k ++ U :: [].drop k = [] ++ [U] = [U].
+    -- So LHS = lookup [U] (n+1). For n+1 > k, this is lookup [] n = none
+    -- which matches. Actually lookup [U] (n+1) reduces by the cons-succ rule:
+    -- lookup [U] (n+1) = lookup [] n = none.
+    simp only [Ctx.insertAt, List.take_nil, List.drop_nil, List.nil_append]
+    show Ctx.lookup (U :: []) (n+1) = Ctx.lookup [] n
+    show Ctx.lookup [] n = Ctx.lookup [] n
+    rfl
+  | T :: Γ, 0, U, n+1, _ => by
+    simp [Ctx.insertAt, Ctx.lookup]
+  | T :: Γ, k+1, U, n+1, h => by
+    rw [Ctx.insertAt_cons_succ]
+    show Ctx.lookup (T :: Ctx.insertAt Γ k U) (n+1) = Ctx.lookup (T :: Γ) (n+1 - 1)
+    have hn : n + 1 > k + 1 ↔ n > k := by omega
+    have hgt : n > k := hn.mp h
+    cases n with
+    | zero => omega
+    | succ n' =>
+      show Ctx.lookup (Ctx.insertAt Γ k U) (n'+1) = Ctx.lookup Γ n'
+      have := Ctx.lookup_insertAt_gt Γ k U (n'+1) hgt
+      simp at this
+      exact this
+
+/-- Weakening / shift-preserves-typing. Inserting a fresh type at position k
+    into the context, and shifting every variable ≥ k up by one in the
+    expression, preserves typing. -/
+theorem shift_preserves_typing
+    {Γ : Ctx} {e : Expr} {T : Ty} (ht : HasType Γ e T) :
+    ∀ (k : Nat) (U : Ty), k ≤ Γ.length →
+      HasType (Ctx.insertAt Γ k U) (shift 1 k e) T := by
+  induction ht with
+  | tInt => intro k U _; simp only [shift]; exact HasType.tInt
+  | tFloat => intro k U _; simp only [shift]; exact HasType.tFloat
+  | tBool => intro k U _; simp only [shift]; exact HasType.tBool
+  | tString => intro k U _; simp only [shift]; exact HasType.tString
+  | tUnit => intro k U _; simp only [shift]; exact HasType.tUnit
+  | @tVar Γ n T hl =>
+    intro k U hk
+    show HasType (Ctx.insertAt Γ k U) (shift 1 k (Expr.var n)) T
+    show HasType (Ctx.insertAt Γ k U)
+      (if n ≥ k then Expr.var (Int.toNat ((n : Int) + 1)) else Expr.var n) T
+    by_cases hnk : n ≥ k
+    · -- n ≥ k: var becomes var (n+1)
+      rw [if_pos hnk]
+      have hnat : Int.toNat ((n : Int) + 1) = n + 1 := by omega
+      rw [hnat]
+      apply HasType.tVar
+      have hgt : n + 1 > k := by omega
+      rw [Ctx.lookup_insertAt_gt _ _ _ _ hgt]
+      simp
+      exact hl
+    · -- n < k: var stays at n
+      rw [if_neg hnk]
+      have hlt : n < k := by omega
+      apply HasType.tVar
+      rw [Ctx.lookup_insertAt_lt _ _ _ _ hk hlt]
+      exact hl
+  | @tLam Γ S body T _ ih =>
+    intro k U hk
+    simp only [shift]
+    apply HasType.tLam
+    rw [← Ctx.insertAt_cons_succ]
+    exact ih (k+1) U (by simp; omega)
+  | tApp _ _ ih1 ih2 =>
+    intro k U hk
+    simp only [shift]
+    exact HasType.tApp (ih1 k U hk) (ih2 k U hk)
+  | @tLet Γ e₁ S e₂ T _ _ ih1 ih2 =>
+    intro k U hk
+    simp only [shift]
+    apply HasType.tLet (ih1 k U hk)
+    rw [← Ctx.insertAt_cons_succ]
+    exact ih2 (k+1) U (by simp; omega)
+  | tIf _ _ _ ihc iht ihe =>
+    intro k U hk
+    simp only [shift]
+    exact HasType.tIf (ihc k U hk) (iht k U hk) (ihe k U hk)
+  | tBet _ _ _ ih1 ih2 ih3 =>
+    intro k U hk
+    simp only [shift]
+    exact HasType.tBet (ih1 k U hk) (ih2 k U hk) (ih3 k U hk)
+  | tSample _ ih =>
+    intro k U hk
+    simp only [shift]
+    exact HasType.tSample (ih k U hk)
+  | tDistPure _ ih =>
+    intro k U hk
+    simp only [shift]
+    exact HasType.tDistPure (ih k U hk)
+  | tDistBind _ _ ih1 ih2 =>
+    intro k U hk
+    simp only [shift]
+    exact HasType.tDistBind (ih1 k U hk) (ih2 k U hk)
+
+/-- Shift down then up cancels: `shift (-1) k (shift 1 k e) = e`.
+    Holds unconditionally because every variable that gets shifted up by `shift 1 k`
+    is ≥ k+1, and `shift (-1) k` undoes that. -/
+theorem shift_down_shift_up (e : Expr) :
+    ∀ (k : Nat), shift (-1 : Int) k (shift 1 k e) = e := by
+  induction e with
+  | litInt _ => intro k; simp [shift]
+  | litFloat _ => intro k; simp [shift]
+  | litBool _ => intro k; simp [shift]
+  | litString _ => intro k; simp [shift]
+  | litUnit => intro k; simp [shift]
+  | var n =>
+    intro k
+    show shift (-1) k (if n ≥ k then Expr.var (Int.toNat ((n : Int) + 1))
+                       else Expr.var n) = Expr.var n
+    by_cases hnk : n ≥ k
+    · rw [if_pos hnk]
+      have h1 : Int.toNat ((n : Int) + 1) = n + 1 := by omega
+      rw [h1]
+      show (if n + 1 ≥ k then Expr.var (Int.toNat (((n+1 : Nat) : Int) + (-1)))
+                         else Expr.var (n+1)) = Expr.var n
+      have h2 : n + 1 ≥ k := by omega
+      rw [if_pos h2]
+      have h3 : Int.toNat (((n + 1 : Nat) : Int) + (-1 : Int)) = n := by omega
+      rw [h3]
+    · rw [if_neg hnk]
+      show (if n ≥ k then Expr.var (Int.toNat ((n : Int) + (-1)))
+                     else Expr.var n) = Expr.var n
+      rw [if_neg hnk]
+  | lam t body ih =>
+    intro k
+    show shift (-1) k (Expr.lam t (shift 1 (k+1) body)) = Expr.lam t body
+    show Expr.lam t (shift (-1) (k+1) (shift 1 (k+1) body)) = Expr.lam t body
+    rw [ih]
+  | app e₁ e₂ ih1 ih2 =>
+    intro k
+    show shift (-1) k (Expr.app (shift 1 k e₁) (shift 1 k e₂))
+       = Expr.app e₁ e₂
+    show Expr.app (shift (-1) k (shift 1 k e₁)) (shift (-1) k (shift 1 k e₂))
+       = Expr.app e₁ e₂
+    rw [ih1, ih2]
+  | letE t e₁ e₂ ih1 ih2 =>
+    intro k
+    show shift (-1) k (Expr.letE t (shift 1 k e₁) (shift 1 (k+1) e₂))
+       = Expr.letE t e₁ e₂
+    show Expr.letE t (shift (-1) k (shift 1 k e₁))
+                     (shift (-1) (k+1) (shift 1 (k+1) e₂))
+       = Expr.letE t e₁ e₂
+    rw [ih1, ih2]
+  | ifE c t e ihc iht ihe =>
+    intro k
+    show shift (-1) k (Expr.ifE (shift 1 k c) (shift 1 k t) (shift 1 k e))
+       = Expr.ifE c t e
+    show Expr.ifE (shift (-1) k (shift 1 k c))
+                  (shift (-1) k (shift 1 k t))
+                  (shift (-1) k (shift 1 k e))
+       = Expr.ifE c t e
+    rw [ihc, iht, ihe]
+  | bet e₁ e₂ e₃ ih1 ih2 ih3 =>
+    intro k
+    show shift (-1) k (Expr.bet (shift 1 k e₁) (shift 1 k e₂) (shift 1 k e₃))
+       = Expr.bet e₁ e₂ e₃
+    show Expr.bet (shift (-1) k (shift 1 k e₁))
+                  (shift (-1) k (shift 1 k e₂))
+                  (shift (-1) k (shift 1 k e₃))
+       = Expr.bet e₁ e₂ e₃
+    rw [ih1, ih2, ih3]
+  | sample e ih =>
+    intro k
+    show shift (-1) k (Expr.sample (shift 1 k e)) = Expr.sample e
+    show Expr.sample (shift (-1) k (shift 1 k e)) = Expr.sample e
+    rw [ih]
+  | distPure e ih =>
+    intro k
+    show shift (-1) k (Expr.distPure (shift 1 k e)) = Expr.distPure e
+    show Expr.distPure (shift (-1) k (shift 1 k e)) = Expr.distPure e
+    rw [ih]
+  | distBind e₁ e₂ ih1 ih2 =>
+    intro k
+    show shift (-1) k (Expr.distBind (shift 1 k e₁) (shift 1 k e₂))
+       = Expr.distBind e₁ e₂
+    show Expr.distBind (shift (-1) k (shift 1 k e₁))
+                       (shift (-1) k (shift 1 k e₂))
+       = Expr.distBind e₁ e₂
+    rw [ih1, ih2]
+
+/-- General shift-shift commutation: for `i ≤ j`,
+    `shift 1 i (shift 1 j e) = shift 1 (j+1) (shift 1 i e)`.
+    Specialised at i = 0 to give `shift_one_comm`. -/
+theorem shift_one_comm_general (e : Expr) :
+    ∀ (i j : Nat), i ≤ j →
+      shift 1 i (shift 1 j e) = shift 1 (j+1) (shift 1 i e) := by
+  induction e with
+  | litInt _ => intros i j _; simp [shift]
+  | litFloat _ => intros i j _; simp [shift]
+  | litBool _ => intros i j _; simp [shift]
+  | litString _ => intros i j _; simp [shift]
+  | litUnit => intros i j _; simp [shift]
+  | var n =>
+    intros i j hij
+    show shift 1 i (if n ≥ j then Expr.var (Int.toNat ((n : Int) + 1))
+                              else Expr.var n)
+       = shift 1 (j+1) (if n ≥ i then Expr.var (Int.toNat ((n : Int) + 1))
+                                  else Expr.var n)
+    by_cases hnj : n ≥ j
+    · -- n ≥ j ≥ i: both inner shifts fire.
+      have hni : n ≥ i := by omega
+      rw [if_pos hnj, if_pos hni]
+      have h1 : Int.toNat ((n : Int) + 1) = n + 1 := by omega
+      rw [h1]
+      show (if n+1 ≥ i then Expr.var (Int.toNat (((n+1 : Nat) : Int) + 1))
+                       else Expr.var (n+1))
+         = (if n+1 ≥ j+1 then Expr.var (Int.toNat (((n+1 : Nat) : Int) + 1))
+                         else Expr.var (n+1))
+      have hni' : n + 1 ≥ i := by omega
+      have hnj' : n + 1 ≥ j + 1 := by omega
+      rw [if_pos hni', if_pos hnj']
+    · -- n < j; case split on n ≥ i.
+      rw [if_neg hnj]
+      -- LHS now: shift 1 i (Expr.var n)
+      show shift 1 i (Expr.var n)
+         = shift 1 (j+1) (if n ≥ i then Expr.var (Int.toNat ((n : Int) + 1))
+                                    else Expr.var n)
+      show (if n ≥ i then Expr.var (Int.toNat ((n : Int) + 1)) else Expr.var n)
+         = shift 1 (j+1) (if n ≥ i then Expr.var (Int.toNat ((n : Int) + 1))
+                                    else Expr.var n)
+      by_cases hni : n ≥ i
+      · -- i ≤ n < j
+        simp only [if_pos hni]
+        have h1 : Int.toNat ((n : Int) + 1) = n + 1 := by omega
+        rw [h1]
+        show Expr.var (n+1)
+           = (if n+1 ≥ j+1 then Expr.var (Int.toNat (((n+1 : Nat) : Int) + 1))
+                           else Expr.var (n+1))
+        have hnotgej : ¬ (n + 1 ≥ j + 1) := fun h => hnj (by omega)
+        rw [if_neg hnotgej]
+      · -- n < i ≤ j: neither shift fires.
+        simp only [if_neg hni]
+        show Expr.var n
+           = (if n ≥ j+1 then Expr.var (Int.toNat ((n : Int) + 1))
+                          else Expr.var n)
+        have hnotge : ¬ (n ≥ j + 1) := fun h => hnj (by omega)
+        rw [if_neg hnotge]
+  | lam t body ih =>
+    intros i j hij
+    show shift 1 i (Expr.lam t (shift 1 (j+1) body))
+       = shift 1 (j+1) (Expr.lam t (shift 1 (i+1) body))
+    show Expr.lam t (shift 1 (i+1) (shift 1 (j+1) body))
+       = Expr.lam t (shift 1 (j+1+1) (shift 1 (i+1) body))
+    rw [ih (i+1) (j+1) (by omega)]
+  | app e₁ e₂ ih1 ih2 =>
+    intros i j hij
+    show shift 1 i (Expr.app (shift 1 j e₁) (shift 1 j e₂))
+       = shift 1 (j+1) (Expr.app (shift 1 i e₁) (shift 1 i e₂))
+    show Expr.app (shift 1 i (shift 1 j e₁)) (shift 1 i (shift 1 j e₂))
+       = Expr.app (shift 1 (j+1) (shift 1 i e₁)) (shift 1 (j+1) (shift 1 i e₂))
+    rw [ih1 i j hij, ih2 i j hij]
+  | letE t e₁ e₂ ih1 ih2 =>
+    intros i j hij
+    show shift 1 i (Expr.letE t (shift 1 j e₁) (shift 1 (j+1) e₂))
+       = shift 1 (j+1) (Expr.letE t (shift 1 i e₁) (shift 1 (i+1) e₂))
+    show Expr.letE t (shift 1 i (shift 1 j e₁)) (shift 1 (i+1) (shift 1 (j+1) e₂))
+       = Expr.letE t (shift 1 (j+1) (shift 1 i e₁)) (shift 1 (j+1+1) (shift 1 (i+1) e₂))
+    rw [ih1 i j hij, ih2 (i+1) (j+1) (by omega)]
+  | ifE c t e ihc iht ihe =>
+    intros i j hij
+    show shift 1 i (Expr.ifE (shift 1 j c) (shift 1 j t) (shift 1 j e))
+       = shift 1 (j+1) (Expr.ifE (shift 1 i c) (shift 1 i t) (shift 1 i e))
+    show Expr.ifE (shift 1 i (shift 1 j c)) (shift 1 i (shift 1 j t)) (shift 1 i (shift 1 j e))
+       = Expr.ifE (shift 1 (j+1) (shift 1 i c)) (shift 1 (j+1) (shift 1 i t)) (shift 1 (j+1) (shift 1 i e))
+    rw [ihc i j hij, iht i j hij, ihe i j hij]
+  | bet e₁ e₂ e₃ ih1 ih2 ih3 =>
+    intros i j hij
+    show shift 1 i (Expr.bet (shift 1 j e₁) (shift 1 j e₂) (shift 1 j e₃))
+       = shift 1 (j+1) (Expr.bet (shift 1 i e₁) (shift 1 i e₂) (shift 1 i e₃))
+    show Expr.bet (shift 1 i (shift 1 j e₁)) (shift 1 i (shift 1 j e₂)) (shift 1 i (shift 1 j e₃))
+       = Expr.bet (shift 1 (j+1) (shift 1 i e₁)) (shift 1 (j+1) (shift 1 i e₂)) (shift 1 (j+1) (shift 1 i e₃))
+    rw [ih1 i j hij, ih2 i j hij, ih3 i j hij]
+  | sample e ih =>
+    intros i j hij
+    show shift 1 i (Expr.sample (shift 1 j e))
+       = shift 1 (j+1) (Expr.sample (shift 1 i e))
+    show Expr.sample (shift 1 i (shift 1 j e))
+       = Expr.sample (shift 1 (j+1) (shift 1 i e))
+    rw [ih i j hij]
+  | distPure e ih =>
+    intros i j hij
+    show shift 1 i (Expr.distPure (shift 1 j e))
+       = shift 1 (j+1) (Expr.distPure (shift 1 i e))
+    show Expr.distPure (shift 1 i (shift 1 j e))
+       = Expr.distPure (shift 1 (j+1) (shift 1 i e))
+    rw [ih i j hij]
+  | distBind e₁ e₂ ih1 ih2 =>
+    intros i j hij
+    show shift 1 i (Expr.distBind (shift 1 j e₁) (shift 1 j e₂))
+       = shift 1 (j+1) (Expr.distBind (shift 1 i e₁) (shift 1 i e₂))
+    show Expr.distBind (shift 1 i (shift 1 j e₁)) (shift 1 i (shift 1 j e₂))
+       = Expr.distBind (shift 1 (j+1) (shift 1 i e₁)) (shift 1 (j+1) (shift 1 i e₂))
+    rw [ih1 i j hij, ih2 i j hij]
+
+/-- Specialisation of `shift_one_comm_general` at i = 0. -/
+theorem shift_one_comm (e : Expr) :
+    ∀ (k : Nat), shift 1 0 (shift 1 k e) = shift 1 (k+1) (shift 1 0 e) := by
+  intro k
+  exact shift_one_comm_general e 0 k (Nat.zero_le _)
+
+/-- The generalised substitution lemma. If `body` has type T in a context
+    where S has been inserted at position k, and v has type S in Γ (with
+    appropriate shifting), then the substituted expression has type T in Γ.
+
+    Proved by induction on the structure of `body`. -/
+theorem substAt_preserves_typing :
+    ∀ (body : Expr) (Γ : Ctx) (k : Nat) (S T : Ty) (v : Expr),
+      HasType (Ctx.insertAt Γ k S) body T →
+      HasType Γ v S →
+      k ≤ Γ.length →
+      HasType Γ (shift (-1 : Int) k (subst k (shift 1 k v) body)) T := by
+  intro body
+  induction body with
+  | litInt n =>
+    intros Γ k S T v hbody _ _
+    cases hbody
+    simp only [subst, shift]
+    exact HasType.tInt
+  | litFloat f =>
+    intros Γ k S T v hbody _ _
+    cases hbody
+    simp only [subst, shift]
+    exact HasType.tFloat
+  | litBool b =>
+    intros Γ k S T v hbody _ _
+    cases hbody
+    simp only [subst, shift]
+    exact HasType.tBool
+  | litString s =>
+    intros Γ k S T v hbody _ _
+    cases hbody
+    simp only [subst, shift]
+    exact HasType.tString
+  | litUnit =>
+    intros Γ k S T v hbody _ _
+    cases hbody
+    simp only [subst, shift]
+    exact HasType.tUnit
+  | var n =>
+    intros Γ k S T v hbody hv hk
+    cases hbody with
+    | tVar hl =>
+      show HasType Γ (shift (-1) k (subst k (shift 1 k v) (Expr.var n))) T
+      show HasType Γ
+        (shift (-1) k (if n == k then shift 1 k v else Expr.var n)) T
+      by_cases hnk : n = k
+      · -- n = k: substitute and shift-down
+        subst hnk
+        rw [if_pos (by simp : (n == n) = true)]
+        -- hl : Ctx.lookup (Ctx.insertAt Γ n S) n = some T
+        rw [Ctx.lookup_insertAt_eq Γ n S hk] at hl
+        injection hl with hST
+        subst hST
+        rw [shift_down_shift_up v n]
+        exact hv
+      · -- n ≠ k
+        rw [if_neg (by simpa using hnk)]
+        show HasType Γ
+          (if n ≥ k then Expr.var (Int.toNat ((n : Int) + (-1))) else Expr.var n) T
+        by_cases hng : n ≥ k
+        · -- n > k (since n ≠ k and n ≥ k)
+          rw [if_pos hng]
+          have hgt : n > k := by omega
+          rw [Ctx.lookup_insertAt_gt Γ k S n hgt] at hl
+          cases n with
+          | zero => omega
+          | succ n' =>
+            have hnat : Int.toNat (((n'+1 : Nat) : Int) + (-1 : Int)) = n' := by omega
+            rw [hnat]
+            apply HasType.tVar
+            simpa using hl
+        · -- n < k
+          rw [if_neg hng]
+          have hlt : n < k := by omega
+          rw [Ctx.lookup_insertAt_lt Γ k S n hk hlt] at hl
+          exact HasType.tVar hl
+  | lam t body ih =>
+    intros Γ k S T v hbody hv hk
+    -- The Lam case is the tricky one; T = arrow t T' for some T'.
+    cases hbody with
+    | @tLam _ _ _ T_inner ht' =>
+      -- ht' : HasType (t :: Ctx.insertAt Γ k S) body T_inner
+      simp only [subst, shift]
+      apply HasType.tLam
+      -- shift 1 (k+1) (shift 1 0 v) = shift 1 0 (shift 1 k v) by shift_one_comm
+      have hcomm : shift 1 (k+1) (shift 1 0 v) = shift 1 0 (shift 1 k v) := by
+        rw [← shift_one_comm v k]
+      rw [← hcomm]
+      -- Apply IH at (t :: Γ), k+1, S, T_inner, shift 1 0 v
+      have hk' : k + 1 ≤ (t :: Γ).length := by simp; omega
+      have hv' : HasType (t :: Γ) (shift 1 0 v) S := by
+        have := shift_preserves_typing hv 0 t (by simp)
+        rw [Ctx.insertAt_zero] at this
+        exact this
+      have ht'' : HasType (Ctx.insertAt (t :: Γ) (k+1) S) body T_inner := by
+        rw [Ctx.insertAt_cons_succ]
+        exact ht'
+      exact ih (t :: Γ) (k+1) S T_inner (shift 1 0 v) ht'' hv' hk'
+  | app e₁ e₂ ih1 ih2 =>
+    intros Γ k S T v hbody hv hk
+    cases hbody with
+    | tApp ht1 ht2 =>
+      simp only [subst, shift]
+      exact HasType.tApp (ih1 Γ k S _ v ht1 hv hk) (ih2 Γ k S _ v ht2 hv hk)
+  | letE t e₁ e₂ ih1 ih2 =>
+    intros Γ k S T v hbody hv hk
+    cases hbody with
+    | tLet ht1 ht2 =>
+      -- ht1 : HasType (insertAt Γ k S) e₁ t
+      -- ht2 : HasType (t :: insertAt Γ k S) e₂ T
+      simp only [subst, shift]
+      apply HasType.tLet (ih1 Γ k S t v ht1 hv hk)
+      -- binder case identical structure to lam
+      have hcomm : shift 1 (k+1) (shift 1 0 v) = shift 1 0 (shift 1 k v) := by
+        rw [← shift_one_comm v k]
+      rw [← hcomm]
+      have hk' : k + 1 ≤ (t :: Γ).length := by simp; omega
+      have hv' : HasType (t :: Γ) (shift 1 0 v) S := by
+        have := shift_preserves_typing hv 0 t (by simp)
+        rw [Ctx.insertAt_zero] at this
+        exact this
+      have ht2' : HasType (Ctx.insertAt (t :: Γ) (k+1) S) e₂ T := by
+        rw [Ctx.insertAt_cons_succ]
+        exact ht2
+      exact ih2 (t :: Γ) (k+1) S T (shift 1 0 v) ht2' hv' hk'
+  | ifE c t e ihc iht ihe =>
+    intros Γ k S T v hbody hv hk
+    cases hbody with
+    | tIf htc htt hte =>
+      simp only [subst, shift]
+      exact HasType.tIf
+        (ihc Γ k S Ty.bool v htc hv hk)
+        (iht Γ k S T v htt hv hk)
+        (ihe Γ k S T v hte hv hk)
+  | bet e₁ e₂ e₃ ih1 ih2 ih3 =>
+    intros Γ k S T v hbody hv hk
+    cases hbody with
+    | tBet ht1 ht2 ht3 =>
+      simp only [subst, shift]
+      exact HasType.tBet
+        (ih1 Γ k S _ v ht1 hv hk)
+        (ih2 Γ k S _ v ht2 hv hk)
+        (ih3 Γ k S _ v ht3 hv hk)
+  | sample e ih =>
+    intros Γ k S T v hbody hv hk
+    cases hbody with
+    | tSample ht =>
+      simp only [subst, shift]
+      exact HasType.tSample (ih Γ k S _ v ht hv hk)
+  | distPure e ih =>
+    intros Γ k S T v hbody hv hk
+    cases hbody with
+    | tDistPure ht =>
+      simp only [subst, shift]
+      exact HasType.tDistPure (ih Γ k S _ v ht hv hk)
+  | distBind e₁ e₂ ih1 ih2 =>
+    intros Γ k S T v hbody hv hk
+    cases hbody with
+    | tDistBind ht1 ht2 =>
+      simp only [subst, shift]
+      exact HasType.tDistBind
+        (ih1 Γ k S _ v ht1 hv hk)
+        (ih2 Γ k S _ v ht2 hv hk)
 
 -- ════════════════════════════════════════════════════════════════════════════
 -- Section 9. Preservation theorem
@@ -380,24 +903,18 @@ theorem progress {e : Expr} {T : Ty} (ht : HasType [] e T) :
 /-- The substitution lemma (top-level): if (S :: Γ) ⊢ body : T and Γ ⊢ v : S,
     then Γ ⊢ substTop v body : T.
 
-    We axiomatise this as it requires a substantial de Bruijn infrastructure
-    that would triple the file size. The property is standard and well-known
-    to hold for this style of substitution (see e.g. Pierce, TAPL Ch. 6).
-
-    IMPORTANT: This is NOT sorry — it is an axiom. The difference is that
-    axioms are explicit assumptions in the logical framework, whereas sorry
-    is a proof hole. We could discharge this axiom by building the full
-    shifting/substitution calculus, but that is orthogonal to the BetLang-specific
-    content of this formalisation. -/
--- AXIOM: substTop_preserves_typing — disposition §(d) DEBT (NOT §(c) necessary).
---   The axiom is standard TAPL Ch.9-style substitution preservation; a full
---   de Bruijn discharge has a known recipe (PR #27 body) and a partial
---   implementation on branch `proofs/discharge-substTop-axiom-23` (~300-400 LoC).
---   See docs/proof-debt.md §(d) entry "substTop_preserves_typing" for plan,
---   owner, and discharge recipe.
-axiom substTop_preserves_typing :
+    Discharged from `substAt_preserves_typing` at k = 0, using
+    `Ctx.insertAt_zero` to align the contexts. -/
+theorem substTop_preserves_typing :
   ∀ (Γ : Ctx) (S T : Ty) (body v : Expr),
-    HasType (S :: Γ) body T → HasType Γ v S → HasType Γ (substTop v body) T
+    HasType (S :: Γ) body T → HasType Γ v S → HasType Γ (substTop v body) T := by
+  intros Γ S T body v hbody hv
+  -- substTop v body = shift (-1) 0 (subst 0 (shift 1 0 v) body)
+  -- Apply substAt_preserves_typing at k = 0; insertAt Γ 0 S = S :: Γ.
+  have hbody' : HasType (Ctx.insertAt Γ 0 S) body T := by
+    rw [Ctx.insertAt_zero]; exact hbody
+  have hk : (0 : Nat) ≤ Γ.length := Nat.zero_le _
+  exact substAt_preserves_typing body Γ 0 S T v hbody' hv hk
 
 /-- Preservation: if Γ ⊢ e : T and e → e', then Γ ⊢ e' : T.
     Stepping preserves types. This is the other half of type safety. -/
