@@ -389,6 +389,12 @@ theorem progress {e : Expr} {T : Ty} (ht : HasType [] e T) :
     is a proof hole. We could discharge this axiom by building the full
     shifting/substitution calculus, but that is orthogonal to the BetLang-specific
     content of this formalisation. -/
+-- AXIOM: substTop_preserves_typing — disposition §(d) DEBT (NOT §(c) necessary).
+--   The axiom is standard TAPL Ch.9-style substitution preservation; a full
+--   de Bruijn discharge has a known recipe (PR #27 body) and a partial
+--   implementation on branch `proofs/discharge-substTop-axiom-23` (~300-400 LoC).
+--   See docs/proof-debt.md §(d) entry "substTop_preserves_typing" for plan,
+--   owner, and discharge recipe.
 axiom substTop_preserves_typing :
   ∀ (Γ : Ctx) (S T : Ty) (body v : Expr),
     HasType (S :: Γ) body T → HasType Γ v S → HasType Γ (substTop v body) T
