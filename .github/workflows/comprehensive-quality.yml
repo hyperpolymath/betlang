@@ -9,6 +9,8 @@ on:
   schedule:
     - cron: '0 5 * * 0'
 
+permissions: read-all
+
 jobs:
   # DEPENDABILITY - Stability and reliability
   dependability:
