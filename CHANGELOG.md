@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- `proofs/BetLang.lean`: discharged `substTop_preserves_typing` axiom with a fully mechanised proof (`Ctx.insertAt` + lookup lemmas, weakening, shift cancellation/commutation, combined substitute-and-shift-down lemma). No `axiom` declarations remain in the file; the only axiom dependencies are Lean 4 core (`propext`, `Classical.choice`, `Quot.sound`). Closes #23.
+
 ### Added
 - RSR (Rhodium Standard Repository) compliance improvements
 - `.gitignore` for Racket projects
