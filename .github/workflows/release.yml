@@ -32,7 +32,7 @@ jobs:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v4
 
       - name: Install Rust
-        uses: dtolnay/rust-action@43388701980327f2ec9d300445d44007802f06c1 # v1.0.0
+        uses: dtolnay/rust-toolchain@e97e2d8cc328f1b50210efc529dca0028893a2d9 # stable (was misnamed dtolnay/rust-action)
         with:
           targets: ${{ matrix.target }}
 
@@ -66,7 +66,7 @@ jobs:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v4
 
       - name: Install Rust
-        uses: dtolnay/rust-action@43388701980327f2ec9d300445d44007802f06c1 # v1.0.0
+        uses: dtolnay/rust-toolchain@e97e2d8cc328f1b50210efc529dca0028893a2d9 # stable (was misnamed dtolnay/rust-action)
         with:
           targets: ${{ matrix.target }}
 
@@ -92,7 +92,7 @@ jobs:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v4
 
       - name: Install Rust
-        uses: dtolnay/rust-action@43388701980327f2ec9d300445d44007802f06c1 # v1.0.0
+        uses: dtolnay/rust-toolchain@e97e2d8cc328f1b50210efc529dca0028893a2d9 # stable (was misnamed dtolnay/rust-action)
 
       - name: Build
         run: cargo build --release
