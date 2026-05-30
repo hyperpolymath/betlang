@@ -37,7 +37,7 @@ jobs:
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v4
       - name: Secret scanning
-        uses: trufflesecurity/trufflehog@37835157ba6190a612501a35f7959b8eb3009581 # v3.82.13
+        uses: trufflesecurity/trufflehog@1aa1871f9ae24a8c8a3a48a9345514acf42beb39 # v3.82.13
         continue-on-error: true
       - name: Dependency vulnerabilities
         run: |
