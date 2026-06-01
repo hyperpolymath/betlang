@@ -1,0 +1,551 @@
+[![Sponsor](https://img.shields.io/badge/Sponsor-%E2%9D%A4-pink?logo=github)](https://github.com/sponsors/hyperpolymath)
+
+# BetLang
+
+**A Symbolic Probabilistic Metalanguage / Probabilistic CAS**
+
+BetLang is a domain-specific language for *symbolic probabilistic computation*. It is not a betting language—it is a compositional system for reasoning under uncertainty, built around a minimal ternary core and an extensible tower of uncertainty-aware number systems.
+
+At its heart is a single idea:
+
+> Computation is structured choice under uncertainty.
+
+---
+
+== Core Concept
+
+The fundamental primitive is the ternary form:
+
+```
+(bet A B C)
+```
+
+This represents a probabilistic, lazy choice between three branches.
+
+Unlike conventional probabilistic languages:
+
+* Evaluation is **lazy** (only the selected branch is computed)
+* Choice is **first-class and compositional**
+* The system is **symbolic-first**, not purely numeric
+
+This makes BetLang closer to a **probabilistic computer algebra system (CAS)** than a simulation DSL.
+
+---
+
+== What BetLang *Is*
+
+* A **Symbolic Probabilistic Metalanguage (SPML)**
+* A **Probabilistic CAS** for uncertainty-aware computation
+* A **ternary computation model** with lazy semantics
+* A **hosted language in Racket** with formalizable semantics
+* A system with a **rich uncertainty-aware number tower (14 systems)**
+
+== What BetLang *Is Not*
+
+* Not a DeFi or gambling language
+* Not just a Monte Carlo scripting tool
+* Not limited to numeric probability (supports epistemic uncertainty, intervals, belief functions, etc.)
+
+---
+
+== v1.0 Architecture
+
+BetLang is a **multi-layer system** with clearly separated responsibilities:
+
+=== Racket — Authoritative Frontend / Specification
+
+* `#lang betlang` defines the language
+* `syntax-parse` + nanopass for IR and transformations
+* Lazy ternary semantics are **canonical and non-negotiable**
+* Optional type/refinement layer via Typed Racket / Turnstile+
+
+This is the **source of truth** for semantics.
+
+=== Julia — Compute Kernel
+
+* High-performance execution backend
+* Primary path for numerical and statistical workloads
+* Integration with:
+
+  * `Distributions.jl`
+  * `StatsBase.jl`
+  * `Random.jl`
+* Planned:
+
+  * `AbstractAlgebra.jl`
+  * `IntervalArithmetic.jl`
+  * Differentiable inference via `Zygote` / `Enzyme`
+
+Over time, the full **uncertainty number tower migrates here**.
+
+=== Lean 4 — Proof / Export Layer
+
+* Used for:
+
+  * Convergence guarantees
+  * Safety properties
+  * Semantic correctness proofs
+* Not part of the day-to-day compilation path
+
+This layer ensures BetLang can become **formally trustworthy**.
+
+=== Rust — Optional Tooling Layer
+
+* Status: **Paused / Non-core**
+* Intended for:
+
+  * Packaging
+  * WASM targets
+  * Native runtime wrappers
+
+Rust is explicitly **not part of core semantics**.
+
+---
+
+== Core Features
+
+=== Ternary Computation
+
+* `(bet A B C)` — primitive choice
+* `(bet/weighted ...)` — non-uniform probabilities
+* `(bet_conditional ...)` — predicate-driven selection
+
+=== Lazy Semantics
+
+* Only the chosen branch is evaluated
+* Enables symbolic and infinite structures
+* Prevents unnecessary computation
+
+=== Compositionality
+
+* Bets compose like algebraic objects
+* Supports chaining, mapping, folding, and higher-order composition
+
+---
+
+== The Real Moat: Uncertainty-Aware Number Systems
+
+BetLang includes **14 distinct number systems** for representing uncertainty:
+
+* Gaussian distributions
+* Interval / affine arithmetic
+* Fuzzy numbers
+* Bayesian numbers
+* Risk-based numbers (VaR / CVaR)
+* Surreal and hyperreal systems
+* p-adic probability systems
+* Imprecise probabilities
+* Dempster–Shafer belief functions
+
+These are not addons—they are the **type system of the language**.
+
+See: `docs/number-tower.md`
+
+---
+
+== Semantics
+
+BetLang distinguishes between:
+
+* **Ternary logic** (Kleene-style truth values)
+* **Ternary probabilistic belief** (distributional uncertainty)
+
+This distinction is critical and formalized in:
+
+* `docs/ternary-semantics.md`
+
+---
+
+== Interactive Playgrounds
+
+BetLang provides two playground environments for exploration and experimentation:
+
+=== Web-Based Quantum Playground (`ui/`)
+
+A **quantum-inspired interactive web environment** for exploring Betlang's probabilistic model.
+
+* **Location**: `ui/` directory
+* **Features**:
+
+  * Code editor with syntax hints
+  * 8 quantum-analog examples (superposition, entanglement, measurement)
+  * Probability distribution histograms (SVG)
+  * Ternary bet tree visualization
+  * Configurable sample counts (1-100,000)
+  * Dark/light theme switching
+  * History navigation
+* **Technology**: ReScript + rescript-tea + Vite + Deno
+* **URL**: https://betlang.org/playground (when deployed)
+
+See: link:ui/README.adoc[ui/README.adoc] for complete documentation.
+
+=== Experimental Playground (`playground/`)
+
+A **sandbox workspace** for FFI development, configuration, and experimental features.
+
+* **Location**: `playground/` directory
+* **Features**:
+
+  * FFI bindings (Zig, WASM planned)
+  * Project configuration (Nickel, Must, Just)
+  * Experimental code snippets
+  * RSR compliance checking
+  * Architecture documentation
+* **Technology**: Deno, Zig, Nickel, Just
+
+See: link:playground/README.adoc[playground/README.adoc] for complete documentation.
+
+=== Shareable URLs
+
+Both playgrounds support **URL-encoded code sharing**:
+
+[source]
+----
+# Share a specific snippet
+https://betlang.org/playground#code=<base64-encoded-betlang-code>
+
+# Share with configuration
+https://betlang.org/playground?theme=dark&samples=5000#code=...
+
+# Load specific example
+https://betlang.org/playground?example=superposition
+----
+
+=== QR Code Generation
+
+Generate QR codes for physical sharing:
+
+[source,bash]
+----
+# Using qrencode CLI
+qrencode -t ANSIUTF8 "https://betlang.org/playground#code=$(echo 'bet {1,2,3}' | base64)"
+
+# Using Python
+python -c "import qrcode; img = qrcode.make('https://betlang.org/playground#code=...'); img.save('betlang.png')"
+----
+
+=== Social Media Integration
+
+Share via popular platforms:
+
+[cols="2,3"]
+|===
+| Twitter/X | `https://twitter.com/intent/tweet?text=Betlang%20Playground%20https://betlang.org/playground`
+| Mastodon | `https://mastodon.social/share?text=Exploring%20Betlang%20https://betlang.org/playground`
+| LinkedIn | `https://www.linkedin.com/sharing/share-offsite/?url=https://betlang.org/playground`
+| Reddit | `https://www.reddit.com/submit?url=https://betlang.org/playground&title=Betlang%20Playground`
+| Bluesky | `https://bsky.app/intent/compose?text=Check%20out%20Betlang%20https://betlang.org/playground`
+| Discord | `https://discord.com/app?url=https://betlang.org/playground`
+| Matrix | `https://matrix.to/#/#betlang:matrix.org?web-instance[element.io]=https://betlang.org/playground`
+|===
+
+---
+
+== Tooling Roadmap
+
+Planned unified CLI:
+
+```
+bet check        # static + semantic validation
+bet fmt          # canonical formatting
+bet lsp          # editor integration
+bet run --julia  # execute via Julia backend
+bet trace        # execution tracing
+bet hash         # reproducibility / identity
+```
+
+See: `docs/toolchain-roadmap.md`
+
+---
+
+== Ecosystem Integration
+
+=== K9 Contractiles
+
+K9 (Kennel-Yard-Hunt) **self-validating contractiles** provide configuration and deployment automation:
+
+[cols="1,2,2"]
+|===
+| Level | Trust | Use Case
+
+| Kennel | High | Pure data, schemas, no execution
+| Yard | Medium | Validated configuration with Nickel
+| Hunt | Low | Full execution, requires signature
+|===
+
+* **Location**: `.machine_readable/svc/k9/`
+* **Purpose**: Configuration management, deployment validation, security auditing
+
+=== ADR (Architecture Decision Records)
+
+All architectural decisions are documented as ADRs:
+
+* **ADR-001**: K9 service component organization
+* **ADR-002**: RSR compliance enforcement
+* **ADR-003**: Machine-readable metadata first
+
+* **Location**: `.machine_readable/svc/`
+
+=== Machine-Readable Metadata
+
+The project maintains extensive machine-readable metadata:
+
+[source]
+----
+.machine_readable/
+├── 6a2/
+│   ├── AGENTIC.a2ml      # AI agent constraints and permissions
+│   ├── ECOSYSTEM.a2ml     # Project ecosystem positioning
+│   ├── META.a2ml          # Project metadata and versioning
+│   ├── NEUROSYM.a2ml      # Neural-symbolic integration
+│   ├── PLAYBOOK.a2ml      # Operational procedures
+│   └── STATE.a2ml         # Current project state
+└── svc/
+    └── k9/
+        └── README.adoc      # K9 contractiles documentation
+----
+
+Each `.a2ml` file provides structured configuration for:
+
+* AI agent interactions and constraints
+* Project positioning within the broader ecosystem
+* Metadata versioning and updates
+* Neural-symbolic integration patterns
+* Operational playbooks and incident response
+* Current state tracking
+
+=== AI Agent Integration (0-AI-MANIFEST.a2ml)
+
+The project includes comprehensive AI agent guidance:
+
+[source]
+----
+0-AI-MANIFEST.a2ml    # Universal AI Agent Gateway
+├── Identity and project metadata
+├── Critical invariants (banned languages, file locations)
+├── Canonical file locations
+├── Taxonomy index
+└── Agent constraints
+----
+
+Key constraints for AI agents:
+
+* SCM files ONLY in `.machine_readable/` (root copies are symlinks)
+* NEVER delete spec files: grammar, SPEC.core.scm
+* NEVER use banned languages: TypeScript, Node.js, npm, Go, Python
+* All GitHub Actions must be SHA-pinned
+* All source files must have SPDX headers
+
+---
+
+== Example
+
+```
+(bet 'win 'draw 'lose)
+```
+
+```
+(bet/weighted '(common 7) '(uncommon 2) '(rare 1))
+```
+
+```
+(bet (expensive-computation)
+     (cheap-approximation)
+     (fallback))
+```
+
+Only one branch is evaluated.
+
+---
+
+== Use Cases
+
+* Probabilistic programming
+* Bayesian inference
+* Uncertainty quantification
+* Symbolic statistics
+* Decision theory
+* Risk modeling
+* Scientific computing
+* Research in probabilistic semantics
+* **Education** - Teaching probability and uncertainty concepts
+* **Prototyping** - Quick experimentation with probabilistic models
+
+---
+
+== Quantum-Analog Concepts
+
+For those familiar with quantum computing, BetLang provides analogous concepts:
+
+[cols="1,2,2"]
+|===
+| Quantum Concept | BetLang Analog | Description
+
+| Qubit | Ternary Bet | `bet { |0>, |1>, |unknown> }` - three possible states
+| Superposition | Weighted Bet | `bet { a @ w1, b @ w2, c @ w3 }` - probability amplitudes
+| Entanglement | Nested Bets | `bet { x, y, bet { a, b } }` - correlated outcomes
+| Measurement | Switch/Case | `switch result { | a => ..., | b => ... }` - collapse to value
+| Interference | Probability Weights | Weighted combinations affect outcome distribution
+| Unitary Evolution | Function Composition | Functions preserve probabilistic structure
+|===
+
+This mapping makes BetLang accessible to quantum programmers while maintaining its own semantic rigor.
+
+---
+
+== Philosophy
+
+BetLang is built on three principles:
+
+1. **Ternary over binary** — real-world decisions are rarely yes/no
+2. **Uncertainty as structure** — not noise, but a first-class object
+3. **Symbolic first** — computation should remain inspectable and composable
+
+---
+
+== Status
+
+[cols="2,1,1"]
+|===
+| Component | Status | Notes
+
+| Racket frontend | ✅ Authoritative | Canonical semantics
+| Julia backend | 🟡 Active development | Primary compute kernel
+| Lean integration | 🟡 Planned / partial | Proof layer
+| Rust tooling | ⏸️ Optional / paused | Packaging, WASM
+| Web Playground (ui/) | ✅ Available | Quantum-inspired features
+| FFI (Zig) | 🟡 Experimental | playground/ffi/zig/
+| WASM backend | 🟡 Planned | compiler/bet-wasm/
+|===
+
+---
+
+== Project Structure
+
+[source]
+----
+betlang/
+├── README.adoc                    # This file
+├── LICENSE                       # MPL-2.0
+├── 0-AI-MANIFEST.a2ml            # AI agent guidance
+├── .machine_readable/             # Machine-readable metadata
+│   ├── 6a2/                       # Project state and config
+│   └── svc/                       # Service components
+│       └── k9/                    # K9 contractiles
+├── compiler/                     # Rust compiler components
+│   ├── bet-wasm/                 # WASM backend
+│   └── ...
+├── core/                         # Racket core language
+├── julia-backend/                # Julia compute kernel
+├── ui/                           # Web playground (quantum-inspired)
+│   ├── public/                   # Static assets
+│   │   ├── index.html
+│   │   └── styles.css
+│   ├── src/                      # ReScript source
+│   │   └── App.res
+│   ├── deno.json
+│   ├── rescript.json
+│   ├── vite.config.js
+│   └── Justfile
+├── playground/                    # Experimental sandbox
+│   ├── ARCHITECTURE.adoc
+│   ├── README.adoc               # Playground documentation
+│   ├── Justfile
+│   ├── config.ncl
+│   ├── mustfile.toml
+│   ├── deno.json
+│   ├── rescript.json
+│   ├── ffi/                      # FFI bindings
+│   │   └── zig/
+│   └── examples/
+└── docs/                        # Documentation
+----
+
+---
+
+== Getting Started
+
+=== Prerequisites
+
+* Racket (for language frontend)
+* Julia (for compute backend, optional)
+* Deno (for playground/web, optional)
+* Rust (for compiler, optional)
+
+=== Quick Install
+
+[source,bash]
+----
+# Clone the repository
+git clone https://github.com/hyperpolymath/betlang.git
+cd betlang
+
+# For Racket development
+raco pkg install betlang
+
+# For web playground
+git submodule update --init --recursive
+cd ui
+just dev
+
+# For experimental playground
+cd playground
+just check
+----
+
+=== Running Examples
+
+[source,bash]
+----
+# Run conformance tests
+racket -f conformance/smoke.bet
+
+# Run Julia backend examples
+cd julia-backend/examples
+julia coin-flip-game.bet
+
+# Start web playground
+cd ui
+just dev
+----
+
+---
+
+== Contributing
+
+See link:CONTRIBUTING.md[CONTRIBUTING.md] for development guidelines.
+
+Key principles:
+
+* All files must have SPDX license headers
+* Machine-readable metadata must be kept in sync
+* Changes must pass RSR compliance checks
+* Follow ADR patterns for architectural decisions
+* K9 contractiles for configuration changes
+
+---
+
+== License
+
+BetLang uses **PMPL-1.0 (Palimpsest Public License)**.
+
+See `LICENSE` for the precise definition and terms.
+
+---
+
+== Closing
+
+BetLang is not about betting.
+
+It is about **making uncertainty programmable**.
+
+---
+
+== Links
+
+* link:https://github.com/hyperpolymath/betlang[GitHub Repository]
+* link:https://betlang.org[Project Homepage]
+* link:ui/README.adoc[Quantum Playground Documentation]
+* link:playground/README.adoc[Experimental Playground Documentation]
+* link:.machine_readable/6a2/ECOSYSTEM.a2ml[Ecosystem Position]
+* link:0-AI-MANIFEST.a2ml[AI Agent Manifest]
