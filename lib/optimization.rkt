@@ -23,7 +23,7 @@
 (define (simulated-annealing objective initial temp-schedule max-iter neighbor-fn)
   (let loop ([current initial]
              [current-score (objective initial)]
-             [best current]
+             [best initial]
              [best-score (objective initial)]
              [iter 0])
     (if (>= iter max-iter)
