@@ -1,0 +1,104 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
+// Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
+//
+// Betlang VS Code extension — AffineScript source of truth.
+//
+// Compiles to editors/vscode/out/extension.cjs via:
+//   affinescript compile editors/vscode/src/extension.affine \
+//     -o editors/vscode/out/extension.cjs --vscode-extension
+// The .cjs is what package.json's `main` field points to.
+//
+// Replaces the previous ReScript implementation (Extension.res / VSCode.res,
+// removed 2026-06-02) per the hyperpolymath language policy, under which
+// AffineScript replaces ReScript/TypeScript for editor tooling. The
+// extension is a thin wrapper that spawns the `bet-lsp` language server and
+// registers the Betlang editor commands.
+
+use Vscode::{
+  registerCommand,
+  getConfiguration,
+  workspaceConfigGetString,
+  showInformationMessage,
+  showWarningMessage,
+  pushSubscription,
+  consoleLog,
+  execSync,
+  stringConcat
+};
+use VscodeLanguageClient::{
+  newLanguageClient,
+  languageClientStart
+};
+
+// ── Command handlers ───────────────────────────────────────────────────
+//
+// The REPL / eval commands are stubs today (behavioural parity with the
+// previous ReScript implementation); they surface an informational message
+// until the REPL bridge lands.
+
+pub fn handler_start_repl() -> Int {
+  let _ = showInformationMessage("REPL not yet implemented");
+  return 0;
+}
+
+pub fn handler_stop_repl() -> Int {
+  let _ = showInformationMessage("REPL not yet implemented");
+  return 0;
+}
+
+pub fn handler_eval_selection() -> Int {
+  let _ = showInformationMessage("Eval not yet implemented");
+  return 0;
+}
+
+pub fn handler_restart_server() -> Int {
+  // Best-effort: a full restart needs the ExtensionContext we no longer
+  // hold here. Reloading the window re-fires `activate`, which restarts
+  // the language client.
+  let _ = showInformationMessage("Betlang LSP stopped (reload window to restart)");
+  return 0;
+}
+
+// ── LSP startup ─────────────────────────────────────────────────────────
+
+fn start_lsp() -> Int {
+  let cfg = getConfiguration("betlang");
+  let server_path = workspaceConfigGetString(cfg, "lspPath", "bet-lsp");
+  let probe_cmd = stringConcat("which ", server_path);
+  let which_rc = execSync(probe_cmd);
+  if which_rc != 0 {
+    let _ = showWarningMessage("Betlang LSP server (bet-lsp) not found. Language features disabled.");
+    return 1;
+  }
+  let client = newLanguageClient(
+    "betlang",
+    "Betlang Language Server",
+    server_path,
+    "",   // no extra args (newline-separated list)
+    0     // 0 = stdio transport
+  );
+  let _ = languageClientStart(client);
+  let _ = showInformationMessage("Betlang Language Server started");
+  return 0;
+}
+
+// ── Lifecycle ────────────────────────────────────────────────────────────
+
+pub fn activate(ctx: ExtensionContext) -> Int {
+  let _ = consoleLog("Betlang extension activated");
+
+  // Register commands. Each handler is a function value (no brittle
+  // wasm-table indices); the lambda takes the explicit `Unit` param and
+  // delegates to the named handler.
+  let _ = pushSubscription(ctx, registerCommand("betlang.startRepl", fn(u: Unit) => handler_start_repl()));
+  let _ = pushSubscription(ctx, registerCommand("betlang.stopRepl", fn(u: Unit) => handler_stop_repl()));
+  let _ = pushSubscription(ctx, registerCommand("betlang.evalSelection", fn(u: Unit) => handler_eval_selection()));
+  let _ = pushSubscription(ctx, registerCommand("betlang.restartServer", fn(u: Unit) => handler_restart_server()));
+
+  let _ = start_lsp();
+  return 0;
+}
+
+pub fn deactivate() -> Int {
+  return 0;
+}

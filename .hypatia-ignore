@@ -1,0 +1,23 @@
+# SPDX-License-Identifier: MPL-2.0
+#
+# .hypatia-ignore — repo-scoped exemptions for the estate governance
+# bundle's anti-pattern / Hypatia scanner. Format (per the bundle's
+# `is_exempt`): each non-comment line is `${rule}:${path}`, matched as a
+# fixed-string whole-line equality. Comment (`#`) and blank lines are
+# tolerated.
+#
+# ─── Playground TypeScript sandbox ──────────────────────────────────
+#
+# The `playground/` directory is an intentional experimental sandbox,
+# decoupled from the Racket core, in which TypeScript is one of several
+# languages explored (see playground/README.adoc). This is an APPROVED
+# carve-out, already documented in the TypeScript Exemptions table in
+# .claude/CLAUDE.md, with the same unblock condition: migrate the sample
+# to AffineScript or delete it once the experiment is settled. These
+# entries implement that approved exemption for the Hypatia scanner.
+cicd_rules/banned_language_file:playground/src/ternary.ts
+cicd_rules/banned_language_file:playground/src/probability.ts
+cicd_rules/banned_language_file:playground/src/main.ts
+cicd_rules/banned_language_file:playground/test/ternary_test.ts
+cicd_rules/banned_language_file:playground/test/probability_test.ts
+cicd_rules/banned_language_file:playground/examples/uncertainty.ts

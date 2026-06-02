@@ -26,7 +26,7 @@
   "activationEvents": [
     "onLanguage:betlang"
   ],
-  "main": "./src/Extension.res.js",
+  "main": "./out/extension.cjs",
   "contributes": {
     "languages": [
       {
@@ -110,16 +110,13 @@
     ]
   },
   "scripts": {
-    "vscode:prepublish": "rescript build",
-    "compile": "rescript build",
-    "watch": "rescript build -w",
-    "clean": "rescript clean"
+    "vscode:prepublish": "npm run compile",
+    "compile": "affinescript compile src/extension.affine -o out/extension.cjs --vscode-extension",
+    "watch": "echo 'watch mode not implemented for AffineScript source — re-run npm run compile'",
+    "clean": "rm -rf out"
   },
-  "devDependencies": {
-    "rescript": "^12.0.0"
-  },
+  "devDependencies": {},
   "dependencies": {
-    "vscode-languageclient": "^9.0.0",
-    "@rescript/core": "^1.5.0"
+    "vscode-languageclient": "^9.0.0"
   }
 }

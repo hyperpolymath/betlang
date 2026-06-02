@@ -4,6 +4,10 @@
 
 ;; Optimization Algorithms with Probabilistic Elements
 
+;; Only export algorithms that are actually implemented below. The
+;; following were declared but never defined and have been removed from
+;; the provide list: gradient-descent-stochastic, differential-evolution,
+;; tabu-search, ant-colony, firefly-algorithm, golden-section-search.
 (provide simulated-annealing
          genetic-algorithm
          particle-swarm
@@ -11,19 +15,13 @@
          random-search
          evolutionary-strategy
          cross-entropy-method
-         gradient-descent-stochastic
-         differential-evolution
-         tabu-search
-         ant-colony
-         firefly-algorithm
-         ternary-search
-         golden-section-search)
+         ternary-search)
 
 ;; Simulated Annealing
 (define (simulated-annealing objective initial temp-schedule max-iter neighbor-fn)
   (let loop ([current initial]
              [current-score (objective initial)]
-             [best current]
+             [best initial]
              [best-score (objective initial)]
              [iter 0])
     (if (>= iter max-iter)
@@ -88,8 +86,8 @@
              [gen 0])
     (if (>= gen generations)
         (let* ([fitnesses (map fitness population)]
-               [best-idx (argmax identity (range (length fitnesses))
-                                 #:key (lambda (i) (list-ref fitnesses i)))])
+               [best-idx (argmax (lambda (i) (list-ref fitnesses i))
+                                 (range (length fitnesses)))])
           (list (list-ref population best-idx)
                 (list-ref fitnesses best-idx)))
         (let* ([fitnesses (map fitness population)]
@@ -179,11 +177,11 @@
     (for/list ([i (in-range n-samples)])
       (sample-fn)))
   (define scores (map objective samples))
-  (define best-idx (argmax identity (range n-samples) #:key (lambda (i) (list-ref scores i))))
+  (define best-idx (argmax (lambda (i) (list-ref scores i)) (range n-samples)))
   (list (list-ref samples best-idx) (list-ref scores best-idx)))
 
 ;; Evolutionary Strategy (ES)
-(define (evolutionary-strategy objective dim mu lambda sigma max-gen bounds)
+(define (evolutionary-strategy objective dim mu lambda-size sigma max-gen bounds)
   (define (random-individual)
     (for/list ([i (in-range dim)])
       (+ (first bounds) (* (random) (- (second bounds) (first bounds))))))
@@ -193,17 +191,17 @@
              [gen 0])
     (if (>= gen max-gen)
         (let* ([scores (map objective population)]
-               [best-idx (argmax identity (range mu) #:key (lambda (i) (list-ref scores i)))])
+               [best-idx (argmax (lambda (i) (list-ref scores i)) (range mu))])
           (list (list-ref population best-idx) (list-ref scores best-idx)))
         (let* ([offspring
-                (for/list ([i (in-range lambda)])
+                (for/list ([i (in-range lambda-size)])
                   (define parent (list-ref population (random mu)))
                   (for/list ([gene parent])
                     (+ gene (* sigma (- (random) 0.5)))))]
                [all-individuals (append population offspring)]
                [all-scores (map objective all-individuals)]
                [sorted-indices
-                (sort (range (+ mu lambda))
+                (sort (range (+ mu lambda-size))
                       > #:key (lambda (i) (list-ref all-scores i)))]
                [new-pop (for/list ([i (in-range mu)])
                          (list-ref all-individuals (list-ref sorted-indices i)))])

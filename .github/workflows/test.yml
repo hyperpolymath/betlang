@@ -13,6 +13,7 @@ jobs:
   test:
     name: Test on Racket ${{ matrix.racket-version }}
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
 
     strategy:
       fail-fast: false
@@ -28,7 +29,9 @@ jobs:
         uses: Bogdanp/setup-racket@2466913449df77df2bad149d1f2fc4e1ea4795dd # v1.15
         with:
           version: ${{ matrix.racket-version }}
-          packages: 'rackunit'
+          # rackunit ships with the full Racket distribution (already present
+          # at installation scope); re-requesting it at user scope errors with
+          # "package is currently installed in a wider scope".
 
       - name: Run core tests
         run: racket tests/basics.rkt
@@ -69,6 +72,7 @@ jobs:
   lint:
     name: Code Quality
     runs-on: ubuntu-latest
+    timeout-minutes: 30
 
     steps:
       - name: Checkout code
@@ -98,6 +102,7 @@ jobs:
   docs:
     name: Documentation Check
     runs-on: ubuntu-latest
+    timeout-minutes: 30
 
     steps:
       - name: Checkout code
@@ -125,6 +130,7 @@ jobs:
   rsr-compliance:
     name: RSR Framework Compliance
     runs-on: ubuntu-latest
+    timeout-minutes: 30
 
     steps:
       - name: Checkout code

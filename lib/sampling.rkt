@@ -14,8 +14,6 @@
          adaptive-rejection-sampling
          slice-sampling
          hamiltonian-monte-carlo
-         parallel-tempering
-         nested-sampling
          ternary-sampling
          antithetic-variates
          control-variates

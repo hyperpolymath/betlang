@@ -233,7 +233,7 @@
     (treap-insert t x)))
 
 (displayln (format "   Inserted keys: 5 3 7 2 4 6 8 1 9"))
-(displayln (format "   Treap height: ~a (expected ~log₂(9) ≈ 3-4)"
+(displayln (format "   Treap height: ~a (expected ~~log₂(9) ≈ 3-4)"
                    (treap-height my-treap)))
 
 (displayln "\n=== Probabilistic Data Structures Complete ===")
