@@ -3,18 +3,61 @@
 #
 # ECOSYSTEM.a2ml — Betlang ecosystem position
 [metadata]
-version = "1.0"
-last-updated = "2026-04-11"
+version = "1.1"
+last-updated = "2026-06-02"
 
 [project]
 name = "Betlang"
 purpose = "Ternary probabilistic programming with Dutch book prevention and gambling harm reduction"
 role = "programming-language"
+license = "PMPL-1.0 (SPDX: MPL-2.0)"
+repo = "https://github.com/hyperpolymath/betlang"
 
 [position-in-ecosystem]
 category = "probabilistic-programming"
+paradigm = ["functional", "probabilistic", "symbolic"]
+core-primitive = "(bet A B C) — ternary stochastic choice"
+type-system = "Hindley-Milner + Echo T / EchoR T structured-loss formers"
+proof-layer = "Lean 4 (machine-checked Progress + Preservation + monad laws)"
 
 [related-projects]
-projects = [
-  # No related projects recorded
-]
+# upstream / source-of-truth
+[[related-projects.upstream]]
+name = "echo-types"
+repo = "https://github.com/hyperpolymath/echo-types"
+language = "Agda"
+role = "Source of truth for Echo types (Echo f y := Σ(x:A), f x ≡ y proof-relevant fibre)"
+relationship = "betlang borrows the unary Echo T / EchoR T formers; does NOT implement the dependent fibre"
+
+[[related-projects.upstream]]
+name = "EchoTypes.jl"
+repo = "https://github.com/hyperpolymath/EchoTypes.jl"
+language = "Julia"
+role = "Executable finite-domain companion to echo-types"
+relationship = "betlang canonical operation names mirror EchoTypes.jl (echo_intro, echo_to_residue, etc.)"
+
+# engineering-position reference
+[[related-projects.alignment-target]]
+name = "affinescript"
+repo = "https://github.com/hyperpolymath/affinescript"
+language = "AffineScript / OCaml"
+role = "AffineScript compiler — RSR engineering position betlang is aligning toward"
+relationship = "betlang proof infrastructure and verification/ layout modelled on affinescript's RSR posture"
+
+[[related-projects.alignment-target]]
+name = "affinescriptiser"
+repo = "https://github.com/hyperpolymath/affinescriptiser"
+language = "AffineScript"
+role = "AffineScript tooling"
+
+# ecosystem tools
+[[related-projects.tooling]]
+name = "palimpsest-license"
+repo = "https://github.com/hyperpolymath/palimpsest-license"
+role = "PMPL-1.0 license definition (betlang uses PMPL-1.0 / SPDX: MPL-2.0)"
+
+[external-dependencies]
+proof-verifier = "Lean 4 (leanprover/lean4:v4.15.0)"
+build-tool = "Lake (bundled with Lean 4)"
+racket = "8.11 / 8.12 / current"
+rust-edition = "2021"

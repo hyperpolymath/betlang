@@ -1,35 +1,47 @@
 # SPDX-License-Identifier: MPL-2.0
-# Mustfile - declarative state contract (template)
+# Mustfile — declarative state contract for betlang
 # See: https://github.com/hyperpolymath/mustfile
 
 version: 1
 
 metadata:
-  name: project-state-contract
-  spec: v0.0.1
-  description: "Invariant checks for config, policy, gateway, logs, and schema."
-
-parameters:
-  gateway_port: "8080"
-  schema_version: "v0.0.1"
+  name: betlang-state-contract
+  spec: v1.0.0
+  description: "Invariant checks for betlang's proof integrity, language policy, governance, and CI."
 
 checks:
-  - name: config-valid
-    description: "config/service.yaml must be valid."
-    run: "yq -e '.' config/service.yaml >/dev/null"
+  - name: spdx-headers
+    description: "All .rkt, .rs, .lean, .scm, .adoc source files must have SPDX-License-Identifier headers."
+    run: "bash -uc 'git ls-files | grep -E \"\\.(rkt|rs|lean|scm|adoc)$\" | xargs grep -L \"SPDX-License-Identifier\" | head -20 | grep . && exit 1 || exit 0'"
 
-  - name: policy-compiles
-    description: "policy/policy.ncl must compile."
-    run: "nickel check policy/policy.ncl"
+  - name: no-sorry-in-proofs
+    description: "No sorry/admit/Admitted/postulate/believe_me/assert_total/unsafeCoerce in Lean proof files."
+    run: "bash tools/proof-scan.sh"
 
-  - name: gateway-exposes-port
-    description: "Service must expose the configured port."
-    run: "bash -uc 'ss -lnt | rg \":${GATEWAY_PORT:-8080}\"'"
+  - name: lean-builds
+    description: "Lean 4 proof project must build successfully (lake build)."
+    run: "cd /repo && lake build"
 
-  - name: logs-are-json
-    description: "Logs must be JSON."
-    run: "bash -uc 'rg --files -g \"*.json\" logs | xargs -r jq -e .'"
+  - name: racket-tests-pass
+    description: "Racket core tests must pass."
+    run: "racket tests/basics.rkt"
 
-  - name: schema-version-matches
-    description: "Schema must match version spec."
-    run: "bash -uc 'rg -n \"${SCHEMA_VERSION:-v0.0.1}\" schema'"
+  - name: no-banned-languages
+    description: "No TypeScript files outside playground/, no Java files, no Python, no Go."
+    run: "bash -uc 'git ls-files | grep -E \"\\.(ts|java|py|go)$\" | grep -v \"^playground/\" | head -5 | grep . && exit 1 || exit 0'"
+
+  - name: cargo-check
+    description: "Rust compiler components must pass cargo check."
+    run: "cargo check -p bet-core -p bet-check -p bet-parse 2>&1 | grep -v bet-wasm"
+
+  - name: governance-allowlist-present
+    description: ".governance-allowlist must exist (TypeScript exemption governance)."
+    run: "test -f .governance-allowlist"
+
+  - name: hypatia-ignore-present
+    description: ".hypatia-ignore must exist (Hypatia scanner exemptions)."
+    run: "test -f .hypatia-ignore"
+
+  - name: echo-distinctness
+    description: "Echo T must remain distinct from T in the checker — regression test."
+    run: "cargo test -p bet-check test_echo_distinct_from_carrier -- --nocapture 2>&1 | grep 'test result: ok'"

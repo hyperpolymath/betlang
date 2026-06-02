@@ -1,0 +1,284 @@
+// SPDX-License-Identifier: MPL-2.0
+// SPDX-FileCopyrightText: 2026 Jonathan D.A. Jewell (hyperpolymath)
+// @taxonomy: explainme
+= BetLang — Explained
+:toc:
+:sectnums:
+
+A guided tour for contributors, reviewers, and AI agents. Starts at the surface and
+works inward. If you only read one file before touching this repo, read this one.
+
+== What BetLang is (one sentence)
+
+BetLang is a minimal ternary DSL hosted in Racket for *symbolic probabilistic computation*
+whose core primitive is a three-way stochastic choice, supported by a Lean 4–mechanised
+type system and a Rust compiler front-end.
+
+== The core idea
+
+The fundamental primitive is:
+
+[source,scheme]
+----
+(bet A B C)
+----
+
+Select one of three values uniformly at random. That's it. Everything else in the language
+is built on top of this.
+
+Unlike conventional stochastic simulators:
+
+* Evaluation is *lazy* — only the chosen branch is evaluated.
+* Choice is *first-class* — bets compose like algebraic values.
+* The system is *symbolic-first* — computation stays inspectable.
+
+This puts BetLang closer to a probabilistic CAS (computer algebra system) than a
+simulation DSL or Monte Carlo runner.
+
+=== Weighted and conditional variants
+
+[source,scheme]
+----
+;; Non-uniform weights (proportional, not literal probabilities)
+(bet/weighted '(common 7) '(uncommon 2) '(rare 1))
+
+;; Predicate-driven: if pred is true return A, else bet B C A
+(bet/conditional pred A B C)
+
+;; Only the selected thunk is called
+(bet/lazy thunk-a thunk-b thunk-c)
+
+;; Deterministic seed for reproducible tests
+(bet-with-seed 42 (lambda () (bet 'x 'y 'z)))
+----
+
+== Architecture layers
+
+BetLang has four layers with clearly separated concerns:
+
+[cols="1,2,1"]
+|===
+| Layer | Role | Status
+
+| **Racket** | Authoritative frontend and semantics (`core/`, `lib/`) | Active
+| **Lean 4** | Mechanised safety proofs (`proofs/BetLang.lean`) | Active
+| **Rust** | Compiler components (`compiler/bet-check`, `bet-core`, `bet-parse`) | Active
+| **Julia** | High-performance compute kernel (`julia-backend/`) | Development
+|===
+
+=== Racket is canonical
+
+`core/betlang.rkt` defines the language. `spec/SPEC.core.scm` and `spec/grammar.ebnf`
+are the formal specification. All other layers implement or verify the semantics defined
+there.
+
+=== Lean 4 proves it correct
+
+`proofs/BetLang.lean` machine-checks three theorems with **zero `sorry`**:
+
+* **Progress** — a well-typed closed term is either a value or can step.
+* **Preservation** — typing is invariant under small-step reduction.
+* **Distribution monad laws** — the probability monad is correctly structured.
+
+One permitted axiom: `substTop_preserves_typing` — classified, triaged in
+`docs/proof-debt.adoc`, tracked as standards#203.
+
+Proof infrastructure: `lakefile.lean`, `lean-toolchain` (pins `leanprover/lean4:v4.15.0`),
+`.github/workflows/proofs.yml` (runs `lake build` + `tools/proof-scan.sh` on every PR).
+
+=== Rust type-checks it
+
+`compiler/bet-check/` implements Hindley-Milner type inference with:
+
+* Type variables, function types, product types, `Bool`, `Int`, `Float`, `String`, `Unit`
+* `Dist T` — the probability distribution functor
+* **`Echo T` / `EchoR T`** — structured-loss type formers (see below)
+* A bidirectional checker that drives inference from annotations
+
+`compiler/bet-core/src/types.rs` defines the `Type` enum. `compiler/bet-check/src/lib.rs`
+implements unification, resolution, lowering from surface AST, and inference.
+
+== Echo types
+
+Echo types are a first-class notion of *structured loss* — loss that is not total erasure.
+
+=== Upstream
+
+The mathematical definition lives in `hyperpolymath/echo-types` (Agda):
+
+----
+Echo f y := Σ (x : A), (f x ≡ y)
+----
+
+Given `f : A → B`, the echo at `y` is the *fibre* — the proof-relevant residue
+recording what `f` collapsed when it mapped `x` to `y`.
+
+`hyperpolymath/EchoTypes.jl` is the executable finite-domain companion in Julia.
+
+=== In BetLang
+
+BetLang is non-dependent. It does not represent the full fibre. Instead it adds two
+**unary type formers**:
+
+[cols="1,4"]
+|===
+| Former | Meaning
+
+| `Echo T`
+| A `T`-value carrying a proof-relevant residue of *retained* loss.
+  Potentially recoverability-bearing. **Distinct from `T`.**
+
+| `EchoR T`
+| The strict, non-recoverable residue / retraction of `Echo T`.
+  Reserved former; operations deferred.
+|===
+
+=== Critical invariants (do not change without ADR update)
+
+1. **`Echo T` is not `T`** — `unify(Echo T, T)` *must* fail. There is no implicit
+   coercion `Echo T → T`. Violating this destroys the point of retained loss.
+2. **`Echo T` is not `EchoR T`** — `unify(Echo T, EchoR T)` also fails.
+3. **Ghost/erased at runtime** — `Echo T` and `EchoR T` erase to `T`'s representation
+   in code generation. No runtime payload is added until operations demand it.
+4. **Canonical bridge is probabilistic** — the first betlang use site is
+   `sample_echo : Dist T → Echo T` retaining the draw/branch residue that `sample`
+   discards. This bridge is **deferred** and not yet implemented.
+5. **Operations are RESERVED, not committed** — `echo_intro`, `echo_to_residue`,
+   `echo_input`, `echo_output`, `residue_strictly_loses`, `sample_echo`, `bet_echo`
+   are cross-repo conceptual anchors mirroring `EchoTypes.jl`. None is typed or
+   implemented in BetLang until the runtime/proof story is settled.
+6. **Error-Lang's stability penalty does not apply here** — in Error-Lang,
+   `echo_to_residue` carries a Landauer/Bennett-style cost. BetLang has no such
+   effect layer yet.
+
+=== Where it is implemented
+
+* `compiler/bet-core/src/types.rs` — `Type::Echo(Box<Type>)`, `Type::EchoR(Box<Type>)`
+* `compiler/bet-check/src/lib.rs` — lowering in `ast_type_to_core`; structural
+  `resolve`/`unify`; 5 unit tests; 27 tests total pass
+* `proofs/BetLang.lean` — `Ty.echo`, `Ty.echoR` constructors (no Expr/HasType use;
+  Progress/Preservation are unaffected)
+* `spec/SPEC.core.scm` — `echo-types` alist entry with canonical statement
+* `spec/grammar.ebnf` — note on `Echo T` / `EchoR T` as application types
+* `docs/echo-types.adoc` — full design rationale, deferred-work register, canonical
+  statement, reserved operation names
+
+== Type system at a glance
+
+[source]
+----
+τ ::= Bool | Int | Float | String | Unit
+    | (τ → τ)              -- function
+    | (τ × τ × …)          -- product
+    | Dist τ               -- probability distribution
+    | Echo τ               -- structured-loss residue  (distinct from τ)
+    | EchoR τ              -- strict non-recoverable residue  (reserved)
+    | 'a                   -- type variable
+----
+
+Inference is Hindley-Milner. `Echo T` is introduced as a type application
+(`Echo` as a named constructor applied to one argument). Unification recurses
+structurally: `Echo T ~ Echo T'` iff `T ~ T'`.
+
+== Governance and CI
+
+=== What runs on every PR
+
+`.github/workflows/` contains the CI suite. Key checks:
+
+[cols="2,2"]
+|===
+| Check | What it verifies
+
+| `governance / Language / package anti-pattern policy`
+| No banned languages (`.governance-allowlist` + `check-ts-allowlist.deno.js`)
+
+| `governance / Licence consistency`
+| All SPDX headers match; `Cargo.toml license = "MPL-2.0"`
+
+| `governance / Validate Hypatia baseline`
+| Hypatia neurosymbolic scan findings ≤ baseline
+
+| `proofs / banned-patterns`
+| `tools/proof-scan.sh` — no sorry/admit/Admitted/etc. in Lean files
+
+| `proofs / lean4`
+| `lake build` — Lean 4 proofs compile
+
+| `Test on Racket …`
+| `racket tests/basics.rkt` on 8.11, 8.12, current
+
+| `fuzz`
+| ClusterFuzzLite fuzzing of the Rust parser
+|===
+
+=== Exemptions and allowlists
+
+* `.hypatia-ignore` — exempts `playground/*.ts` from Hypatia's banned-language scanner.
+* `.governance-allowlist` — exempts `playground/*.ts` from the standards-repo anti-pattern check.
+* `playground/**` TypeScript is an **approved time-limited exemption** (see
+  `.claude/CLAUDE.md` TypeScript Exemptions table). Unblock condition: migrate to
+  AffineScript or delete.
+
+=== Proof debt
+
+`docs/proof-debt.adoc` — records the single classified axiom
+(`substTop_preserves_typing`, standards#203). No other unsoundness.
+
+=== PROOF-STATUS.md
+
+Tracks the 13 proof obligations across their completion stages. Currently 3/13 done
+(Progress, Preservation, monad laws). Phases 2-5 are planned (see `docs/AFFINESCRIPT-ALIGNMENT.adoc`).
+
+== Key files reference
+
+[cols="2,3"]
+|===
+| File | Purpose
+
+| `core/betlang.rkt` | Racket language implementation (canonical)
+| `spec/SPEC.core.scm` | Formal semantics (Scheme alist, authoritative)
+| `spec/grammar.ebnf` | Surface grammar (EBNF)
+| `proofs/BetLang.lean` | Lean 4 mechanised proofs
+| `lakefile.lean` | Lake build project for proofs
+| `lean-toolchain` | Lean version pin (`leanprover/lean4:v4.15.0`)
+| `compiler/bet-core/src/types.rs` | Core type enum (incl. Echo T / EchoR T)
+| `compiler/bet-check/src/lib.rs` | Type checker, unifier, inference
+| `docs/echo-types.adoc` | Echo types design doc
+| `docs/proof-debt.adoc` | Classified axiom register
+| `docs/AFFINESCRIPT-ALIGNMENT.adoc` | Phased plan to AffineScript engineering posture
+| `PROOF-STATUS.md` | Live proof obligation table
+| `PROOF-NEEDS.md` | Proof obligation stub (intentional minimal form — do not overwrite)
+| `tools/proof-scan.sh` | Banned-pattern scanner for Lean files
+| `.github/workflows/proofs.yml` | Proof CI (lake build + scan)
+| `verification/` | RSR verification pillars (proofs, tests, conformance, benchmarks, fuzzing, simulations, coverage, traceability, safety_case)
+| `.machine_readable/6a2/STATE.a2ml` | Current project state (machine-readable)
+| `.machine_readable/6a2/META.a2ml` | ADRs and architecture decisions
+| `.machine_readable/6a2/ECOSYSTEM.a2ml` | Related projects (echo-types, EchoTypes.jl, affinescript)
+| `.machine_readable/6a2/AGENTIC.a2ml` | AI agent constraints and entry/exit protocol
+| `contractiles/must/Mustfile` | Declarative invariant checks
+| `contractiles/dust/Dustfile` | Recovery and rollback playbook
+| `.hypatia-ignore` | Hypatia scanner exemptions
+| `.governance-allowlist` | TypeScript exemptions for governance scanner
+|===
+
+== What is NOT in scope (current pass)
+
+* Echo operations (`echo_intro`, `echo_to_residue`, etc.) — reserved/deferred
+* `sample_echo` / `bet_echo` probabilistic bridge — deferred
+* Runtime residue payload for `Echo T` / `EchoR T` — ghost-erased until operations demand
+* WASM backend (`compiler/bet-wasm/`) — pre-existing breakage, non-critical
+* Julia backend Phase 2 — active but separate work stream
+* `substTop_preserves_typing` discharge — Phase 2 proof obligation
+
+== For AI agents
+
+Read `.machine_readable/6a2/AGENTIC.a2ml` for the full entry/exit protocol, permission
+model, and prohibited actions. The short version:
+
+* Do not implement Echo operations (they are reserved conceptual anchors)
+* Do not overwrite `PROOF-NEEDS.md` (intentional stub form)
+* `axiom` in Lean is not banned; only `sorry`/`admit`/`Admitted`/`postulate`/`believe_me`/`assert_total`/`unsafeCoerce`
+* Do not add `Echo T → T` implicit coercion anywhere
+* Do not add TypeScript files outside `playground/`
+* Update `STATE.a2ml` on exit
