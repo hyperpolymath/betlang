@@ -1,0 +1,14 @@
+# SPDX-License-Identifier: MPL-2.0
+---
+### [META]
+id: "verification-unit-safety-case"
+level: 2
+parent: "../0.1-AI-MANIFEST.a2ml"
+
+---
+### [AI_MANIFEST]
+description: |
+  Sub-unit focusing on the safety case: a structured (GSN-style)
+  assurance argument tying BetLang's harm-reduction safety features
+  (Dutch-book freedom, risk-of-ruin protection, cool-off, stake limits)
+  to the formal proofs and tests that evidence them. Phase 4.

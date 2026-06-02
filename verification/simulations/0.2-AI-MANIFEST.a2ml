@@ -1,0 +1,16 @@
+# SPDX-License-Identifier: MPL-2.0
+---
+### [META]
+id: "verification-unit-simulations"
+level: 2
+parent: "../0.1-AI-MANIFEST.a2ml"
+
+---
+### [AI_MANIFEST]
+description: |
+  Sub-unit focusing on simulations: seeded stochastic runs that exercise
+  the probabilistic semantics of `bet` and validate empirical
+  distributions against the proven analytic results (e.g. uniform-ternary
+  entropy, SLLN convergence). Seeds the STAT-* obligations in
+  PROOF-NEEDS.md. Today, seeded conformance lives in ../conformance;
+  this pillar will host dedicated long-run simulation harnesses (Phase 4).

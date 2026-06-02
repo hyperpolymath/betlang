@@ -1,0 +1,15 @@
+// SPDX-License-Identifier: MPL-2.0
+// @taxonomy: verification/coverage
+= Verification — Coverage
+:toc:
+
+== Status
+
+Placeholder pillar (Phase 4 of `docs/AFFINESCRIPT-ALIGNMENT.adoc`).
+
+== Purpose
+
+Test-coverage evidence for the authoritative Racket implementation
+(`core/`, `lib/`), with MC/DC targeted at the safety-critical paths
+documented in `SAFETY-FEATURES.md` (Dutch-book prevention, risk-of-ruin
+protection, cool-off mechanism).

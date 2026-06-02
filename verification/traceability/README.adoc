@@ -1,0 +1,21 @@
+// SPDX-License-Identifier: MPL-2.0
+// @taxonomy: verification/traceability
+= Verification — Traceability
+:toc:
+
+== Status
+
+Placeholder pillar (Phase 4 of `docs/AFFINESCRIPT-ALIGNMENT.adoc`).
+
+== Purpose
+
+A bidirectional traceability matrix:
+
+[source]
+----
+requirement (spec) <-> obligation (PROOF-NEEDS.md) <-> proof <-> test
+----
+
+Links `spec/SPEC.core.scm` / `spec/grammar.ebnf` clauses to the proof
+obligations in `../../PROOF-NEEDS.md`, the mechanised proofs in
+`../proofs/`, and the tests in `../tests` / `../conformance`.

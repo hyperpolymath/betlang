@@ -1,0 +1,46 @@
+# SPDX-License-Identifier: MPL-2.0
+# Machine-check BetLang's formal proofs on every push/PR.
+# See docs/AFFINESCRIPT-ALIGNMENT.adoc (Phase 1).
+name: Proofs
+permissions: read-all
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+  workflow_dispatch:
+
+jobs:
+  # Banned soundness escape hatches (sorry/admit/Admitted/postulate/...).
+  # Portable shell gate; the interim stand-in for `panic-attack assail
+  # --proofs-only` until panic-attack is available estate-wide.
+  banned-patterns:
+    name: Banned-pattern gate
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+      - name: Scan proof sources
+        run: bash tools/proof-scan.sh .
+
+  # Build (= type-check) the Lean 4 formalisation. A green build is a
+  # machine-checked proof of Progress, Preservation and the monad laws.
+  lean4:
+    name: Lean 4 (lake build)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+      - name: Install elan (Lean toolchain manager)
+        run: |
+          set -euo pipefail
+          curl -fsSL https://raw.githubusercontent.com/leanprover/elan/master/elan-init.sh \
+            -o elan-init.sh
+          sha256sum elan-init.sh
+          bash elan-init.sh -y --default-toolchain "$(cat lean-toolchain)"
+          echo "$HOME/.elan/bin" >> "$GITHUB_PATH"
+      - name: Show toolchain
+        run: lake --version && lean --version
+      - name: Build proofs
+        run: lake build
