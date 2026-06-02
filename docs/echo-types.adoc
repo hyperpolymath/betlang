@@ -1,0 +1,144 @@
+// SPDX-License-Identifier: MPL-2.0
+// SPDX-FileCopyrightText: 2026 Jonathan D.A. Jewell (hyperpolymath)
+// @taxonomy: docs/echo-types
+= Echo Types in BetLang
+:toc:
+
+Integration of *Echo Types* — a first-class notion of **structured loss**
+(loss that is not total erasure) — into BetLang's type system. Upstream:
+https://github.com/hyperpolymath/echo-types[`echo-types`] (Agda, source of
+truth) and https://github.com/hyperpolymath/EchoTypes.jl[`EchoTypes.jl`]
+(executable finite-domain companion).
+
+== Concept
+
+Given `f : A → B`, the echo at `y : B` is the fibre
+`Echo f y := Σ (x : A), (f x ≡ y)` — a *proof-relevant residue* recording
+what was lost when `f` collapsed `x` to `y`. The honest post-retraction
+core is the Echo functor (`echo-intro`, `map-over`) plus the **residue**
+weakening `EchoR` (a strict, non-recoverable lowering).
+
+BetLang is non-dependent, so it does not represent the literal fibre.
+Instead it adds two **unary type formers**:
+
+[cols="1,4"]
+|===
+| Former | Meaning
+
+| `Echo T`
+| A `T`-value carrying a proof-relevant residue of retained loss
+  (potentially recoverability-bearing). *Distinct from `T`.*
+
+| `EchoR T`
+| The strict, non-recoverable residue/retraction of `Echo T`. Reserved
+  former; rich operations deferred.
+|===
+
+== Design decisions (this pass)
+
+. **Distinctness.** `Echo T` is *not* `T`. `unify(Echo T, T)` fails, as
+  does `unify(Echo T, EchoR T)`. There is no implicit forgetting
+  `Echo T → T`; introduction and projection are explicit. If `Echo T`
+  unified with `T`, the checker would lose the entire point of retained
+  loss.
+. **Domain-agnostic core, probabilistic-support bridge.** `Echo` is the
+  general structured-loss former. Its *canonical betlang introduction
+  site* is probabilistic support retention — but that is the bridge, not
+  the definition (so future structured-loss uses are not foreclosed).
++
+[source]
+----
+sample      : Dist T -> T        // marginalises away which draw/branch fired
+sample_echo : Dist T -> Echo T   // retains that residue   (DEFERRED)
+----
+. **Ghost / erased residue.** The residue is proof-relevant; at runtime
+  `Echo T` (and `EchoR T`) erase to `T`'s representation. No runtime
+  payload is added until operations demand it — avoiding premature
+  commitment to a representation of branch histories, support traces,
+  seeds, or likelihood paths.
+
+== Where it lives
+
+[cols="1,3"]
+|===
+| Surface | Change
+
+| `compiler/bet-core/src/types.rs`
+| `Type::Echo(Box<Type>)`, `Type::EchoR(Box<Type>)`.
+
+| `compiler/bet-check/src/lib.rs`
+| Lowering `Echo T` / `EchoR T` (parsed as type applications) in
+  `ast_type_to_core`; structural `resolve`/`unify`; distinctness enforced
+  by the existing mismatch fallthrough. Unit tests cover lowering,
+  distinctness, structural unification, `Echo`≠`EchoR`, and inference
+  recursion.
+
+| `proofs/BetLang.lean`
+| `Ty.echo`, `Ty.echoR` constructors. Type *formers* only — no `Expr`
+  introduces/eliminates them and `HasType` assigns no expression an echo
+  type, so Progress/Preservation are unaffected.
+
+| `spec/SPEC.core.scm`, `spec/grammar.ebnf`
+| `echo-types` semantics entry (incl. the canonical statement) and a
+  grammar note. `Echo T` already parses as an application type.
+|===
+
+== Deferred (next passes)
+
+=== Canonical operation names (RESERVED / deferred)
+
+These names are **reserved cross-repo conceptual anchors, not committed
+BetLang operational semantics.** None of them is implemented or typed in
+BetLang yet, and none will be until the runtime/proof story is settled.
+When the echo operations do land, their *canonical* names mirror
+`EchoTypes.jl` for cross-repo conceptual consistency (shorter aliases may
+be added later, but the canonical names preserve the mapping):
+
+[cols="2,3"]
+|===
+| Builtin | Meaning
+
+| `echo(x, y)`              | Introduce an echo (the witness core, `echo-intro`).
+| `echo_input(e)`           | Project the retained input/source witness (`proj₁`).
+| `echo_output(e)`          | Project the visible output/base value.
+| `echo_to_residue(e)`      | Lower a full echo to its residue (`Echo T -> EchoR T`).
+| `residue_strictly_loses(e)` | The strict-weakening witness: the residue is non-recoverable.
+|===
+
+The probabilistic bridge adds `sample_echo : Dist T -> Echo T` (and
+`bet_echo`), retaining the draw/branch residue that `sample`/`bet` discard
+— also reserved/deferred.
+
+NOTE: BetLang uses the *unary* `Echo T`. The names `echo_input` /
+`echo_output` are conceptual anchors borrowed from the upstream fibre
+vocabulary; they do **not** imply that BetLang has the dependent
+`Echo f y` fibre or any checked `A -> B` relation. BetLang commits only to
+`Echo T` being a distinct unary former; the `input`/`output` framing is
+documentation, not operational semantics.
+
+=== Runtime representation strategy (deferred)
+
+* Start with a **single-witness core**, not a whole-fibre representation.
+  Whole-fibre runtime requires first-class functions and must wait.
+* In Error-Lang, `echo_to_residue` carries a stability penalty (the
+  Landauer/Bennett-style cost of discarding retained lineage). **In
+  BetLang, no such runtime effect is implemented yet** — BetLang must not
+  inherit Error-Lang's stability accounting before it has the
+  corresponding effect/cost layer.
+* Add a runtime residue payload only when an operation requires it; until
+  then `Echo T` / `EchoR T` stay ghost/erased (codegen represents them as
+  `T`) while the checker keeps them distinct.
+
+=== Still to do
+
+* Introduction/elimination + residue forms (canonical names above) and
+  their typing rules.
+* The `sample_echo` / `bet_echo` operations and their typing rules.
+* Lean typing rules + metatheory for the echo operations once the runtime
+  residue representation is settled.
+
+== References
+
+* `proofs/agda/Echo.agda`, `EchoResidue.agda`,
+  `EchoProbabilisticSupport.agda` (upstream echo-types).
+* `EchoTypes.jl` — the finite-domain executable shadow.

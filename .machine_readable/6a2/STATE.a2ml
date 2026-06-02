@@ -5,49 +5,78 @@
 [metadata]
 project = "betlang"
 version = "0.8.0-dev"
-last-updated = "2026-02-07"
+last-updated = "2026-06-02"
 status = "active"
-session = "converted from scheme — 2026-04-11"
+session = "affinescript-alignment + governance + echo-types — 2026-06-02"
 
 [project-context]
 name = "Betlang"
-purpose = """Safe probabilistic programming with Dutch book prevention and gambling harm reduction"""
-completion-percentage = 82
+purpose = """
+Safe probabilistic programming with Dutch book prevention and gambling harm reduction.
+Core primitive: (bet A B C) — ternary stochastic choice. Type system adds Echo T / EchoR T
+structured-loss formers (proof-relevant, ghost-erased). Proofs machine-checked in Lean 4.
+"""
+completion-percentage = 87
 
 [position]
-phase = "v0.8-julia-backend-development"   # design | implementation | testing | maintenance | archived
+phase = "proof-foundation + governance-alignment + echo-types-integration"
 maturity = "experimental"  # experimental | alpha | beta | production | lts
+
+[recent-sessions]
+# Session 2026-06-02: AffineScript alignment, governance cleanup, Echo types
+# PR #53: Lean 4 proof infrastructure (lakefile, proofs.yml, verification/, PROOF-STATUS.md)
+# PR #54: Governance/CI debt — Cargo.toml license, rackunit conflict, timeout-minutes,
+#          .governance-allowlist, .hypatia-ignore, delete Java, ReScript → AffineScript
+# PR #55: Echo T / EchoR T type formers in Rust checker + Lean + spec + docs
 
 [route-to-mvp]
 milestones = [
-  # No milestones recorded
+  "M1: Proof foundation — lakefile.lean + proofs.yml CI + banned-pattern gate [DONE #53]",
+  "M2: Governance clean — licence, language policy, Racket tests, timeout [DONE #54]",
+  "M3: Echo types core — Type::Echo/EchoR, unify, lower, Lean Ty.echo/echoR [DONE #55]",
+  "M4: Discharge substTop_preserves_typing axiom (PROOF-STATUS TP-4)",
+  "M5: Echo operations — echo_intro, proj1, echo_to_residue; typing rules",
+  "M6: sample_echo / bet_echo probabilistic bridge",
+  "M7: Julia backend Phase 2 — core language features",
 ]
+
+[proof-obligations]
+# See PROOF-STATUS.md for the full register (13 obligations)
+proved = ["TP-1 Progress", "TP-2 Preservation", "TP-3 Monad laws"]
+axioms = ["substTop_preserves_typing (classified, standards#203, docs/proof-debt.adoc)"]
+remaining = 10
 
 [blockers-and-issues]
 issues = [
-  # No blockers recorded
+  "bet-wasm E0308: pre-existing WASM backend breakage (match arm type mismatch, not caused by any of #53-55)",
+  "substTop_preserves_typing: classified axiom; discharge is M4 (Phase 2 proofs)",
+  "Echo operations deferred: no echo_intro/proj1/echo_to_residue until runtime/proof story settled",
 ]
 
 [critical-next-actions]
 actions = [
-  "Continue Julia backend Step 2: Core language features",
-  ")))
-    (optional-future-work
-      ((",
-  ")
-       (",
-  ")
-       (",
-  ")
-       (",
-  ")
-       (",
-  ")
-       (",
-  ")
-       (",
+  "Merge PR #54 → main (all-green)",
+  "Rebase PR #53 onto updated main, re-CI, merge",
+  "Retarget PR #55 to main, mark ready, merge",
+  "Phase 2 proof obligations: discharge substTop_preserves_typing",
+  "Echo operations pass: introduce echo_intro, echo_to_residue, proj1; typing rules in Lean",
+  "sample_echo / bet_echo probabilistic bridge (Dist T → Echo T)",
 ]
 
+[language-policy]
+primary = "Racket"          # core semantics
+proofs = "Lean 4"           # mechanised safety proofs
+compiler-tooling = "Rust"   # bet-core, bet-check, bet-parse, bet-wasm (paused)
+editor-tooling = "AffineScript"  # replaces TypeScript/ReScript in editors/
+compute-backend = "Julia"   # numerical/statistical kernel
+scripts = "Bash/POSIX shell + Just"
+config = "Nickel / 6a2 Scheme (.a2ml)"
+banned = ["TypeScript (except playground sandbox)", "Node.js", "npm", "Go", "Python", "Java", "Kotlin", "Swift"]
+
 [maintenance-status]
-last-run-utc = "2026-02-07T00:00:00Z"
-last-result = "unknown"  # unknown | pass | warn | fail
+last-run-utc = "2026-06-02T14:00:00Z"
+last-result = "pass"  # unknown | pass | warn | fail
+# Racket tests: pass (current + 8.11 + 8.12 on PR #54)
+# Governance: pass (all checks on PR #54)
+# Lean proofs: pass (proofs.yml lake build on PR #53)
+# Echo types: pass (cargo test -p bet-check: 27 tests pass on PR #55)
