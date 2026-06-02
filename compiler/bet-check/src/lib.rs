@@ -107,6 +107,8 @@ impl CheckEnv {
             Type::Tuple(elems) => {
                 Type::Tuple(elems.iter().map(|e| self.resolve(e)).collect())
             }
+            Type::Echo(inner) => Type::Echo(Box::new(self.resolve(inner))),
+            Type::EchoR(inner) => Type::EchoR(Box::new(self.resolve(inner))),
             _ => ty.clone(),
         }
     }
@@ -160,6 +162,15 @@ impl CheckEnv {
                     self.unify(ae, be, span)?;
                 }
                 Ok(())
+            }
+            // Echo/EchoR unify only structurally with their own former — never
+            // with the bare carrier `T`, nor with each other. This keeps the
+            // "retained loss" distinction: `Echo T` is not `T` with decoration.
+            (Type::Echo(a_inner), Type::Echo(b_inner)) => {
+                self.unify(a_inner, b_inner, span)
+            }
+            (Type::EchoR(a_inner), Type::EchoR(b_inner)) => {
+                self.unify(a_inner, b_inner, span)
             }
 
             _ => Err(CompileError::TypeMismatch {
@@ -887,6 +898,12 @@ fn ast_type_to_core(ty: &bet_syntax::ast::Type) -> Type {
                 "Dist" if args.len() == 1 => {
                     Type::Dist(Box::new(ast_type_to_core(&args[0].node)))
                 }
+                "Echo" if args.len() == 1 => {
+                    Type::Echo(Box::new(ast_type_to_core(&args[0].node)))
+                }
+                "EchoR" if args.len() == 1 => {
+                    Type::EchoR(Box::new(ast_type_to_core(&args[0].node)))
+                }
                 _ => Type::Named(base_name),
             }
         }
@@ -907,6 +924,9 @@ fn ast_type_to_core(ty: &bet_syntax::ast::Type) -> Type {
 #[cfg(test)]
 mod tests {
     use super::*;
+    // `Symbol` is re-exported at the bet_syntax crate root (not via
+    // `bet_syntax::ast::*`), so import it explicitly for the tests.
+    use bet_syntax::Symbol;
 
     /// Helper: create a dummy-spanned expression.
     fn dummy(expr: Expr) -> Spanned<Expr> {
@@ -1151,5 +1171,82 @@ mod tests {
         );
         let result = check_expr(&dummy(par), &mut env).expect("TODO: handle error");
         assert_eq!(result, Type::List(Box::new(Type::Float)));
+    }
+
+    // ---- Echo types (structured loss; see hyperpolymath/echo-types) ----
+
+    /// `Echo T` / `EchoR T` surface syntax (parsed as a type application)
+    /// lowers to the dedicated semantic formers.
+    #[test]
+    fn test_echo_lowering() {
+        use bet_syntax::ast::Type as AstType;
+        let app = |name: &str, arg: AstType| {
+            AstType::App(
+                Box::new(Spanned::dummy(AstType::Named(Symbol::intern(name)))),
+                vec![Spanned::dummy(arg)],
+            )
+        };
+        assert_eq!(
+            ast_type_to_core(&app("Echo", AstType::Named(Symbol::intern("Int")))),
+            Type::Echo(Box::new(Type::Int))
+        );
+        assert_eq!(
+            ast_type_to_core(&app("EchoR", AstType::Named(Symbol::intern("Float")))),
+            Type::EchoR(Box::new(Type::Float))
+        );
+    }
+
+    /// `Echo T` is distinct from `T`: no implicit forgetting in either
+    /// direction. This is the load-bearing invariant — if it unified with the
+    /// carrier the checker would lose the entire point of retained loss.
+    #[test]
+    fn test_echo_distinct_from_carrier() {
+        let mut env = CheckEnv::new();
+        assert!(env.unify(&Type::Echo(Box::new(Type::Int)), &Type::Int, None).is_err());
+        assert!(env.unify(&Type::Int, &Type::Echo(Box::new(Type::Int)), None).is_err());
+    }
+
+    /// `Echo T` unifies structurally with `Echo T'` iff `T` unifies with `T'`.
+    #[test]
+    fn test_echo_unifies_structurally() {
+        let mut env = CheckEnv::new();
+        env.unify(
+            &Type::Echo(Box::new(Type::Int)),
+            &Type::Echo(Box::new(Type::Int)),
+            None,
+        )
+        .expect("Echo Int should unify with Echo Int");
+        assert!(env
+            .unify(
+                &Type::Echo(Box::new(Type::Int)),
+                &Type::Echo(Box::new(Type::String)),
+                None
+            )
+            .is_err());
+    }
+
+    /// `Echo T` and `EchoR T` are distinct formers (the residue is a strict
+    /// weakening, not interchangeable with the full echo).
+    #[test]
+    fn test_echo_vs_residue_distinct() {
+        let mut env = CheckEnv::new();
+        assert!(env
+            .unify(
+                &Type::Echo(Box::new(Type::Int)),
+                &Type::EchoR(Box::new(Type::Int)),
+                None
+            )
+            .is_err());
+    }
+
+    /// Unification recurses through the Echo former, so an inference variable
+    /// inside an `Echo` is solved.
+    #[test]
+    fn test_echo_inference_var_recurses() {
+        let mut env = CheckEnv::new();
+        let a = env.fresh_var();
+        env.unify(&Type::Echo(Box::new(a.clone())), &Type::Echo(Box::new(Type::Int)), None)
+            .expect("Echo 'a should unify with Echo Int");
+        assert_eq!(env.resolve(&Type::Echo(Box::new(a))), Type::Echo(Box::new(Type::Int)));
     }
 }
