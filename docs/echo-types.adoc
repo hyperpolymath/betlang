@@ -85,13 +85,44 @@ sample_echo : Dist T -> Echo T   // retains that residue   (DEFERRED)
 
 == Deferred (next passes)
 
-* Introduction/elimination forms: `echo_intro : T -> Echo T`,
-  `proj₁ : Echo T -> T`, `echo_to_residue : Echo T -> EchoR T`.
-* The residue-retaining `sample_echo` / `bet_echo` operations and their
-  typing rules.
+=== Canonical operation names (deferred)
+
+When the echo operations land, their *canonical* names mirror
+`EchoTypes.jl` for cross-repo conceptual consistency (shorter aliases may
+be added later, but the canonical names preserve the mapping):
+
+[cols="2,3"]
+|===
+| Builtin | Meaning
+
+| `echo(x, y)`              | Introduce an echo (the witness core, `echo-intro`).
+| `echo_input(e)`           | Project the retained input/source witness (`proj₁`).
+| `echo_output(e)`          | Project the visible output/base value.
+| `echo_to_residue(e)`      | Lower a full echo to its residue (`Echo T -> EchoR T`).
+| `residue_strictly_loses(e)` | The strict-weakening witness: the residue is non-recoverable.
+|===
+
+The probabilistic bridge adds `sample_echo : Dist T -> Echo T` (and
+`bet_echo`), retaining the draw/branch residue that `sample`/`bet` discard.
+
+=== Runtime representation strategy (deferred)
+
+* Start with a **single-witness core**, not a whole-fibre representation.
+  Whole-fibre runtime requires first-class functions and must wait.
+* Erasing an `Echo` down to its residue (`echo_to_residue`) should incur a
+  **stability penalty in Error-Lang** (the Landauer/Bennett-style cost of
+  discarding retained lineage) — not a silent, free coercion.
+* Add a runtime residue payload only when an operation requires it; until
+  then `Echo T` / `EchoR T` stay ghost/erased (codegen represents them as
+  `T`) while the checker keeps them distinct.
+
+=== Still to do
+
+* Introduction/elimination + residue forms (canonical names above) and
+  their typing rules.
+* The `sample_echo` / `bet_echo` operations and their typing rules.
 * Lean typing rules + metatheory for the echo operations once the runtime
   residue representation is settled.
-* Runtime residue payload (only when an operation requires it).
 
 == References
 
