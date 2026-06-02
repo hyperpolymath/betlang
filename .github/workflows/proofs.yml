@@ -18,6 +18,7 @@ jobs:
   banned-patterns:
     name: Banned-pattern gate
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     steps:
       - name: Checkout code
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
@@ -29,6 +30,7 @@ jobs:
   lean4:
     name: Lean 4 (lake build)
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
       - name: Checkout code
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
