@@ -85,9 +85,12 @@ sample_echo : Dist T -> Echo T   // retains that residue   (DEFERRED)
 
 == Deferred (next passes)
 
-=== Canonical operation names (deferred)
+=== Canonical operation names (RESERVED / deferred)
 
-When the echo operations land, their *canonical* names mirror
+These names are **reserved cross-repo conceptual anchors, not committed
+BetLang operational semantics.** None of them is implemented or typed in
+BetLang yet, and none will be until the runtime/proof story is settled.
+When the echo operations do land, their *canonical* names mirror
 `EchoTypes.jl` for cross-repo conceptual consistency (shorter aliases may
 be added later, but the canonical names preserve the mapping):
 
@@ -103,15 +106,25 @@ be added later, but the canonical names preserve the mapping):
 |===
 
 The probabilistic bridge adds `sample_echo : Dist T -> Echo T` (and
-`bet_echo`), retaining the draw/branch residue that `sample`/`bet` discard.
+`bet_echo`), retaining the draw/branch residue that `sample`/`bet` discard
+— also reserved/deferred.
+
+NOTE: BetLang uses the *unary* `Echo T`. The names `echo_input` /
+`echo_output` are conceptual anchors borrowed from the upstream fibre
+vocabulary; they do **not** imply that BetLang has the dependent
+`Echo f y` fibre or any checked `A -> B` relation. BetLang commits only to
+`Echo T` being a distinct unary former; the `input`/`output` framing is
+documentation, not operational semantics.
 
 === Runtime representation strategy (deferred)
 
 * Start with a **single-witness core**, not a whole-fibre representation.
   Whole-fibre runtime requires first-class functions and must wait.
-* Erasing an `Echo` down to its residue (`echo_to_residue`) should incur a
-  **stability penalty in Error-Lang** (the Landauer/Bennett-style cost of
-  discarding retained lineage) — not a silent, free coercion.
+* In Error-Lang, `echo_to_residue` carries a stability penalty (the
+  Landauer/Bennett-style cost of discarding retained lineage). **In
+  BetLang, no such runtime effect is implemented yet** — BetLang must not
+  inherit Error-Lang's stability accounting before it has the
+  corresponding effect/cost layer.
 * Add a runtime residue payload only when an operation requires it; until
   then `Echo T` / `EchoR T` stay ghost/erased (codegen represents them as
   `T`) while the checker keeps them distinct.
