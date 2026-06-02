@@ -1,0 +1,23 @@
+// SPDX-License-Identifier: MPL-2.0
+// @taxonomy: verification/simulations
+= Verification — Simulations
+:toc:
+
+== Status
+
+Placeholder pillar (Phase 4 of `docs/AFFINESCRIPT-ALIGNMENT.adoc`).
+
+== Purpose
+
+Seeded stochastic simulations that empirically validate BetLang's
+probabilistic semantics against the analytic / proven results:
+
+* Empirical ternary frequencies → uniform (1/3 each).
+* Sample-mean convergence → expectation (SLLN, obligation STAT-2).
+* Empirical entropy → log₂3 bits (obligation STAT-1).
+
+== Current evidence
+
+Seeded stochastic conformance currently lives in
+`../conformance/stochastic-seeded.rkt`. Dedicated long-run simulation
+harnesses will be added here.

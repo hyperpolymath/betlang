@@ -1,0 +1,201 @@
+// SPDX-License-Identifier: MPL-2.0
+// SPDX-FileCopyrightText: 2026 Jonathan D.A. Jewell (hyperpolymath)
+// @taxonomy: docs/affinescript-alignment
+= BetLang → AffineScript Alignment Plan
+:toc:
+:toclevels: 3
+:revdate: 2026-06-02
+
+Bring BetLang from where it is today to the same *engineering position*
+that the AffineScript estate occupies, **starting with proofs**. This
+document is the standing plan referenced by the
+`claude/affinescript-betlang-alignment-*` work.
+
+== 1. What "the AffineScript position" means
+
+AffineScript (`hyperpolymath/affinescript`, OCaml → typed-WASM) and its
+satellites (`affinescript-vite`, `affinescriptiser`) share a
+*Reproducible Software Research* (RSR) verification posture that BetLang
+has not yet fully adopted. Concretely, the AffineScript estate has:
+
+[cols="1,3"]
+|===
+| Pillar | AffineScript artefact
+
+| Standardised verification scaffold
+| A 9-pillar `verification/` tree (`proofs`, `tests`, `conformance`,
+  `benchmarks`, `fuzzing`, `simulations`, `coverage`, `traceability`,
+  `safety_case`), each with an `AI-MANIFEST.a2ml` + `README.adoc`.
+
+| Multi-prover proof layout
+| `verification/proofs/{idris2,lean4,agda,coq,tlaplus}/` with real proof
+  files; ABI/FFI proofs mandatory in Idris2.
+
+| Proof governance contract
+| `PROOF-NEEDS.md` (structured obligation categories: ABI, TP, INV, SEC,
+  CONC, ALG, DOM) **and** `PROOF-STATUS.md` (a live completion table).
+
+| Banned-pattern enforcement
+| No `sorry` / `admit` (Lean), `Admitted` (Coq), `postulate` /
+  `believe_me` / `assert_total` (Idris2/Agda), `unsafeCoerce`. Enforced
+  in CI via `panic-attack assail --proofs-only`.
+
+| CI-checked proofs
+| `just proof-check-{idris2,lean4,agda,coq,all}` recipes, wired into CI
+  so every proof is *machine-checked on every push*.
+
+| Staged proof roadmap
+| Statements-first (`%default total`, explicit holes), with a week-by-week
+  discharge schedule (see AffineScript's `solo-core`).
+|===
+
+== 2. Where BetLang is today (2026-06-02)
+
+BetLang is *ahead* of AffineScript on proof **content** and *behind* on
+proof **infrastructure**.
+
+=== 2.1 Strengths (content)
+
+* `proofs/BetLang.lean` — a 1,148-line Lean 4 mechanisation of the core
+  calculus: syntax, bidirectional typing (de Bruijn), small-step
+  semantics, and the metatheory (**Progress + Preservation proved**),
+  plus the three monad laws for the distribution monad.
+* **0 `sorry`**, exactly **1 classified necessary axiom**
+  (`substTop_preserves_typing`), already triaged in `docs/proof-debt.adoc`
+  under the standards#203 trusted-base-reduction policy.
+* ~14 markdown proof documents (`proofs/theorems/*`, ~7,000 lines)
+  covering type theory, measure theory, category theory, MCMC, complexity,
+  information theory, convergence statistics.
+
+By comparison, AffineScript's `solo-core` Idris2 is *statements-only*
+(progress/preservation declared with `?todo` holes, derivations scheduled
+weeks 3–12). BetLang has the derivations; what it lacks is the *scaffold
+and enforcement* around them.
+
+=== 2.2 Gaps (infrastructure) — the work this plan closes
+
+[cols="1,4"]
+|===
+| Gap | Detail
+
+| ❌ Lean is never machine-checked
+| No `lakefile.lean`, no `lean-toolchain`. The "0 `sorry`" claim is
+  asserted but not CI-verified. *Highest priority.*
+
+| ❌ `verification/` is aspirational
+| `verification/README.adoc` and the root `0-AI-MANIFEST.a2ml` describe
+  symlinks (`verification/proofs → ../proofs`, …) that **do not exist on
+  disk**, and the 9-pillar standard is not present.
+
+| ❌ No multi-prover layout
+| Only Lean; no `idris2/agda/coq/tlaplus` homes, no ABI/FFI proofs.
+
+| ❌ No `PROOF-STATUS.md`
+| `PROOF-NEEDS.md` is a stub note (template-ABI cleanup), not the
+  structured obligation table AffineScript uses.
+
+| ❌ No proof CI / banned-pattern gate
+| `comprehensive-quality.yml` only checks Ada/SPARK. No `lake build`, no
+  `sorry`/`admit` scan.
+
+| ❌ No `just proof-check-*` recipes
+| `Justfile` has no proof targets.
+|===
+
+== 3. The plan (phased, proofs-first)
+
+=== Phase 1 — Proof foundation ✅ (this branch)
+
+Make BetLang's *existing* proof content machine-checked, standardised, and
+governed. Deliverables:
+
+. `lean-toolchain` + `lakefile.lean` — BetLang.lean becomes a buildable,
+  CI-checkable Lake package (pure-core, no Mathlib).
+. `tools/proof-scan.sh` — banned-pattern scanner (comment-aware), shared
+  by CI and `just`.
+. `.github/workflows/proofs.yml` — `lake build` + banned-pattern gate on
+  every push/PR; multi-prover steps guarded (skip when a prover is absent).
+. `Justfile` — `proof-check-lean4`, `proof-scan`, `proof-check-all`.
+. `PROOF-STATUS.md` — live obligation/completion table (BetLang-specific).
+. `PROOF-NEEDS.md` — upgraded to the structured category format.
+. `verification/` scaffold — create the symlinks the manifest already
+  promises, plus the four missing RSR pillars (`simulations`, `coverage`,
+  `traceability`, `safety_case`) with manifests + READMEs.
+
+Exit criterion: green `proofs` CI job; `PROOF-STATUS.md` reflects
+Progress/Preservation/monad-laws as *machine-checked*.
+
+=== Phase 2 — Discharge & deepen the Lean metatheory
+
+. Discharge `substTop_preserves_typing` via the de Bruijn
+  shift/substitution calculus (promotion path in betlang PR #27) → move
+  the `docs/proof-debt.adoc` entry from §(c) NECESSARY AXIOM to §(a)
+  DISCHARGED, reaching an *axiom-free* core.
+. Add the continuous / measure-theoretic denotational semantics flagged in
+  `proofs/README.md` (currently discrete-only).
+. Mechanise the headline statistical results that today live only as
+  markdown: maximum-entropy of the uniform ternary (log₂3 bits) and the
+  SLLN-for-bets statement, at least to Lean *statement* level.
+
+=== Phase 3 — Multi-prover + ABI/FFI proofs
+
+. Stand up `proofs/{idris2,coq,agda,tlaplus}/` (exposed via
+  `verification/proofs/`).
+. Idris2 ABI/FFI proofs for the Rust/Julia FFI surface
+  (`ABI-FFI-README.md`, `ffi/`) — mirrors AffineScript's mandatory ABI
+  proof set (non-null pointers, layout, platform sizes, foreign returns,
+  C-ABI compliance). This is BetLang's `RUST-STATUS.md` / `julia-backend`
+  FFI boundary.
+. TLA+ spec for any concurrent/parallel bet-execution model
+  (`proofs/theorems/*` concurrency item).
+
+=== Phase 4 — Fill the remaining RSR pillars
+
+Turn the Phase-1 placeholder pillars into live evidence: `coverage`
+(MC/DC where applicable), `simulations` (seeded stochastic conformance →
+already partly in `conformance/`), `traceability` (proof ↔ requirement ↔
+test matrix), `safety_case` (GSN argument tying Dutch-book-freedom and
+risk-of-ruin safety features to proofs).
+
+=== Phase 5 — Parity hardening
+
+. Adopt `panic-attack assail --proofs-only` once `panic-attack` is
+  available estate-wide (Phase 1 ships a portable shell scanner as the
+  interim gate).
+. Cross-link `PROOF-STATUS.md` into `.machine_readable/STATE.scm` so the
+  machine-readable project state reflects proof completion.
+. Publish the mechanised metatheory alongside the planned PLDI/POPL/ICFP
+  2027 submission (`ROADMAP.adoc` v1.0).
+
+== 4. Obligation register (seed)
+
+The authoritative, live version is `PROOF-STATUS.md`. Seed obligations:
+
+[cols="1,3,1,1"]
+|===
+| ID | Obligation | Prover | Phase
+
+| TP-1  | Progress (well-typed ⇒ value or steps)        | Lean4  | 1 (done)
+| TP-2  | Preservation (typing preserved under step)    | Lean4  | 1 (done)
+| TP-3  | Distribution monad laws (×3)                   | Lean4  | 1 (done)
+| TP-4  | `substTop_preserves_typing` (discharge axiom) | Lean4  | 2
+| SEM-1 | Continuous measure-theoretic denotation       | Lean4  | 2
+| STAT-1| Max-entropy of uniform ternary = log₂3        | Lean4  | 2
+| STAT-2| SLLN for bet sample means                     | Lean4  | 2
+| ABI-1 | FFI non-null pointer safety                   | Idris2 | 3
+| ABI-2 | FFI memory-layout correctness                 | Idris2 | 3
+| ABI-3 | Platform type-size proofs                     | Idris2 | 3
+| ABI-4 | Foreign return-type proofs                     | Idris2 | 3
+| ABI-5 | C-ABI compliance                              | Idris2 | 3
+| CONC-1| Parallel bet-execution model                  | TLA+   | 3
+|===
+
+== 5. Cross-references
+
+* `docs/proof-debt.adoc` — trusted-base reduction ledger (standards#203)
+* `proofs/README.md` — academic proof index + known gaps
+* `proofs/BetLang.lean` — canonical Lean 4 mechanisation
+* `PROOF-NEEDS.md` / `PROOF-STATUS.md` — proof governance contract
+* `ROADMAP.adoc` — product roadmap (v1.0 = Idris2 ABI proofs + paper)
+* AffineScript reference posture: `affinescript-vite/verification/**`,
+  `docs/academic/formal-verification/solo-core/**`

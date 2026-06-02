@@ -1,0 +1,14 @@
+# SPDX-License-Identifier: MPL-2.0
+---
+### [META]
+id: "verification-unit-coverage"
+level: 2
+parent: "../0.1-AI-MANIFEST.a2ml"
+
+---
+### [AI_MANIFEST]
+description: |
+  Sub-unit focusing on coverage: line/branch coverage of the Racket
+  authoritative implementation and, where applicable, MC/DC for
+  high-assurance paths (safety features: Dutch-book prevention,
+  risk-of-ruin protection, cool-off). Phase 4.
