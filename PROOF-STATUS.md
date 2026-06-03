@@ -52,7 +52,7 @@ See `docs/AFFINESCRIPT-ALIGNMENT.adoc` for the phased plan and
 | ID | Proof | Category | Prover | Phase | Priority |
 |----|-------|----------|--------|-------|----------|
 | TP-4   | Discharge `substTop_preserves_typing` (de Bruijn subst lemma) | TP   | Lean4  | 2 | P1 |
-| TP-5   | Echo-operation typing rules + metatheory (mirror `bet-check`'s `echo`/`echo_output`/`echo_to_residue`/`sample_echo`) | TP | Lean4 | 2 | P2 |
+| TP-5   | Echo-operation typing rules + metatheory — mirror `bet-check`'s functor/comonad surface (`echo`, `echo_map`, `echo_output`, `echo_duplicate`, `echo_to_residue`, `sample_echo`), incl. the comonad laws from `EchoGradedComonad.agda` | TP | Lean4 | 2 | P2 |
 | SEM-1  | Continuous measure-theoretic denotational semantics           | SEM  | Lean4  | 2 | P2 |
 | STAT-1 | Maximum entropy of uniform ternary = log₂3 bits               | STAT | Lean4  | 2 | P2 |
 | STAT-2 | SLLN for bet sample means (a.s. convergence to expectation)   | STAT | Lean4  | 2 | P2 |

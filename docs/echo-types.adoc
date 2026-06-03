@@ -107,8 +107,17 @@ carrier types in one scope). Surface syntax is ordinary application
 
 | `echo_output`
 | `Echo 'a -> 'a`
-| *Explicit* projection to the base value. The point of distinctness: there is
-  no *implicit* `Echo T -> T`; you must ask for the value back.
+| *Explicit* projection to the base value — the comonad **counit**. The point
+  of distinctness: there is no *implicit* `Echo T -> T`; you must ask for the
+  value back.
+
+| `echo_map`
+| `('a -> 'b) -> Echo 'a -> Echo 'b`
+| Functor action (`map-over`): transform under the echo without forgetting.
+
+| `echo_duplicate`
+| `Echo 'a -> Echo (Echo 'a)`
+| Comonad comultiplication (`gduplicate`).
 
 | `echo_to_residue`
 | `Echo 'a -> EchoR 'a`
@@ -119,6 +128,19 @@ carrier types in one scope). Surface syntax is ordinary application
 | Probabilistic-support bridge: retains the draw/branch residue that
   `sample : Dist 'a -> 'a` discards. Composes with `echo_to_residue`.
 |===
+
+Together `echo_map` (functor), `echo_output` (counit), and `echo_duplicate`
+(comultiplication) give `Echo` the **functor + comonad surface**. This is the
+ungraded, ghost shadow of the *graded comonad of structured loss* proved
+upstream in echo-types (`EchoGradedComonad.agda`: `gextract` / `gduplicate` /
+coassoc). Here the grades are erased, so `bet-check` carries the *typing* while
+the *laws* live in the Agda — mirrored for Lean as obligation TP-5.
+
+NOTE: The core ternary primitive bridges to `Echo` by composition at the type
+level — `echo(bet a b c) : Echo T` already type-checks, viewing the
+branch-collapse as a retained-loss site. A dedicated `bet_echo` is only needed
+for *runtime* branch-tag retention (deferred); the type story needs no new
+primitive.
 
 These are **types-only / ghost**: at runtime `Echo T` and `EchoR T` still
 erase to `T` (no residue payload — see "Runtime representation strategy"

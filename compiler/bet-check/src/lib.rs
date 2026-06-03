@@ -8,10 +8,10 @@
 //! - `sample(dist)` — takes `Dist<T>`, returns `T`
 //! - `observe(dist, value)` — takes `Dist<T>` and `T`
 //! - `infer(method, model)` — model returns `Dist<T>`, result is `Dist<T>`
-//! - Echo (structured-loss) operations over the `Echo`/`EchoR` formers:
-//!   `echo(x) : Echo T`, `echo_output(e) : T`, `echo_to_residue(e) : EchoR T`,
-//!   `sample_echo(d) : Echo T` (see `echo_builtin_type` and
-//!   `docs/echo-types.adoc`)
+//! - Echo (structured-loss) operations over the `Echo`/`EchoR` formers — the
+//!   functor/comonad surface plus the residue and probabilistic bridges:
+//!   `echo`, `echo_output`, `echo_map`, `echo_duplicate`, `echo_to_residue`,
+//!   `sample_echo` (see `echo_builtin_type` and `docs/echo-types.adoc`)
 //! - Ternary values have type `Ternary`
 //! - Let-polymorphism via generalization at let-boundaries
 
@@ -230,12 +230,21 @@ fn seed_builtins(env: &mut CheckEnv) {
 /// legacy `to_string`. Returning `None` means "not an echo builtin"; the
 /// caller then reports an undefined variable.
 ///
-/// | Operation         | Scheme                | Role                                                              |
-/// |-------------------|-----------------------|-------------------------------------------------------------------|
-/// | `echo`            | `'a -> Echo 'a`       | introduction (`echo-intro`, the unary collapse of the fibre core) |
-/// | `echo_output`     | `Echo 'a -> 'a`       | *explicit* projection to the base value (never an implicit coercion) |
-/// | `echo_to_residue` | `Echo 'a -> EchoR 'a` | lower a full echo to its strict, non-recoverable residue          |
-/// | `sample_echo`     | `Dist 'a -> Echo 'a`  | probabilistic-support bridge: retains the residue `sample` discards |
+/// | Operation         | Scheme                          | Role                                                              |
+/// |-------------------|---------------------------------|-------------------------------------------------------------------|
+/// | `echo`            | `'a -> Echo 'a`                 | introduction (`echo-intro`, the unary collapse of the fibre core) |
+/// | `echo_output`     | `Echo 'a -> 'a`                 | *explicit* projection to the base value (the comonad counit; never an implicit coercion) |
+/// | `echo_map`        | `('a -> 'b) -> Echo 'a -> Echo 'b` | functor action (`map-over`): transform under the echo without forgetting |
+/// | `echo_duplicate`  | `Echo 'a -> Echo (Echo 'a)`     | comonad comultiplication (`gduplicate`)                           |
+/// | `echo_to_residue` | `Echo 'a -> EchoR 'a`           | lower a full echo to its strict, non-recoverable residue          |
+/// | `sample_echo`     | `Dist 'a -> Echo 'a`            | probabilistic-support bridge: retains the residue `sample` discards |
+///
+/// Together `echo_map` / `echo_output` / `echo_duplicate` realise the
+/// **functor + comonad surface** of structured loss. They are the ungraded,
+/// ghost shadow of the *graded comonad* proved upstream in echo-types
+/// (`EchoGradedComonad.agda`: `gextract` / `gduplicate` / coassoc): here the
+/// grades are erased, so the operations carry the typing but the laws live in
+/// the Agda (mirrored for Lean as obligation TP-5).
 ///
 /// These are **types-only / ghost**: at runtime `Echo T` and `EchoR T` erase
 /// to `T` (no residue payload is materialised yet — see `docs/echo-types.adoc`
@@ -279,6 +288,26 @@ fn echo_builtin_type(name: &str, env: &mut CheckEnv) -> Option<Type> {
             Some(Type::Fun(
                 Box::new(Type::Dist(Box::new(a.clone()))),
                 Box::new(Type::Echo(Box::new(a))),
+            ))
+        }
+        // echo_map : ('a -> 'b) -> Echo 'a -> Echo 'b   (functor / map-over)
+        "echo_map" => {
+            let a = env.fresh_var();
+            let b = env.fresh_var();
+            Some(Type::Fun(
+                Box::new(Type::Fun(Box::new(a.clone()), Box::new(b.clone()))),
+                Box::new(Type::Fun(
+                    Box::new(Type::Echo(Box::new(a))),
+                    Box::new(Type::Echo(Box::new(b))),
+                )),
+            ))
+        }
+        // echo_duplicate : Echo 'a -> Echo (Echo 'a)   (comonad comultiplication)
+        "echo_duplicate" => {
+            let a = env.fresh_var();
+            Some(Type::Fun(
+                Box::new(Type::Echo(Box::new(a.clone()))),
+                Box::new(Type::Echo(Box::new(Type::Echo(Box::new(a))))),
             ))
         }
         _ => None,
@@ -1443,6 +1472,79 @@ mod tests {
         assert_eq!(
             check_expr(&e, &mut env).expect("shadowed echo : Int -> Bool"),
             Type::Bool
+        );
+    }
+
+    // ---- Echo functor / comonad surface (map-over + duplicate + counit) ----
+
+    /// `echo_map : ('a -> 'b) -> Echo 'a -> Echo 'b` is the functor action
+    /// (Agda `map-over`): transform under the echo without forgetting.
+    #[test]
+    fn test_echo_map_is_functorial() {
+        let mut env = CheckEnv::new();
+        env.bind(
+            "f".to_string(),
+            Type::Fun(Box::new(Type::Int), Box::new(Type::Bool)),
+        );
+        let e = call(
+            "echo_map",
+            vec![var("f"), call("echo", vec![dummy(Expr::Int(1))])],
+        );
+        assert_eq!(
+            check_expr(&e, &mut env).expect("echo_map f (echo 1) : Echo Bool"),
+            Type::Echo(Box::new(Type::Bool))
+        );
+    }
+
+    /// `echo_duplicate : Echo 'a -> Echo (Echo 'a)` is the comonad
+    /// comultiplication (Agda `gduplicate`).
+    #[test]
+    fn test_echo_duplicate() {
+        let mut env = CheckEnv::new();
+        let e = call("echo_duplicate", vec![call("echo", vec![dummy(Expr::Int(1))])]);
+        assert_eq!(
+            check_expr(&e, &mut env).expect("echo_duplicate (echo 1) : Echo (Echo Int)"),
+            Type::Echo(Box::new(Type::Echo(Box::new(Type::Int))))
+        );
+    }
+
+    /// Comonad shape at the type level: `echo_output` is the counit, so
+    /// `echo_output (echo_duplicate e)` recovers the type of `e` (extract after
+    /// duplicate = identity). The *law* is proved upstream in echo-types
+    /// (`EchoGradedComonad.agda`); here we pin only the typing.
+    #[test]
+    fn test_comonad_extract_after_duplicate_typing() {
+        let mut env = CheckEnv::new();
+        let e = call(
+            "echo_output",
+            vec![call(
+                "echo_duplicate",
+                vec![call("echo", vec![dummy(Expr::Int(1))])],
+            )],
+        );
+        assert_eq!(
+            check_expr(&e, &mut env).expect("echo_output (echo_duplicate (echo 1)) : Echo Int"),
+            Type::Echo(Box::new(Type::Int))
+        );
+    }
+
+    /// The core primitive bridges to Echo by composition at the type level:
+    /// `echo(bet a b c) : Echo T`. (Runtime branch-tag retention — `bet_echo` —
+    /// remains deferred; the *type* story needs no new primitive.)
+    #[test]
+    fn test_bet_echo_bridge_by_composition() {
+        let mut env = CheckEnv::new();
+        let bet = BetExpr {
+            alternatives: [
+                Box::new(dummy(Expr::Int(1))),
+                Box::new(dummy(Expr::Int(2))),
+                Box::new(dummy(Expr::Int(3))),
+            ],
+        };
+        let e = call("echo", vec![dummy(Expr::Bet(bet))]);
+        assert_eq!(
+            check_expr(&e, &mut env).expect("echo (bet 1 2 3) : Echo Int"),
+            Type::Echo(Box::new(Type::Int))
         );
     }
 }
