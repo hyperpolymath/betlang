@@ -136,13 +136,21 @@ link:https://github.com/hyperpolymath/echo-types[`hyperpolymath/echo-types`] (Ag
   _Distinct from `T`_: `unify(Echo T, T)` fails by design.
 
 | `EchoR T`
-| The strict, non-recoverable residue of `Echo T`. Reserved; operations deferred.
+| The strict, non-recoverable residue of `Echo T`. Introduced by
+  `echo_to_residue`; further operations deferred.
 |===
 
 `Echo T` and `EchoR T` erase to `T` at runtime (ghost types) until operations
 demand a payload. The canonical introduction site is probabilistic support retention:
 `sample : Dist T → T` discards which branch fired;
-`sample_echo : Dist T → Echo T` retains that residue — deferred for a future pass.
+`sample_echo : Dist T → Echo T` retains that residue. The operations now
+type-check in `bet-check` (type-level; the runtime residue payload remains
+deferred): introduction `echo` (`'a → Echo 'a`); the **functor + comonad
+surface** `echo_map` (`('a→'b) → Echo 'a → Echo 'b`), `echo_output`
+(`Echo 'a → 'a`, the counit), `echo_duplicate` (`Echo 'a → Echo (Echo 'a)`);
+the residue lowering `echo_to_residue` (`Echo 'a → EchoR 'a`); and the
+probabilistic bridge `sample_echo` (`Dist 'a → Echo 'a`). These mirror the
+graded comonad proved in `hyperpolymath/echo-types`.
 
 See link:docs/echo-types.adoc[`docs/echo-types.adoc`] for the full design rationale.
 
@@ -437,7 +445,7 @@ BetLang is built on three principles:
 | Racket frontend | ✅ Authoritative | Canonical semantics
 | Julia backend | 🟡 Active development | Primary compute kernel
 | Lean 4 proofs | ✅ Machine-checked | Progress + Preservation + monad laws
-| Rust type-checker | ✅ Active | bet-check / bet-core (incl. Echo T)
+| Rust type-checker | ✅ Active | bet-check / bet-core (incl. Echo T + operations)
 | VS Code extension | 🟡 In progress | AffineScript source (replaces ReScript)
 | Web Playground (ui/) | ✅ Available | Quantum-inspired features
 | FFI (Zig) | 🟡 Experimental | playground/ffi/zig/

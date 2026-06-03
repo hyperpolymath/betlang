@@ -12,14 +12,14 @@ See `docs/AFFINESCRIPT-ALIGNMENT.adoc` for the phased plan and
 
 | Category | Total | Done | In Progress | Blocked | Remaining |
 |----------|-------|------|-------------|---------|-----------|
-| Typing / metatheory (TP)   | 4 | 3 | 0 | 0 | 1 |
+| Typing / metatheory (TP)   | 5 | 3 | 0 | 0 | 2 |
 | Semantics (SEM)            | 1 | 0 | 0 | 0 | 1 |
 | Statistics (STAT)          | 2 | 0 | 0 | 0 | 2 |
 | ABI / FFI (ABI)            | 5 | 0 | 0 | 0 | 5 |
 | Concurrency (CONC)         | 1 | 0 | 0 | 0 | 1 |
-| **Total**                  | **13** | **3** | **0** | **0** | **10** |
+| **Total**                  | **14** | **3** | **0** | **0** | **11** |
 
-**Overall**: 23% proven (3 / 13). Lean core metatheory mechanised and
+**Overall**: 21% proven (3 / 14). Lean core metatheory mechanised and
 (as of Phase 1) machine-checked in CI.
 
 ## Proofs Done
@@ -52,6 +52,7 @@ See `docs/AFFINESCRIPT-ALIGNMENT.adoc` for the phased plan and
 | ID | Proof | Category | Prover | Phase | Priority |
 |----|-------|----------|--------|-------|----------|
 | TP-4   | Discharge `substTop_preserves_typing` (de Bruijn subst lemma) | TP   | Lean4  | 2 | P1 |
+| TP-5   | Echo-operation typing rules + metatheory — mirror `bet-check`'s functor/comonad surface (`echo`, `echo_map`, `echo_output`, `echo_duplicate`, `echo_to_residue`, `sample_echo`), incl. the comonad laws from `EchoGradedComonad.agda` | TP | Lean4 | 2 | P2 |
 | SEM-1  | Continuous measure-theoretic denotational semantics           | SEM  | Lean4  | 2 | P2 |
 | STAT-1 | Maximum entropy of uniform ternary = log₂3 bits               | STAT | Lean4  | 2 | P2 |
 | STAT-2 | SLLN for bet sample means (a.s. convergence to expectation)   | STAT | Lean4  | 2 | P2 |
@@ -82,3 +83,4 @@ classified `axiom` is permitted by policy (standards#203).
 | Date | Change | By |
 |------|--------|-----|
 | 2026-06-02 | Phase 1: Lean proofs made CI-machine-checked; status table created. | alignment branch |
+| 2026-06-03 | Echo operations typed in `bet-check` (`echo`/`echo_output`/`echo_to_residue`/`sample_echo`); registered TP-5 for the Lean metatheory mirror. | echo-types pass |

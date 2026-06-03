@@ -49,7 +49,7 @@ Instead it adds two **unary type formers**:
 [source]
 ----
 sample      : Dist T -> T        // marginalises away which draw/branch fired
-sample_echo : Dist T -> Echo T   // retains that residue   (DEFERRED)
+sample_echo : Dist T -> Echo T   // retains that residue   (LANDED, type-level)
 ----
 . **Ghost / erased residue.** The residue is proof-relevant; at runtime
   `Echo T` (and `EchoR T`) erase to `T`'s representation. No runtime
@@ -69,9 +69,14 @@ sample_echo : Dist T -> Echo T   // retains that residue   (DEFERRED)
 | `compiler/bet-check/src/lib.rs`
 | Lowering `Echo T` / `EchoR T` (parsed as type applications) in
   `ast_type_to_core`; structural `resolve`/`unify`; distinctness enforced
-  by the existing mismatch fallthrough. Unit tests cover lowering,
-  distinctness, structural unification, `Echo`≠`EchoR`, and inference
-  recursion.
+  by the existing mismatch fallthrough. **`echo_builtin_type`** supplies the
+  polymorphic typing schemes for the operations `echo` / `echo_output` /
+  `echo_to_residue` / `sample_echo` (instantiated fresh per use site, wired
+  through the `Expr::Var` resolution path). Unit tests cover lowering,
+  distinctness, structural unification, `Echo`≠`EchoR`, inference recursion,
+  and now the four operations (introduction, explicit projection, residue
+  lowering, the `sample_echo` bridge, polymorphic reuse, bare-carrier
+  rejection, and shadowing).
 
 | `proofs/BetLang.lean`
 | `Ty.echo`, `Ty.echoR` constructors. Type *formers* only — no `Expr`
@@ -83,16 +88,82 @@ sample_echo : Dist T -> Echo T   // retains that residue   (DEFERRED)
   grammar note. `Echo T` already parses as an application type.
 |===
 
+== Operations (typing rules — LANDED, types-only)
+
+The `Echo`/`EchoR` formers are now *operational* in `bet-check`, not inert:
+four structured-loss operations carry typing rules. They are added as
+**polymorphic builtins**, instantiated with a fresh carrier variable at every
+use site (genuine generalisation — a single operation may be applied at many
+carrier types in one scope). Surface syntax is ordinary application
+(`echo(x)`), so no grammar change was needed. The names mirror `EchoTypes.jl`.
+
+[cols="2,3,3"]
+|===
+| Operation | Typing rule | Role
+
+| `echo`
+| `'a -> Echo 'a`
+| Introduction (`echo-intro`, the unary collapse of the fibre core).
+
+| `echo_output`
+| `Echo 'a -> 'a`
+| *Explicit* projection to the base value — the comonad **counit**. The point
+  of distinctness: there is no *implicit* `Echo T -> T`; you must ask for the
+  value back.
+
+| `echo_map`
+| `('a -> 'b) -> Echo 'a -> Echo 'b`
+| Functor action (`map-over`): transform under the echo without forgetting.
+
+| `echo_duplicate`
+| `Echo 'a -> Echo (Echo 'a)`
+| Comonad comultiplication (`gduplicate`).
+
+| `echo_to_residue`
+| `Echo 'a -> EchoR 'a`
+| Lower a full echo to its strict, non-recoverable residue.
+
+| `sample_echo`
+| `Dist 'a -> Echo 'a`
+| Probabilistic-support bridge: retains the draw/branch residue that
+  `sample : Dist 'a -> 'a` discards. Composes with `echo_to_residue`.
+|===
+
+Together `echo_map` (functor), `echo_output` (counit), and `echo_duplicate`
+(comultiplication) give `Echo` the **functor + comonad surface**. This is the
+ungraded, ghost shadow of the *graded comonad of structured loss* proved
+upstream in echo-types (`EchoGradedComonad.agda`: `gextract` / `gduplicate` /
+coassoc). Here the grades are erased, so `bet-check` carries the *typing* while
+the *laws* live in the Agda — mirrored for Lean as obligation TP-5.
+
+NOTE: The core ternary primitive bridges to `Echo` by composition at the type
+level — `echo(bet a b c) : Echo T` already type-checks, viewing the
+branch-collapse as a retained-loss site. A dedicated `bet_echo` is only needed
+for *runtime* branch-tag retention (deferred); the type story needs no new
+primitive.
+
+These are **types-only / ghost**: at runtime `Echo T` and `EchoR T` still
+erase to `T` (no residue payload — see "Runtime representation strategy"
+below). Lexical bindings shadow these builtins, so they never steal a
+user-chosen identifier. The carrier distinctness is enforced *through* the
+operations as well as the formers — e.g. `echo_output` applied to a bare `T`
+is rejected.
+
+NOTE: The unary former does not provide `echo_input` (it would coincide with
+`echo_output` — there is no separate fibre *domain* to project), nor
+`residue_strictly_loses` (a propositional witness, not a term), nor `bet_echo`
+(it needs the ternary surface form, not a function application). Those remain
+conceptual anchors / deferred, below.
+
 == Deferred (next passes)
 
 === Canonical operation names (RESERVED / deferred)
 
-These names are **reserved cross-repo conceptual anchors, not committed
-BetLang operational semantics.** None of them is implemented or typed in
-BetLang yet, and none will be until the runtime/proof story is settled.
-When the echo operations do land, their *canonical* names mirror
-`EchoTypes.jl` for cross-repo conceptual consistency (shorter aliases may
-be added later, but the canonical names preserve the mapping):
+These names are **cross-repo conceptual anchors mirroring `EchoTypes.jl`.**
+Four of them — `echo`, `echo_output`, `echo_to_residue`, `sample_echo` — are
+now *typed* in `bet-check` (type-level only; see "Operations" above). The
+remainder stay reserved with **no committed operational semantics**, and none
+gains a *runtime* effect until that story is settled:
 
 [cols="2,3"]
 |===
@@ -131,11 +202,16 @@ documentation, not operational semantics.
 
 === Still to do
 
-* Introduction/elimination + residue forms (canonical names above) and
-  their typing rules.
-* The `sample_echo` / `bet_echo` operations and their typing rules.
-* Lean typing rules + metatheory for the echo operations once the runtime
-  residue representation is settled.
+* Runtime residue payload and *operational* semantics for `echo_output` /
+  `echo_to_residue` / `sample_echo` (currently typed only; erased at runtime).
+* `bet_echo` (needs the ternary surface form, not a function application) and
+  the proof-level `residue_strictly_loses` witness.
+* Lean typing rules + metatheory (Progress/Preservation) for the echo
+  operations — tracked as obligation **TP-5** in `PROOF-NEEDS.md`. The Rust
+  checker carries the typing rules today; the mechanised Lean mirror follows
+  once the runtime residue representation is settled. Until then the Lean
+  development keeps `echo`/`echoR` as type *formers* only, so Progress and
+  Preservation remain intact.
 
 == References
 
