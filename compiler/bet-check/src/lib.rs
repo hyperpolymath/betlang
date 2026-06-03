@@ -8,6 +8,10 @@
 //! - `sample(dist)` — takes `Dist<T>`, returns `T`
 //! - `observe(dist, value)` — takes `Dist<T>` and `T`
 //! - `infer(method, model)` — model returns `Dist<T>`, result is `Dist<T>`
+//! - Echo (structured-loss) operations over the `Echo`/`EchoR` formers:
+//!   `echo(x) : Echo T`, `echo_output(e) : T`, `echo_to_residue(e) : EchoR T`,
+//!   `sample_echo(d) : Echo T` (see `echo_builtin_type` and
+//!   `docs/echo-types.adoc`)
 //! - Ternary values have type `Ternary`
 //! - Let-polymorphism via generalization at let-boundaries
 
@@ -213,6 +217,74 @@ fn seed_builtins(env: &mut CheckEnv) {
     );
 }
 
+/// Typing schemes for the **echo-type operations** — the structured-loss
+/// introduction / projection / residue-lowering forms that make the
+/// `Echo`/`EchoR` formers *operational* in the type system rather than inert
+/// (see `hyperpolymath/echo-types`, the source of truth, and
+/// `docs/echo-types.adoc`).
+///
+/// Each operation is polymorphic in the carrier `'a`. We instantiate a
+/// **fresh** type variable at *every* use site, so a single operation can be
+/// applied at many carrier types within one scope — genuine generalization,
+/// unlike the shared-variable approximation `seed_builtins` uses for the
+/// legacy `to_string`. Returning `None` means "not an echo builtin"; the
+/// caller then reports an undefined variable.
+///
+/// | Operation         | Scheme                | Role                                                              |
+/// |-------------------|-----------------------|-------------------------------------------------------------------|
+/// | `echo`            | `'a -> Echo 'a`       | introduction (`echo-intro`, the unary collapse of the fibre core) |
+/// | `echo_output`     | `Echo 'a -> 'a`       | *explicit* projection to the base value (never an implicit coercion) |
+/// | `echo_to_residue` | `Echo 'a -> EchoR 'a` | lower a full echo to its strict, non-recoverable residue          |
+/// | `sample_echo`     | `Dist 'a -> Echo 'a`  | probabilistic-support bridge: retains the residue `sample` discards |
+///
+/// These are **types-only / ghost**: at runtime `Echo T` and `EchoR T` erase
+/// to `T` (no residue payload is materialised yet — see `docs/echo-types.adoc`
+/// §"Runtime representation strategy"). Names mirror `EchoTypes.jl` for
+/// cross-repo consistency.
+///
+/// Deliberately *not* provided here (see `docs/echo-types.adoc`):
+/// `echo_input` (coincides with `echo_output` for the unary former — there is
+/// no separate fibre domain to project), `residue_strictly_loses` (a
+/// propositional witness, not a term-level value), and `bet_echo` (needs the
+/// ternary surface form, not a function application).
+fn echo_builtin_type(name: &str, env: &mut CheckEnv) -> Option<Type> {
+    match name {
+        // echo : 'a -> Echo 'a
+        "echo" => {
+            let a = env.fresh_var();
+            Some(Type::Fun(
+                Box::new(a.clone()),
+                Box::new(Type::Echo(Box::new(a))),
+            ))
+        }
+        // echo_output : Echo 'a -> 'a
+        "echo_output" => {
+            let a = env.fresh_var();
+            Some(Type::Fun(
+                Box::new(Type::Echo(Box::new(a.clone()))),
+                Box::new(a),
+            ))
+        }
+        // echo_to_residue : Echo 'a -> EchoR 'a
+        "echo_to_residue" => {
+            let a = env.fresh_var();
+            Some(Type::Fun(
+                Box::new(Type::Echo(Box::new(a.clone()))),
+                Box::new(Type::EchoR(Box::new(a))),
+            ))
+        }
+        // sample_echo : Dist 'a -> Echo 'a
+        "sample_echo" => {
+            let a = env.fresh_var();
+            Some(Type::Fun(
+                Box::new(Type::Dist(Box::new(a.clone()))),
+                Box::new(Type::Echo(Box::new(a))),
+            ))
+        }
+        _ => None,
+    }
+}
+
 /// Type-check a top-level item.
 fn check_item(item: &Item, env: &mut CheckEnv) -> CompileResult<()> {
     match item {
@@ -314,13 +386,23 @@ fn check_expr(expr: &Spanned<Expr>, env: &mut CheckEnv) -> CompileResult<Type> {
         Expr::Unit => Ok(Type::Unit),
 
         // --- Variable ---
-        Expr::Var(name) => env
-            .lookup(&name.to_string())
-            .cloned()
-            .ok_or_else(|| CompileError::UndefinedVariable {
-                name: name.to_string(),
-                span: Some(span),
-            }),
+        Expr::Var(name) => {
+            let n = name.to_string();
+            // Lexical/seeded bindings win first (so an echo builtin can be
+            // shadowed by a user binding of the same name); otherwise fall back
+            // to the polymorphic echo-type operations, which are freshly
+            // instantiated per use site.
+            if let Some(ty) = env.lookup(&n).cloned() {
+                Ok(ty)
+            } else if let Some(ty) = echo_builtin_type(&n, env) {
+                Ok(ty)
+            } else {
+                Err(CompileError::UndefinedVariable {
+                    name: n,
+                    span: Some(span),
+                })
+            }
+        }
 
         // --- Bet (ternary choice) ---
         Expr::Bet(bet) => check_bet(bet, env, span),
@@ -933,6 +1015,16 @@ mod tests {
         Spanned::dummy(expr)
     }
 
+    /// Helper: a variable reference by name.
+    fn var(name: &str) -> Spanned<Expr> {
+        dummy(Expr::Var(Symbol::intern(name)))
+    }
+
+    /// Helper: apply a named function to arguments (`name(args...)`).
+    fn call(name: &str, args: Vec<Spanned<Expr>>) -> Spanned<Expr> {
+        dummy(Expr::App(Box::new(var(name)), args))
+    }
+
     #[test]
     fn test_literal_types() {
         let mut env = CheckEnv::new();
@@ -1248,5 +1340,109 @@ mod tests {
         env.unify(&Type::Echo(Box::new(a.clone())), &Type::Echo(Box::new(Type::Int)), None)
             .expect("Echo 'a should unify with Echo Int");
         assert_eq!(env.resolve(&Type::Echo(Box::new(a))), Type::Echo(Box::new(Type::Int)));
+    }
+
+    // ---- Echo operations (introduction / projection / residue / bridge) ----
+    // These exercise the typing rules that make the Echo formers operational,
+    // not just inert. See `echo_builtin_type` and `docs/echo-types.adoc`.
+
+    /// `echo : 'a -> Echo 'a` introduces a structured-loss residue.
+    #[test]
+    fn test_echo_intro() {
+        let mut env = CheckEnv::new();
+        let e = call("echo", vec![dummy(Expr::Int(5))]);
+        assert_eq!(
+            check_expr(&e, &mut env).expect("echo 5 should type-check"),
+            Type::Echo(Box::new(Type::Int))
+        );
+    }
+
+    /// `echo_output : Echo 'a -> 'a` is the *explicit* projection back to the
+    /// carrier — `echo_output (echo x)` recovers `T`. There is no implicit
+    /// `Echo T -> T`.
+    #[test]
+    fn test_echo_output_projection() {
+        let mut env = CheckEnv::new();
+        let inner = call("echo", vec![dummy(Expr::String("x".into()))]);
+        let e = call("echo_output", vec![inner]);
+        assert_eq!(
+            check_expr(&e, &mut env).expect("echo_output (echo \"x\") should type-check"),
+            Type::String
+        );
+    }
+
+    /// `echo_to_residue : Echo 'a -> EchoR 'a` lowers a full echo to its
+    /// strict residue.
+    #[test]
+    fn test_echo_to_residue() {
+        let mut env = CheckEnv::new();
+        let inner = call("echo", vec![dummy(Expr::Int(1))]);
+        let e = call("echo_to_residue", vec![inner]);
+        assert_eq!(
+            check_expr(&e, &mut env).expect("echo_to_residue (echo 1) should type-check"),
+            Type::EchoR(Box::new(Type::Int))
+        );
+    }
+
+    /// `sample_echo : Dist 'a -> Echo 'a` is the probabilistic-support bridge,
+    /// and it composes with `echo_to_residue`.
+    #[test]
+    fn test_sample_echo_bridge_and_composition() {
+        let mut env = CheckEnv::new();
+        env.bind("d".to_string(), Type::Dist(Box::new(Type::Int)));
+        let e = call("sample_echo", vec![var("d")]);
+        assert_eq!(
+            check_expr(&e, &mut env).expect("sample_echo d : Echo Int"),
+            Type::Echo(Box::new(Type::Int))
+        );
+        let composed = call("echo_to_residue", vec![call("sample_echo", vec![var("d")])]);
+        assert_eq!(
+            check_expr(&composed, &mut env)
+                .expect("echo_to_residue (sample_echo d) : EchoR Int"),
+            Type::EchoR(Box::new(Type::Int))
+        );
+    }
+
+    /// The echo operations are genuinely polymorphic: a fresh instantiation per
+    /// use site lets `echo` be applied at `Int` and at `String` in one scope
+    /// (the legacy shared-variable approximation would pin it to the first).
+    #[test]
+    fn test_echo_builtins_are_polymorphic() {
+        let mut env = CheckEnv::new();
+        let at_int = call("echo", vec![dummy(Expr::Int(1))]);
+        assert_eq!(
+            check_expr(&at_int, &mut env).expect("echo @ Int"),
+            Type::Echo(Box::new(Type::Int))
+        );
+        let at_str = call("echo", vec![dummy(Expr::String("s".into()))]);
+        assert_eq!(
+            check_expr(&at_str, &mut env).expect("echo @ String"),
+            Type::Echo(Box::new(Type::String))
+        );
+    }
+
+    /// Distinctness is enforced *through the operations*, not only the formers:
+    /// `echo_output` applied to a bare carrier (not an `Echo`) is rejected.
+    #[test]
+    fn test_echo_output_rejects_bare_carrier() {
+        let mut env = CheckEnv::new();
+        let e = call("echo_output", vec![dummy(Expr::Int(5))]);
+        assert!(check_expr(&e, &mut env).is_err());
+    }
+
+    /// A lexical binding of the same name shadows the echo builtin (env lookup
+    /// wins), so the builtins never steal a user-chosen identifier.
+    #[test]
+    fn test_echo_builtin_is_shadowable() {
+        let mut env = CheckEnv::new();
+        env.bind(
+            "echo".to_string(),
+            Type::Fun(Box::new(Type::Int), Box::new(Type::Bool)),
+        );
+        let e = call("echo", vec![dummy(Expr::Int(1))]);
+        assert_eq!(
+            check_expr(&e, &mut env).expect("shadowed echo : Int -> Bool"),
+            Type::Bool
+        );
     }
 }

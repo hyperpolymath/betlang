@@ -28,6 +28,7 @@ This file defines *what* must be proven. Completion is tracked in
 | TP-2   | Preservation (typing preserved under step)          | TP   | Lean4  | P1 | ✅ done |
 | TP-3   | Distribution monad laws (×3)                        | TP   | Lean4  | P1 | ✅ done |
 | TP-4   | Discharge `substTop_preserves_typing` axiom         | TP   | Lean4  | P1 | remaining |
+| TP-5   | Echo-operation typing rules + metatheory (Progress/Preservation) | TP | Lean4 | P2 | remaining |
 | SEM-1  | Continuous measure-theoretic denotation             | SEM  | Lean4  | P2 | remaining |
 | STAT-1 | Maximum entropy of uniform ternary = log₂3          | STAT | Lean4  | P2 | remaining |
 | STAT-2 | SLLN for bet sample means                           | STAT | Lean4  | P2 | remaining |
