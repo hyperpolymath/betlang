@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MPL-2.0
+// Copyright (c) Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
 # BetLang
 
 **A Symbolic Probabilistic Metalanguage / Probabilistic CAS**
@@ -11,6 +13,8 @@ At its heart is a single idea:
 ---
 
 == Core Concept
+image:https://img.shields.io/badge/OpenSSF-Best_Practices-green?logo=openssourcesecurity[OpenSSF Best Practices,link="https://www.bestpractices.dev/en/projects/new?repo_url=https://github.com/hyperpolymath/betlang"]
+
 
 The fundamental primitive is the ternary form:
 
@@ -525,7 +529,7 @@ Key principles:
 
 == License
 
-BetLang uses **PMPL-1.0 (Palimpsest Public License)**.
+BetLang uses **MPL-2.0 (Palimpsest Public License)**.
 
 See `LICENSE` for the precise definition and terms.
 
