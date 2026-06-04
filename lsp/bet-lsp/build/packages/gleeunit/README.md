@@ -1,3 +1,7 @@
+<!--
+SPDX-License-Identifier: MPL-2.0
+Copyright (c) Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
+-->
 # gleeunit
 
 A simple test runner for Gleam, using EUnit on Erlang and a custom runner on JS.

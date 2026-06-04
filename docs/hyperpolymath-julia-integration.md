@@ -1,3 +1,7 @@
+<!--
+SPDX-License-Identifier: MPL-2.0
+Copyright (c) Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
+-->
 # BetLang Integration with Hyperpolymath Julia Packages
 
 **Status:** Planning Phase (2026-02-07)

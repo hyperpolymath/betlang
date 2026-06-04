@@ -1,5 +1,6 @@
-// @taxonomy: compiler/parser
 // SPDX-License-Identifier: MPL-2.0
+// Copyright (c) Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
+// @taxonomy: compiler/parser
 //! Parser for Betlang
 //!
 //! This module provides lexing and parsing for betlang source code.

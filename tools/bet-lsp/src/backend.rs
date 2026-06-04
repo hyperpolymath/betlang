@@ -1,4 +1,5 @@
-// SPDX-License-Identifier: MIT OR Apache-2.0
+// SPDX-License-Identifier: MPL-2.0
+// Copyright (c) Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
 //! LSP Backend — LanguageServer trait implementation for betlang.
 //!
 //! Manages document state and dispatches LSP requests to the appropriate

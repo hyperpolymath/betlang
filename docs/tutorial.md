@@ -1,3 +1,7 @@
+<!--
+SPDX-License-Identifier: MPL-2.0
+Copyright (c) Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
+-->
 # betlang Tutorial
 
 Welcome to betlang! This tutorial will guide you through the ternary probabilistic programming language from basics to advanced topics.

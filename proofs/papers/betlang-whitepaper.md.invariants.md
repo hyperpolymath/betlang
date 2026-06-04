@@ -1,3 +1,7 @@
+<!--
+SPDX-License-Identifier: MPL-2.0
+Copyright (c) Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
+-->
 # Invariant Path Scan: betlang-whitepaper.md
 
 ## Invariant: ip-30723e8b73ccb799

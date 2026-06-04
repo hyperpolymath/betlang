@@ -1,4 +1,5 @@
-// SPDX-License-Identifier: MIT OR Apache-2.0
+// SPDX-License-Identifier: MPL-2.0
+// Copyright (c) Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
 //! Go-to-definition handler.
 //!
 //! Searches the document for `let`, `define`, `type`, and `import`

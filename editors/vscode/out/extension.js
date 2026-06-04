@@ -1,5 +1,6 @@
+// SPDX-License-Identifier: MPL-2.0
+// Copyright (c) Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
 "use strict";
-// SPDX-License-Identifier: MIT OR Apache-2.0
 // Betlang VSCode Extension
 // Thin wrapper that spawns the bet-lsp language server
 var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
