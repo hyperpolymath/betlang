@@ -1,4 +1,6 @@
 #lang racket
+; SPDX-License-Identifier: MPL-2.0
+; SPDX-FileCopyrightText: 2026 Jonathan D.A. Jewell (hyperpolymath)
 (require "../core/betlang.rkt")
 
 ;; Ternary Logic and Utilities for betlang

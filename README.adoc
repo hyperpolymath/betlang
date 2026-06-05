@@ -79,8 +79,8 @@ Over time, the full **uncertainty number tower migrates here**.
 === Lean 4 — Proof / Verification Layer
 
 * Machine-checks **Progress**, **Preservation**, and distribution **monad laws**
-* **Zero `sorry`** — one permitted classified axiom (`substTop_preserves_typing`,
-  see `docs/proof-debt.adoc`)
+* **Zero `sorry`, zero `axiom`** — `substTop_preserves_typing` is fully proved
+  (formerly a classified axiom, since discharged; see `docs/proof-debt.adoc`)
 * `lakefile.lean` + `lean-toolchain` make proofs a first-class Lake project
 * `.github/workflows/proofs.yml` verifies every PR via `lake build`
 

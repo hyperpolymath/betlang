@@ -80,8 +80,8 @@ there.
 * **Preservation** — typing is invariant under small-step reduction.
 * **Distribution monad laws** — the probability monad is correctly structured.
 
-One permitted axiom: `substTop_preserves_typing` — classified, triaged in
-`docs/proof-debt.adoc`, tracked as standards#203.
+Axiom-free: `substTop_preserves_typing` is a proved theorem (formerly a
+classified axiom, since discharged; see `docs/proof-debt.adoc` §(a), standards#203).
 
 Proof infrastructure: `lakefile.lean`, `lean-toolchain` (pins `leanprover/lean4:v4.15.0`),
 `.github/workflows/proofs.yml` (runs `lake build` + `tools/proof-scan.sh` on every PR).
@@ -222,8 +222,8 @@ structurally: `Echo T ~ Echo T'` iff `T ~ T'`.
 
 === Proof debt
 
-`docs/proof-debt.adoc` — records the single classified axiom
-(`substTop_preserves_typing`, standards#203). No other unsoundness.
+`docs/proof-debt.adoc` — records the discharged `substTop_preserves_typing`
+lemma (formerly a classified axiom; standards#203). No axioms remain; no other unsoundness.
 
 === PROOF-STATUS.md
 
@@ -269,7 +269,6 @@ Tracks the 13 proof obligations across their completion stages. Currently 3/13 d
 * Runtime residue payload for `Echo T` / `EchoR T` — ghost-erased until operations demand
 * WASM backend (`compiler/bet-wasm/`) — pre-existing breakage, non-critical
 * Julia backend Phase 2 — active but separate work stream
-* `substTop_preserves_typing` discharge — Phase 2 proof obligation
 
 == For AI agents
 

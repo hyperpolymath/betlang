@@ -3,7 +3,6 @@
 
 [![Sponsor](https://img.shields.io/badge/Sponsor-%E2%9D%A4-pink?logo=github)](https://github.com/sponsors/hyperpolymath)
 [![License: MPL-2.0](https://img.shields.io/badge/License-MPL--2.0-blue.svg)](LICENSE)
-[![License: PMPL-1.0](https://img.shields.io/badge/License-PMPL--1.0-indigo.svg)](PALIMPSEST.adoc)
 
 # BetLang
 
@@ -64,7 +63,7 @@ demand a payload. See [docs/echo-types.adoc](docs/echo-types.adoc).
 
 - `lakefile.lean` + `lean-toolchain` → buildable Lake project
 - `.github/workflows/proofs.yml` → CI-checked on every PR (`lake build` + banned-pattern scan)
-- One permitted classified axiom: `substTop_preserves_typing` (see `docs/proof-debt.adoc`)
+- Axiom-free: `substTop_preserves_typing` is fully proved — no `axiom`/`sorry` (see `docs/proof-debt.adoc`)
 
 ---
 
@@ -117,7 +116,7 @@ See [CONTRIBUTING.md](CONTRIBUTING.md). For a guided tour, read [EXPLAINME.adoc]
 
 ## License
 
-BetLang uses **PMPL-1.0** (Palimpsest Public License). SPDX identifier: `MPL-2.0`.
+BetLang is licensed under **MPL-2.0**. SPDX identifier: `MPL-2.0`.
 
 See [LICENSE](LICENSE) and [PALIMPSEST.adoc](PALIMPSEST.adoc).
 

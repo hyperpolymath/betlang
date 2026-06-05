@@ -1,6 +1,0 @@
-#lang racket
-(provide ternary-eval)
-
-;; Abstract ternary condition
-(define (ternary-eval cond truth fallback)
-  (if cond truth fallback))

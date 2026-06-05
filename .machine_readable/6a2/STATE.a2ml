@@ -34,7 +34,7 @@ milestones = [
   "M1: Proof foundation — lakefile.lean + proofs.yml CI + banned-pattern gate [DONE #53]",
   "M2: Governance clean — licence, language policy, Racket tests, timeout [DONE #54]",
   "M3: Echo types core — Type::Echo/EchoR, unify, lower, Lean Ty.echo/echoR [DONE #55]",
-  "M4: Discharge substTop_preserves_typing axiom (PROOF-STATUS TP-4)",
+  "M4: Discharge substTop_preserves_typing axiom (PROOF-STATUS TP-4) [DONE — now a proved theorem; axiom-free core]",
   "M5: Echo operations — echo_intro, proj1, echo_to_residue; typing rules",
   "M6: sample_echo / bet_echo probabilistic bridge",
   "M7: Julia backend Phase 2 — core language features",
@@ -42,25 +42,22 @@ milestones = [
 
 [proof-obligations]
 # See PROOF-STATUS.md for the full register (13 obligations)
-proved = ["TP-1 Progress", "TP-2 Preservation", "TP-3 Monad laws"]
-axioms = ["substTop_preserves_typing (classified, standards#203, docs/proof-debt.adoc)"]
-remaining = 10
+proved = ["TP-1 Progress", "TP-2 Preservation", "TP-3 Monad laws", "TP-4 substTop_preserves_typing (discharged — axiom-free)"]
+axioms = []
+remaining = 9
 
 [blockers-and-issues]
 issues = [
   "bet-wasm E0308: pre-existing WASM backend breakage (match arm type mismatch, not caused by any of #53-55)",
-  "substTop_preserves_typing: classified axiom; discharge is M4 (Phase 2 proofs)",
   "Echo operations deferred: no echo_intro/proj1/echo_to_residue until runtime/proof story settled",
 ]
 
 [critical-next-actions]
 actions = [
-  "Merge PR #54 → main (all-green)",
-  "Rebase PR #53 onto updated main, re-CI, merge",
-  "Retarget PR #55 to main, mark ready, merge",
-  "Phase 2 proof obligations: discharge substTop_preserves_typing",
-  "Echo operations pass: introduce echo_intro, echo_to_residue, proj1; typing rules in Lean",
+  "TP-5: Echo-operation typing rules + metatheory in Lean (echo_intro, echo_to_residue, proj1)",
   "sample_echo / bet_echo probabilistic bridge (Dist T → Echo T)",
+  "Julia backend Phase 2 — core language features",
+  "bet-wasm E0308: fix pre-existing WASM backend match-arm type mismatch",
 ]
 
 [language-policy]
