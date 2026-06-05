@@ -29,11 +29,12 @@ See `docs/AFFINESCRIPT-ALIGNMENT.adoc` for the phased plan and
 | TP-1 | Progress — well-typed closed term is a value or steps | Lean4 | `proofs/BetLang.lean` | `lake build` (CI: `proofs.yml`) |
 | TP-2 | Preservation — typing preserved under reduction | Lean4 | `proofs/BetLang.lean` | `lake build` (CI: `proofs.yml`) |
 | TP-3 | Distribution monad laws (left id, right id, assoc) | Lean4 | `proofs/BetLang.lean` | `lake build` (CI: `proofs.yml`) |
+| TP-4 | Discharge `substTop_preserves_typing` (de Bruijn subst lemma) — now a proved theorem, axiom-free | Lean4 | `proofs/BetLang.lean` | `lake build` (CI: `proofs.yml`) |
 
-> Note: TP-2 currently depends on the classified necessary axiom
-> `substTop_preserves_typing` (`proofs/BetLang.lean`). It is an explicit
-> axiom, **not** a `sorry` — see `docs/proof-debt.adoc` §(c). Discharging
-> it (TP-4) yields an axiom-free core.
+> Note: TP-2 is axiom-free. `substTop_preserves_typing`
+> (`proofs/BetLang.lean:918`) is a fully proved `theorem` — the former
+> classified axiom (TP-4) has been discharged (see `docs/proof-debt.adoc`
+> §(a)). No `axiom` declarations remain.
 
 ## Proofs In Progress
 
@@ -51,7 +52,6 @@ See `docs/AFFINESCRIPT-ALIGNMENT.adoc` for the phased plan and
 
 | ID | Proof | Category | Prover | Phase | Priority |
 |----|-------|----------|--------|-------|----------|
-| TP-4   | Discharge `substTop_preserves_typing` (de Bruijn subst lemma) | TP   | Lean4  | 2 | P1 |
 | TP-5   | Echo-operation typing rules + metatheory — mirror `bet-check`'s functor/comonad surface (`echo`, `echo_map`, `echo_output`, `echo_duplicate`, `echo_to_residue`, `sample_echo`), incl. the comonad laws from `EchoGradedComonad.agda` | TP | Lean4 | 2 | P2 |
 | SEM-1  | Continuous measure-theoretic denotational semantics           | SEM  | Lean4  | 2 | P2 |
 | STAT-1 | Maximum entropy of uniform ternary = log₂3 bits               | STAT | Lean4  | 2 | P2 |
@@ -75,8 +75,9 @@ just proof-scan           # banned-pattern gate only
 
 `sorry` / `admit` (Lean), `Admitted` (Coq), `postulate` / `believe_me` /
 `assert_total` (Idris2/Agda), `unsafeCoerce`. Enforced by
-`tools/proof-scan.sh` in CI (`.github/workflows/proofs.yml`). The single
-classified `axiom` is permitted by policy (standards#203).
+`tools/proof-scan.sh` in CI (`.github/workflows/proofs.yml`). No `axiom`
+declarations remain; any future classified `axiom` would be permitted by
+policy (standards#203) and registered in `docs/proof-debt.adoc`.
 
 ## Changelog
 
