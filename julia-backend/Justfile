@@ -52,3 +52,6 @@ format:
 dev:
     just compile examples/test.bet
     julia --project=. examples/test.jl
+
+secret-scan-trufflehog:
+    @command -v trufflehog >/dev/null && trufflehog filesystem . --only-verified || true

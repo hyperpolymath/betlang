@@ -141,3 +141,6 @@ init-hooks:
     @echo "just check" >> .git/hooks/pre-commit
     @chmod +x .git/hooks/pre-commit
     @echo "Git hooks initialized"
+
+secret-scan-trufflehog:
+    @command -v trufflehog >/dev/null && trufflehog filesystem . --only-verified || true
