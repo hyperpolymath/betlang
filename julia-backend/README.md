@@ -1,3 +1,7 @@
+<!--
+SPDX-License-Identifier: MPL-2.0
+Copyright (c) Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
+-->
 # BetLang Julia Backend (v0.8.0-dev)
 
 High-performance Julia backend for the betlang probabilistic programming language.
@@ -227,7 +231,7 @@ See `../CONTRIBUTING.adoc` for contribution guidelines.
 
 ## License
 
-MPL-2.0 (Palimpsest License)
+MPL-2.0 (MPL-2.0)
 
 ## Authors
 

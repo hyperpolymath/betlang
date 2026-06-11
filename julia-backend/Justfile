@@ -1,4 +1,5 @@
 # SPDX-License-Identifier: MPL-2.0
+// Copyright (c) Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
 # justfile for BetLang Julia backend
 
 # Default recipe
@@ -52,3 +53,6 @@ format:
 dev:
     just compile examples/test.bet
     julia --project=. examples/test.jl
+
+secret-scan-trufflehog:
+    @command -v trufflehog >/dev/null && trufflehog filesystem . --only-verified || true

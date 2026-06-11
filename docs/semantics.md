@@ -1,3 +1,7 @@
+<!--
+SPDX-License-Identifier: MPL-2.0
+Copyright (c) Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
+-->
 # betlang Semantics
 
 Betlang is a ternary DSL for probabilistic modeling and symbolic wagers, implemented in Racket. It provides a rich set of primitives for expressing and analyzing probabilistic computations.

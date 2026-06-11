@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: MPL-2.0
+// Copyright (c) Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
 //! Type checker for Betlang
 //!
 //! Implements bidirectional type checking for Betlang's probabilistic type
