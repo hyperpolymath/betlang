@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MPL-2.0
+// Copyright (c) Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
 # betlang - Development Tasks
 # AUTHORITY: AUTHORITY_STACK.mustfile-nickel.scm
 # All operations MUST be invoked via `just <recipe>`.
@@ -81,6 +83,24 @@ test-tooling:
 # Clean Rust build artifacts
 clean-tooling:
     cargo clean
+
+# ============================================================================
+# PROOFS (formal verification — see docs/AFFINESCRIPT-ALIGNMENT.adoc)
+# ============================================================================
+
+# Machine-check the Lean 4 formalisation (proofs/BetLang.lean)
+proof-check-lean4:
+    @echo "Building Lean 4 proofs (lake build)..."
+    lake build
+
+# Scan proof sources for banned soundness escape hatches
+proof-scan:
+    @echo "Scanning proofs for banned patterns..."
+    bash tools/proof-scan.sh .
+
+# Run all available proof checks (scan + machine-check)
+proof-check-all: proof-scan proof-check-lean4
+    @echo "All proof checks complete."
 
 # ============================================================================
 # CODE QUALITY

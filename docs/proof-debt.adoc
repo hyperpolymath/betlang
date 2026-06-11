@@ -12,19 +12,36 @@ of: (a) DISCHARGED, (b) BUDGETED, (c) NECESSARY AXIOM, or (d) DEBT.
 
 Supersedes the thin index in
 https://github.com/hyperpolymath/betlang/pull/37[betlang#37] (which
-declared "3 escape hatches" — the actual count is 1).
+declared "3 escape hatches" — the actual count is now 0; the single
+classified axiom has since been discharged to a theorem, see §(a)).
 
 == Marker count
 
-1 soundness-relevant escape hatch in this repo:
+0 soundness-relevant escape hatches in this repo.
 
-* `proofs/BetLang.lean:392` — `axiom substTop_preserves_typing`
-
-Zero `sorry` declarations. Zero `noncomputable` in soundness positions.
+The former `axiom substTop_preserves_typing` has been discharged to a
+proved theorem (`proofs/BetLang.lean:918`); see §(a). Zero `axiom`, zero
+`sorry` declarations, zero `noncomputable` in soundness positions.
 
 == (a) Discharged
 
-No entries.
+=== `proofs/BetLang.lean:918` — `theorem substTop_preserves_typing` (formerly an axiom)
+
+[source,lean]
+----
+theorem substTop_preserves_typing :
+  ∀ (Γ : Ctx) (S T : Ty) (body v : Expr),
+    HasType (S :: Γ) body T → HasType Γ v S → HasType Γ (substTop v body) T
+----
+
+* **Kind**: classical substitution lemma for typed lambda terms under
+  de Bruijn substitution — the canonical preservation prerequisite ({tapl}).
+* **Status**: DISCHARGED. Formerly classified (c) NECESSARY AXIOM; now a
+  fully proved `theorem`, with no `axiom` declaration remaining anywhere in
+  `proofs/BetLang.lean`. Machine-checked by `lake build` (CI: `proofs.yml`).
+* **Used by**: the `preservation` theorem (threaded through the `appLam`
+  beta-reduction case).
+* **History**: discharge recipe in link:{discharge-pr}[betlang PR #27].
 
 == (b) Budgeted — tested with refutation budget
 
@@ -32,41 +49,8 @@ No entries.
 
 == (c) NECESSARY AXIOM
 
-=== `proofs/BetLang.lean:392` — `axiom substTop_preserves_typing`
-
-[source,lean]
-----
-axiom substTop_preserves_typing :
-  ∀ (Γ : Ctx) (S T : Ty) (body v : Expr),
-    HasType (S :: Γ) body T → HasType Γ v S → HasType Γ (substTop v body) T
-----
-
-* **Kind**: classical substitution lemma for typed lambda terms under
-  de Bruijn substitution.
-* **Justification**: discharging requires the full shifting /
-  substitution calculus over de Bruijn indices, which would triple
-  the file size and is orthogonal to the BetLang-specific content of
-  this formalisation. The property is standard and well-known to
-  hold for this style of substitution.
-* **Citation**: {tapl} ("Pure Simply Typed Lambda Calculus" — the
-  substitution lemma is the canonical preservation prerequisite).
-  Mechanised independently in many libraries: Software Foundations
-  Volume 2 § STLC, Programming Language Foundations in Agda §
-  Properties, Lean Mathlib's `Mathlib.Logic.Function.Iterate`
-  substitution machinery.
-* **Used by**: `preservation` theorem at `proofs/BetLang.lean:398`
-  (invoked in the `appLam` case to thread typing across
-  beta-reduction).
-* **Author's framing**: the in-file comment at
-  `proofs/BetLang.lean:387-391` is explicit that this is an axiom,
-  not a `sorry`: _"IMPORTANT: This is NOT sorry — it is an axiom.
-  The difference is that axioms are explicit assumptions in the
-  logical framework, whereas sorry is a proof hole."_
-* **Promotion path** (optional, not blocking): see
-  link:{discharge-pr}[betlang PR #27] body for a discharge recipe.
-  Promotion would move this entry to §(a) DISCHARGED and remove the
-  `axiom` declaration in favour of a proof using the Lean Mathlib
-  substitution lemmas.
+No entries. (The former `substTop_preserves_typing` axiom was discharged to
+a theorem — see §(a).)
 
 == (d) DEBT — actively to be closed
 
@@ -78,8 +62,8 @@ principled disposition today.)
 
 * link:{policy}[standards#203] — trusted-base reduction policy
   (canonical estate-wide definition)
-* `proofs/BetLang.lean` — the formal model where the axiom is
-  declared and used
+* `proofs/BetLang.lean` — the formal model where the (now proved)
+  substitution lemma is stated and used
 * `docs/semantics.md` — language semantics overview
 * link:{discharge-pr}[betlang PR #27] — discharge recipe (optional
   promotion to §(a))

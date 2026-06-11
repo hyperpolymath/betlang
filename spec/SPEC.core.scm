@@ -132,6 +132,35 @@
             "Conformance testing"))))
 
     ;;=========================================================================
+    ;; TYPE SYSTEM EXTENSION: echo types (structured loss)
+    ;;=========================================================================
+    (echo-types
+     . ((origin . "hyperpolymath/echo-types (Agda, source of truth); EchoTypes.jl (executable companion)")
+        (canonical-statement
+         . "Echo T is a distinct proof-relevant structured-loss type whose first canonical betlang introduction form is probabilistic support retention: sampling or betting may erase branch/draw information into T, while the echo form retains that residue statically.")
+
+        (formers
+         . ((Echo  . ((arity . 1)
+                      (meaning . "Echo T : a T-value carrying a proof-relevant residue of retained loss; potentially recoverability-bearing")
+                      (surface-syntax . "Echo T  (parsed as a type application, like `Dist T`)")))
+            (EchoR . ((arity . 1)
+                      (meaning . "EchoR T : the strict, non-recoverable residue/retraction of Echo T; no recovery operation is promised")
+                      (status . "reserved former; rich operations deferred")))))
+
+        (typing-rules
+         . ((distinctness . "Echo T is NOT T: unify(Echo T, T) fails and unify(Echo T, EchoR T) fails. No implicit forgetting Echo T -> T.")
+            (structural . "Echo T ~ Echo T' iff T ~ T'; likewise EchoR T ~ EchoR T'.")
+            (domain-agnostic . "Echo is the general structured-loss former in core; the probabilistic-support bridge is its canonical betlang integration, not its definition.")))
+
+        (canonical-bridge
+         . ((sample . "sample : Dist T -> T   (marginalises away which draw/branch produced the value)")
+            (echo-companion . "sample_echo / bet_echo : Dist T -> Echo T   (retains that residue) -- DEFERRED")))
+
+        (runtime . "Residue is ghost / proof-relevant: Echo T and EchoR T erase to T's representation in codegen for now (no runtime payload until operations demand it).")
+
+        (mechanisation . "Type formers Ty.echo / Ty.echoR in proofs/BetLang.lean; Type::Echo / Type::EchoR in compiler/bet-core/src/types.rs; lowered + unified (distinctly) in compiler/bet-check.")))
+
+    ;;=========================================================================
     ;; TESTING REQUIREMENTS
     ;;=========================================================================
     (testing-requirements

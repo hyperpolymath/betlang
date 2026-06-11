@@ -31,6 +31,23 @@ inductive Ty : Type where
   | unit   : Ty
   | arrow  : Ty → Ty → Ty
   | dist   : Ty → Ty
+  -- Echo types (structured loss; see `hyperpolymath/echo-types`). `echo T` is
+  -- a proof-relevant retained-loss residue over `T`, distinct from `T`;
+  -- `echoR T` is its strict, non-recoverable weakening. These are type
+  -- *formers* only in this Lean development: no `Expr` constructor introduces
+  -- or eliminates them and `HasType` assigns no expression an echo type, so
+  -- the carrier's metatheory (Progress/Preservation below) is unaffected.
+  -- NOTE: the Rust checker `bet-check` now carries the *typing rules* for the
+  -- echo operations — introduction `echo : 'a → Echo 'a`, the functor/comonad
+  -- surface `echo_map`/`echo_output` (counit)/`echo_duplicate`, the residue
+  -- lowering `echo_to_residue : Echo 'a → EchoR 'a`, and the probabilistic
+  -- bridge `sample_echo : Dist 'a → Echo 'a` (all type-level / ghost; the
+  -- ungraded shadow of `EchoGradedComonad.agda`). Mirroring those rules here
+  -- and re-establishing Progress/Preservation is tracked as obligation TP-5
+  -- (PROOF-NEEDS.md), deferred until the runtime residue representation is
+  -- settled.
+  | echo   : Ty → Ty
+  | echoR  : Ty → Ty
   deriving DecidableEq, Repr
 
 /-- BetLang core expressions using de Bruijn indices. -/

@@ -1,0 +1,65 @@
+# SPDX-License-Identifier: MPL-2.0
+# Dustfile — recovery and rollback semantics for betlang
+
+version: 1
+
+recovery:
+  proofs:
+    - name: lean-build-failure
+      event: "proofs.lean_build_failed"
+      diagnose: |
+        1. Check lean-toolchain (must match leanprover/lean4:v4.15.0)
+        2. Run `lake build` locally — look for type errors in proofs/BetLang.lean
+        3. Check for breaking changes in Lean 4 toolchain version
+      undo: "git checkout HEAD~1 -- lean-toolchain"
+      notes: "If a toolchain bump broke the build, revert lean-toolchain. Proof content is stable."
+
+    - name: banned-pattern-detected
+      event: "proofs.banned_pattern_found"
+      diagnose: |
+        Run: tools/proof-scan.sh
+        Patterns: sorry, admit, Admitted, postulate, believe_me, assert_total, unsafeCoerce
+        NOTE: `axiom` is NOT banned — substTop_preserves_typing is a classified permitted axiom.
+      rollback: "git checkout HEAD~1 -- proofs/BetLang.lean"
+      notes: "Remove the offending escape hatch. axiom substTop_preserves_typing is documented in docs/proof-debt.adoc."
+
+  governance:
+    - name: ts-policy-violation
+      event: "governance.banned_language_file"
+      diagnose: |
+        New TypeScript file detected outside playground/.
+        Check .governance-allowlist and .hypatia-ignore for the approved exemptions.
+        The only approved exemption is playground/** (6 files, sandbox).
+      fix: "Delete or convert offending .ts file to AffineScript."
+      notes: "playground/ TS exemption is documented in .claude/CLAUDE.md TypeScript Exemptions table."
+
+    - name: licence-inconsistency
+      event: "governance.licence_consistency_failed"
+      diagnose: |
+        SPDX header mismatch or Cargo.toml license field wrong.
+        All files use MPL-2.0. Cargo.toml license = \"MPL-2.0\".
+      fix: "Add SPDX-License-Identifier: MPL-2.0 to offending file header."
+
+    - name: racket-test-failure
+      event: "test.racket_tests_failed"
+      diagnose: |
+        1. Check test.yml: setup-racket must NOT include `packages: 'rackunit'` (causes scope conflict)
+        2. Run locally: racket tests/basics.rkt
+        3. Check lib/optimization.rkt, lib/sampling.rkt provide lists for undefined symbols
+      rollback: "git checkout HEAD~1 -- .github/workflows/test.yml"
+
+  echo-types:
+    - name: echo-distinctness-regression
+      event: "test.echo_distinct_from_carrier_failed"
+      diagnose: |
+        The Echo T distinctness invariant has regressed.
+        unify(Echo T, T) must FAIL; unify(Echo T, EchoR T) must FAIL.
+        Check compiler/bet-check/src/lib.rs unify() — the mismatch fallthrough must be intact.
+      rollback: "git checkout HEAD~1 -- compiler/bet-check/src/lib.rs"
+      notes: "Echo T is not T. If unification were silent, the whole point of retained loss is gone."
+
+  infrastructure:
+    - name: ci-workflow-timeout
+      event: "ci.workflow_timeout"
+      diagnose: "Jobs running >30min are likely stuck on Lean toolchain download or Racket pkg install."
+      fix: "Add or restore timeout-minutes: 30 on non-reusable-caller jobs. Reusable workflow callers cannot have timeout-minutes."

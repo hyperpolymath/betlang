@@ -9,6 +9,10 @@
 //! - `sample(dist)` — takes `Dist<T>`, returns `T`
 //! - `observe(dist, value)` — takes `Dist<T>` and `T`
 //! - `infer(method, model)` — model returns `Dist<T>`, result is `Dist<T>`
+//! - Echo (structured-loss) operations over the `Echo`/`EchoR` formers — the
+//!   functor/comonad surface plus the residue and probabilistic bridges:
+//!   `echo`, `echo_output`, `echo_map`, `echo_duplicate`, `echo_to_residue`,
+//!   `sample_echo` (see `echo_builtin_type` and `docs/echo-types.adoc`)
 //! - Ternary values have type `Ternary`
 //! - Let-polymorphism via generalization at let-boundaries
 
@@ -108,6 +112,8 @@ impl CheckEnv {
             Type::Tuple(elems) => {
                 Type::Tuple(elems.iter().map(|e| self.resolve(e)).collect())
             }
+            Type::Echo(inner) => Type::Echo(Box::new(self.resolve(inner))),
+            Type::EchoR(inner) => Type::EchoR(Box::new(self.resolve(inner))),
             _ => ty.clone(),
         }
     }
@@ -162,6 +168,15 @@ impl CheckEnv {
                 }
                 Ok(())
             }
+            // Echo/EchoR unify only structurally with their own former — never
+            // with the bare carrier `T`, nor with each other. This keeps the
+            // "retained loss" distinction: `Echo T` is not `T` with decoration.
+            (Type::Echo(a_inner), Type::Echo(b_inner)) => {
+                self.unify(a_inner, b_inner, span)
+            }
+            (Type::EchoR(a_inner), Type::EchoR(b_inner)) => {
+                self.unify(a_inner, b_inner, span)
+            }
 
             _ => Err(CompileError::TypeMismatch {
                 expected: format!("{:?}", a),
@@ -201,6 +216,103 @@ fn seed_builtins(env: &mut CheckEnv) {
         "to_string".to_string(),
         Type::Fun(Box::new(a), Box::new(Type::String)),
     );
+}
+
+/// Typing schemes for the **echo-type operations** — the structured-loss
+/// introduction / projection / residue-lowering forms that make the
+/// `Echo`/`EchoR` formers *operational* in the type system rather than inert
+/// (see `hyperpolymath/echo-types`, the source of truth, and
+/// `docs/echo-types.adoc`).
+///
+/// Each operation is polymorphic in the carrier `'a`. We instantiate a
+/// **fresh** type variable at *every* use site, so a single operation can be
+/// applied at many carrier types within one scope — genuine generalization,
+/// unlike the shared-variable approximation `seed_builtins` uses for the
+/// legacy `to_string`. Returning `None` means "not an echo builtin"; the
+/// caller then reports an undefined variable.
+///
+/// | Operation         | Scheme                          | Role                                                              |
+/// |-------------------|---------------------------------|-------------------------------------------------------------------|
+/// | `echo`            | `'a -> Echo 'a`                 | introduction (`echo-intro`, the unary collapse of the fibre core) |
+/// | `echo_output`     | `Echo 'a -> 'a`                 | *explicit* projection to the base value (the comonad counit; never an implicit coercion) |
+/// | `echo_map`        | `('a -> 'b) -> Echo 'a -> Echo 'b` | functor action (`map-over`): transform under the echo without forgetting |
+/// | `echo_duplicate`  | `Echo 'a -> Echo (Echo 'a)`     | comonad comultiplication (`gduplicate`)                           |
+/// | `echo_to_residue` | `Echo 'a -> EchoR 'a`           | lower a full echo to its strict, non-recoverable residue          |
+/// | `sample_echo`     | `Dist 'a -> Echo 'a`            | probabilistic-support bridge: retains the residue `sample` discards |
+///
+/// Together `echo_map` / `echo_output` / `echo_duplicate` realise the
+/// **functor + comonad surface** of structured loss. They are the ungraded,
+/// ghost shadow of the *graded comonad* proved upstream in echo-types
+/// (`EchoGradedComonad.agda`: `gextract` / `gduplicate` / coassoc): here the
+/// grades are erased, so the operations carry the typing but the laws live in
+/// the Agda (mirrored for Lean as obligation TP-5).
+///
+/// These are **types-only / ghost**: at runtime `Echo T` and `EchoR T` erase
+/// to `T` (no residue payload is materialised yet — see `docs/echo-types.adoc`
+/// §"Runtime representation strategy"). Names mirror `EchoTypes.jl` for
+/// cross-repo consistency.
+///
+/// Deliberately *not* provided here (see `docs/echo-types.adoc`):
+/// `echo_input` (coincides with `echo_output` for the unary former — there is
+/// no separate fibre domain to project), `residue_strictly_loses` (a
+/// propositional witness, not a term-level value), and `bet_echo` (needs the
+/// ternary surface form, not a function application).
+fn echo_builtin_type(name: &str, env: &mut CheckEnv) -> Option<Type> {
+    match name {
+        // echo : 'a -> Echo 'a
+        "echo" => {
+            let a = env.fresh_var();
+            Some(Type::Fun(
+                Box::new(a.clone()),
+                Box::new(Type::Echo(Box::new(a))),
+            ))
+        }
+        // echo_output : Echo 'a -> 'a
+        "echo_output" => {
+            let a = env.fresh_var();
+            Some(Type::Fun(
+                Box::new(Type::Echo(Box::new(a.clone()))),
+                Box::new(a),
+            ))
+        }
+        // echo_to_residue : Echo 'a -> EchoR 'a
+        "echo_to_residue" => {
+            let a = env.fresh_var();
+            Some(Type::Fun(
+                Box::new(Type::Echo(Box::new(a.clone()))),
+                Box::new(Type::EchoR(Box::new(a))),
+            ))
+        }
+        // sample_echo : Dist 'a -> Echo 'a
+        "sample_echo" => {
+            let a = env.fresh_var();
+            Some(Type::Fun(
+                Box::new(Type::Dist(Box::new(a.clone()))),
+                Box::new(Type::Echo(Box::new(a))),
+            ))
+        }
+        // echo_map : ('a -> 'b) -> Echo 'a -> Echo 'b   (functor / map-over)
+        "echo_map" => {
+            let a = env.fresh_var();
+            let b = env.fresh_var();
+            Some(Type::Fun(
+                Box::new(Type::Fun(Box::new(a.clone()), Box::new(b.clone()))),
+                Box::new(Type::Fun(
+                    Box::new(Type::Echo(Box::new(a))),
+                    Box::new(Type::Echo(Box::new(b))),
+                )),
+            ))
+        }
+        // echo_duplicate : Echo 'a -> Echo (Echo 'a)   (comonad comultiplication)
+        "echo_duplicate" => {
+            let a = env.fresh_var();
+            Some(Type::Fun(
+                Box::new(Type::Echo(Box::new(a.clone()))),
+                Box::new(Type::Echo(Box::new(Type::Echo(Box::new(a))))),
+            ))
+        }
+        _ => None,
+    }
 }
 
 /// Type-check a top-level item.
@@ -304,13 +416,23 @@ fn check_expr(expr: &Spanned<Expr>, env: &mut CheckEnv) -> CompileResult<Type> {
         Expr::Unit => Ok(Type::Unit),
 
         // --- Variable ---
-        Expr::Var(name) => env
-            .lookup(&name.to_string())
-            .cloned()
-            .ok_or_else(|| CompileError::UndefinedVariable {
-                name: name.to_string(),
-                span: Some(span),
-            }),
+        Expr::Var(name) => {
+            let n = name.to_string();
+            // Lexical/seeded bindings win first (so an echo builtin can be
+            // shadowed by a user binding of the same name); otherwise fall back
+            // to the polymorphic echo-type operations, which are freshly
+            // instantiated per use site.
+            if let Some(ty) = env.lookup(&n).cloned() {
+                Ok(ty)
+            } else if let Some(ty) = echo_builtin_type(&n, env) {
+                Ok(ty)
+            } else {
+                Err(CompileError::UndefinedVariable {
+                    name: n,
+                    span: Some(span),
+                })
+            }
+        }
 
         // --- Bet (ternary choice) ---
         Expr::Bet(bet) => check_bet(bet, env, span),
@@ -888,6 +1010,12 @@ fn ast_type_to_core(ty: &bet_syntax::ast::Type) -> Type {
                 "Dist" if args.len() == 1 => {
                     Type::Dist(Box::new(ast_type_to_core(&args[0].node)))
                 }
+                "Echo" if args.len() == 1 => {
+                    Type::Echo(Box::new(ast_type_to_core(&args[0].node)))
+                }
+                "EchoR" if args.len() == 1 => {
+                    Type::EchoR(Box::new(ast_type_to_core(&args[0].node)))
+                }
                 _ => Type::Named(base_name),
             }
         }
@@ -908,10 +1036,23 @@ fn ast_type_to_core(ty: &bet_syntax::ast::Type) -> Type {
 #[cfg(test)]
 mod tests {
     use super::*;
+    // `Symbol` is re-exported at the bet_syntax crate root (not via
+    // `bet_syntax::ast::*`), so import it explicitly for the tests.
+    use bet_syntax::Symbol;
 
     /// Helper: create a dummy-spanned expression.
     fn dummy(expr: Expr) -> Spanned<Expr> {
         Spanned::dummy(expr)
+    }
+
+    /// Helper: a variable reference by name.
+    fn var(name: &str) -> Spanned<Expr> {
+        dummy(Expr::Var(Symbol::intern(name)))
+    }
+
+    /// Helper: apply a named function to arguments (`name(args...)`).
+    fn call(name: &str, args: Vec<Spanned<Expr>>) -> Spanned<Expr> {
+        dummy(Expr::App(Box::new(var(name)), args))
     }
 
     #[test]
@@ -1152,5 +1293,259 @@ mod tests {
         );
         let result = check_expr(&dummy(par), &mut env).expect("TODO: handle error");
         assert_eq!(result, Type::List(Box::new(Type::Float)));
+    }
+
+    // ---- Echo types (structured loss; see hyperpolymath/echo-types) ----
+
+    /// `Echo T` / `EchoR T` surface syntax (parsed as a type application)
+    /// lowers to the dedicated semantic formers.
+    #[test]
+    fn test_echo_lowering() {
+        use bet_syntax::ast::Type as AstType;
+        let app = |name: &str, arg: AstType| {
+            AstType::App(
+                Box::new(Spanned::dummy(AstType::Named(Symbol::intern(name)))),
+                vec![Spanned::dummy(arg)],
+            )
+        };
+        assert_eq!(
+            ast_type_to_core(&app("Echo", AstType::Named(Symbol::intern("Int")))),
+            Type::Echo(Box::new(Type::Int))
+        );
+        assert_eq!(
+            ast_type_to_core(&app("EchoR", AstType::Named(Symbol::intern("Float")))),
+            Type::EchoR(Box::new(Type::Float))
+        );
+    }
+
+    /// `Echo T` is distinct from `T`: no implicit forgetting in either
+    /// direction. This is the load-bearing invariant — if it unified with the
+    /// carrier the checker would lose the entire point of retained loss.
+    #[test]
+    fn test_echo_distinct_from_carrier() {
+        let mut env = CheckEnv::new();
+        assert!(env.unify(&Type::Echo(Box::new(Type::Int)), &Type::Int, None).is_err());
+        assert!(env.unify(&Type::Int, &Type::Echo(Box::new(Type::Int)), None).is_err());
+    }
+
+    /// `Echo T` unifies structurally with `Echo T'` iff `T` unifies with `T'`.
+    #[test]
+    fn test_echo_unifies_structurally() {
+        let mut env = CheckEnv::new();
+        env.unify(
+            &Type::Echo(Box::new(Type::Int)),
+            &Type::Echo(Box::new(Type::Int)),
+            None,
+        )
+        .expect("Echo Int should unify with Echo Int");
+        assert!(env
+            .unify(
+                &Type::Echo(Box::new(Type::Int)),
+                &Type::Echo(Box::new(Type::String)),
+                None
+            )
+            .is_err());
+    }
+
+    /// `Echo T` and `EchoR T` are distinct formers (the residue is a strict
+    /// weakening, not interchangeable with the full echo).
+    #[test]
+    fn test_echo_vs_residue_distinct() {
+        let mut env = CheckEnv::new();
+        assert!(env
+            .unify(
+                &Type::Echo(Box::new(Type::Int)),
+                &Type::EchoR(Box::new(Type::Int)),
+                None
+            )
+            .is_err());
+    }
+
+    /// Unification recurses through the Echo former, so an inference variable
+    /// inside an `Echo` is solved.
+    #[test]
+    fn test_echo_inference_var_recurses() {
+        let mut env = CheckEnv::new();
+        let a = env.fresh_var();
+        env.unify(&Type::Echo(Box::new(a.clone())), &Type::Echo(Box::new(Type::Int)), None)
+            .expect("Echo 'a should unify with Echo Int");
+        assert_eq!(env.resolve(&Type::Echo(Box::new(a))), Type::Echo(Box::new(Type::Int)));
+    }
+
+    // ---- Echo operations (introduction / projection / residue / bridge) ----
+    // These exercise the typing rules that make the Echo formers operational,
+    // not just inert. See `echo_builtin_type` and `docs/echo-types.adoc`.
+
+    /// `echo : 'a -> Echo 'a` introduces a structured-loss residue.
+    #[test]
+    fn test_echo_intro() {
+        let mut env = CheckEnv::new();
+        let e = call("echo", vec![dummy(Expr::Int(5))]);
+        assert_eq!(
+            check_expr(&e, &mut env).expect("echo 5 should type-check"),
+            Type::Echo(Box::new(Type::Int))
+        );
+    }
+
+    /// `echo_output : Echo 'a -> 'a` is the *explicit* projection back to the
+    /// carrier — `echo_output (echo x)` recovers `T`. There is no implicit
+    /// `Echo T -> T`.
+    #[test]
+    fn test_echo_output_projection() {
+        let mut env = CheckEnv::new();
+        let inner = call("echo", vec![dummy(Expr::String("x".into()))]);
+        let e = call("echo_output", vec![inner]);
+        assert_eq!(
+            check_expr(&e, &mut env).expect("echo_output (echo \"x\") should type-check"),
+            Type::String
+        );
+    }
+
+    /// `echo_to_residue : Echo 'a -> EchoR 'a` lowers a full echo to its
+    /// strict residue.
+    #[test]
+    fn test_echo_to_residue() {
+        let mut env = CheckEnv::new();
+        let inner = call("echo", vec![dummy(Expr::Int(1))]);
+        let e = call("echo_to_residue", vec![inner]);
+        assert_eq!(
+            check_expr(&e, &mut env).expect("echo_to_residue (echo 1) should type-check"),
+            Type::EchoR(Box::new(Type::Int))
+        );
+    }
+
+    /// `sample_echo : Dist 'a -> Echo 'a` is the probabilistic-support bridge,
+    /// and it composes with `echo_to_residue`.
+    #[test]
+    fn test_sample_echo_bridge_and_composition() {
+        let mut env = CheckEnv::new();
+        env.bind("d".to_string(), Type::Dist(Box::new(Type::Int)));
+        let e = call("sample_echo", vec![var("d")]);
+        assert_eq!(
+            check_expr(&e, &mut env).expect("sample_echo d : Echo Int"),
+            Type::Echo(Box::new(Type::Int))
+        );
+        let composed = call("echo_to_residue", vec![call("sample_echo", vec![var("d")])]);
+        assert_eq!(
+            check_expr(&composed, &mut env)
+                .expect("echo_to_residue (sample_echo d) : EchoR Int"),
+            Type::EchoR(Box::new(Type::Int))
+        );
+    }
+
+    /// The echo operations are genuinely polymorphic: a fresh instantiation per
+    /// use site lets `echo` be applied at `Int` and at `String` in one scope
+    /// (the legacy shared-variable approximation would pin it to the first).
+    #[test]
+    fn test_echo_builtins_are_polymorphic() {
+        let mut env = CheckEnv::new();
+        let at_int = call("echo", vec![dummy(Expr::Int(1))]);
+        assert_eq!(
+            check_expr(&at_int, &mut env).expect("echo @ Int"),
+            Type::Echo(Box::new(Type::Int))
+        );
+        let at_str = call("echo", vec![dummy(Expr::String("s".into()))]);
+        assert_eq!(
+            check_expr(&at_str, &mut env).expect("echo @ String"),
+            Type::Echo(Box::new(Type::String))
+        );
+    }
+
+    /// Distinctness is enforced *through the operations*, not only the formers:
+    /// `echo_output` applied to a bare carrier (not an `Echo`) is rejected.
+    #[test]
+    fn test_echo_output_rejects_bare_carrier() {
+        let mut env = CheckEnv::new();
+        let e = call("echo_output", vec![dummy(Expr::Int(5))]);
+        assert!(check_expr(&e, &mut env).is_err());
+    }
+
+    /// A lexical binding of the same name shadows the echo builtin (env lookup
+    /// wins), so the builtins never steal a user-chosen identifier.
+    #[test]
+    fn test_echo_builtin_is_shadowable() {
+        let mut env = CheckEnv::new();
+        env.bind(
+            "echo".to_string(),
+            Type::Fun(Box::new(Type::Int), Box::new(Type::Bool)),
+        );
+        let e = call("echo", vec![dummy(Expr::Int(1))]);
+        assert_eq!(
+            check_expr(&e, &mut env).expect("shadowed echo : Int -> Bool"),
+            Type::Bool
+        );
+    }
+
+    // ---- Echo functor / comonad surface (map-over + duplicate + counit) ----
+
+    /// `echo_map : ('a -> 'b) -> Echo 'a -> Echo 'b` is the functor action
+    /// (Agda `map-over`): transform under the echo without forgetting.
+    #[test]
+    fn test_echo_map_is_functorial() {
+        let mut env = CheckEnv::new();
+        env.bind(
+            "f".to_string(),
+            Type::Fun(Box::new(Type::Int), Box::new(Type::Bool)),
+        );
+        let e = call(
+            "echo_map",
+            vec![var("f"), call("echo", vec![dummy(Expr::Int(1))])],
+        );
+        assert_eq!(
+            check_expr(&e, &mut env).expect("echo_map f (echo 1) : Echo Bool"),
+            Type::Echo(Box::new(Type::Bool))
+        );
+    }
+
+    /// `echo_duplicate : Echo 'a -> Echo (Echo 'a)` is the comonad
+    /// comultiplication (Agda `gduplicate`).
+    #[test]
+    fn test_echo_duplicate() {
+        let mut env = CheckEnv::new();
+        let e = call("echo_duplicate", vec![call("echo", vec![dummy(Expr::Int(1))])]);
+        assert_eq!(
+            check_expr(&e, &mut env).expect("echo_duplicate (echo 1) : Echo (Echo Int)"),
+            Type::Echo(Box::new(Type::Echo(Box::new(Type::Int))))
+        );
+    }
+
+    /// Comonad shape at the type level: `echo_output` is the counit, so
+    /// `echo_output (echo_duplicate e)` recovers the type of `e` (extract after
+    /// duplicate = identity). The *law* is proved upstream in echo-types
+    /// (`EchoGradedComonad.agda`); here we pin only the typing.
+    #[test]
+    fn test_comonad_extract_after_duplicate_typing() {
+        let mut env = CheckEnv::new();
+        let e = call(
+            "echo_output",
+            vec![call(
+                "echo_duplicate",
+                vec![call("echo", vec![dummy(Expr::Int(1))])],
+            )],
+        );
+        assert_eq!(
+            check_expr(&e, &mut env).expect("echo_output (echo_duplicate (echo 1)) : Echo Int"),
+            Type::Echo(Box::new(Type::Int))
+        );
+    }
+
+    /// The core primitive bridges to Echo by composition at the type level:
+    /// `echo(bet a b c) : Echo T`. (Runtime branch-tag retention — `bet_echo` —
+    /// remains deferred; the *type* story needs no new primitive.)
+    #[test]
+    fn test_bet_echo_bridge_by_composition() {
+        let mut env = CheckEnv::new();
+        let bet = BetExpr {
+            alternatives: [
+                Box::new(dummy(Expr::Int(1))),
+                Box::new(dummy(Expr::Int(2))),
+                Box::new(dummy(Expr::Int(3))),
+            ],
+        };
+        let e = call("echo", vec![dummy(Expr::Bet(bet))]);
+        assert_eq!(
+            check_expr(&e, &mut env).expect("echo (bet 1 2 3) : Echo Int"),
+            Type::Echo(Box::new(Type::Int))
+        );
     }
 }

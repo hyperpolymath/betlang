@@ -1,5 +1,11 @@
 #lang racket
-(require racket/readline racket/format racket/pretty)
+; SPDX-License-Identifier: MPL-2.0
+; SPDX-FileCopyrightText: 2026 Jonathan D.A. Jewell (hyperpolymath)
+;; Note: racket/readline (interactive line-editing) lives in the separate
+;; readline-lib package, which is absent from minimal Racket installs (e.g.
+;; CI). It was imported but never used here — input is read via plain
+;; `(read)` — so it is dropped to keep the REPL loadable everywhere.
+(require racket/format racket/pretty)
 (require "../core/betlang.rkt")
 (require "../lib/statistics.rkt")
 (require "../lib/combinators.rkt")

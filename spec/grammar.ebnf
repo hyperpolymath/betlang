@@ -210,6 +210,10 @@ type = arrow_type;
 arrow_type = application_type, [ "->", arrow_type ];
 
 application_type = atom_type, { atom_type };
+(* Recognised built-in type constructors are written as applications, e.g.
+   `Dist T`, `List T`, `Echo T`, `EchoR T`. `Echo T` / `EchoR T` are the
+   structured-loss formers (see SPEC.core.scm > echo-types); `Echo T` is a
+   distinct type from `T`. *)
 
 atom_type = named_type
           | type_variable

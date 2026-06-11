@@ -1,0 +1,24 @@
+// SPDX-License-Identifier: MPL-2.0
+// Copyright (c) Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
+// @taxonomy: verification/safety_case
+= Verification — Safety Case
+:toc:
+
+== Status
+
+Placeholder pillar (Phase 4 of `docs/AFFINESCRIPT-ALIGNMENT.adoc`).
+
+== Purpose
+
+A Goal-Structuring-Notation (GSN) assurance argument for BetLang's
+gambling-harm-reduction guarantees described in `SAFETY-FEATURES.md`:
+
+* *Dutch-book freedom* — coherent probability assignments cannot be
+  arbitraged.
+* *Risk-of-ruin protection* — bankroll bounds.
+* *Cool-off* and *stake limits*.
+
+Each top-level claim is decomposed to sub-goals discharged by the
+mechanised proofs (`../proofs/`) and tests (`../tests`,
+`../conformance`), with the proof obligations registered in
+`../../PROOF-NEEDS.md`.

@@ -1,0 +1,33 @@
+# SPDX-License-Identifier: MPL-2.0
+---
+### [META]
+id: "verification-pillar"
+level: 1
+parent: "../0-AI-MANIFEST.a2ml"
+
+---
+### [AI_MANIFEST]
+description: |
+  Primary verification pillar for BetLang. Single entry point for all
+  correctness evidence: formal proofs, tests, conformance, benchmarks,
+  fuzzing, simulations, coverage, traceability, and safety cases.
+
+  Aligned to the AffineScript estate RSR verification posture
+  (see docs/AFFINESCRIPT-ALIGNMENT.adoc).
+
+canonical_locations:
+  proofs: "proofs/"            # symlink -> ../proofs (Lean 4 + theorems)
+  tests: "tests/"              # symlink -> ../tests
+  conformance: "conformance/"  # symlink -> ../conformance
+  benchmarks: "benchmarks/"    # symlink -> ../bench
+  fuzzing: "fuzzing/"          # symlink -> ../fuzz
+  simulations: "simulations/"  # seeded stochastic evidence (planned)
+  coverage: "coverage/"        # MC/DC + line coverage (planned)
+  traceability: "traceability/"# proof <-> requirement <-> test matrix (planned)
+  safety_case: "safety_case/"  # GSN argument for safety features (planned)
+
+invariants:
+  - "Evidence MUST be reproducible and documented"
+  - "Formal proofs MUST be machine-checked in CI (see .github/workflows/proofs.yml)"
+  - "Proof obligations are defined in PROOF-NEEDS.md and tracked in PROOF-STATUS.md"
+  - "No banned soundness escape hatches (enforced by tools/proof-scan.sh)"

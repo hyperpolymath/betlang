@@ -80,27 +80,25 @@ This is the **source of truth** for semantics.
 
 Over time, the full **uncertainty number tower migrates here**.
 
-=== Lean 4 — Proof / Export Layer
+=== Lean 4 — Proof / Verification Layer
 
-* Used for:
+* Machine-checks **Progress**, **Preservation**, and distribution **monad laws**
+* **Zero `sorry`, zero `axiom`** — `substTop_preserves_typing` is fully proved
+  (formerly a classified axiom, since discharged; see `docs/proof-debt.adoc`)
+* `lakefile.lean` + `lean-toolchain` make proofs a first-class Lake project
+* `.github/workflows/proofs.yml` verifies every PR via `lake build`
 
-  * Convergence guarantees
-  * Safety properties
-  * Semantic correctness proofs
-* Not part of the day-to-day compilation path
+This layer ensures BetLang can become **formally trustworthy** — and already does,
+for the mechanised fragment.
 
-This layer ensures BetLang can become **formally trustworthy**.
+=== Rust — Compiler Tooling Layer
 
-=== Rust — Optional Tooling Layer
+* `compiler/bet-core/` — core type definitions (incl. `Echo T`, `EchoR T`)
+* `compiler/bet-check/` — Hindley-Milner type checker + unifier (27 tests pass)
+* `compiler/bet-parse/` — LALRPOP-based surface parser
+* `compiler/bet-wasm/` — WASM backend (**paused**, pre-existing build issue)
 
-* Status: **Paused / Non-core**
-* Intended for:
-
-  * Packaging
-  * WASM targets
-  * Native runtime wrappers
-
-Rust is explicitly **not part of core semantics**.
+Rust is the compiler tooling layer. Core semantics remain in Racket.
 
 ---
 
@@ -108,9 +106,11 @@ Rust is explicitly **not part of core semantics**.
 
 === Ternary Computation
 
-* `(bet A B C)` — primitive choice
-* `(bet/weighted ...)` — non-uniform probabilities
-* `(bet_conditional ...)` — predicate-driven selection
+* `(bet A B C)` — primitive stochastic choice (uniform)
+* `(bet/weighted '(A w1) '(B w2) '(C w3))` — non-uniform probabilities
+* `(bet/conditional pred A B C)` — predicate-driven selection
+* `(bet/lazy thunk-a thunk-b thunk-c)` — only selected thunk is invoked
+* `(bet-with-seed seed thunk)` — deterministic seed for reproducibility
 
 === Lazy Semantics
 
@@ -122,6 +122,41 @@ Rust is explicitly **not part of core semantics**.
 
 * Bets compose like algebraic objects
 * Supports chaining, mapping, folding, and higher-order composition
+
+=== Echo Types — Structured Loss
+
+BetLang's type system includes **structured-loss type formers** from
+link:https://github.com/hyperpolymath/echo-types[`hyperpolymath/echo-types`] (Agda).
+
+[cols="1,3"]
+|===
+| Type | Meaning
+
+| `T`
+| An ordinary value
+
+| `Echo T`
+| A `T`-value carrying a **proof-relevant residue** of retained loss.
+  _Distinct from `T`_: `unify(Echo T, T)` fails by design.
+
+| `EchoR T`
+| The strict, non-recoverable residue of `Echo T`. Introduced by
+  `echo_to_residue`; further operations deferred.
+|===
+
+`Echo T` and `EchoR T` erase to `T` at runtime (ghost types) until operations
+demand a payload. The canonical introduction site is probabilistic support retention:
+`sample : Dist T → T` discards which branch fired;
+`sample_echo : Dist T → Echo T` retains that residue. The operations now
+type-check in `bet-check` (type-level; the runtime residue payload remains
+deferred): introduction `echo` (`'a → Echo 'a`); the **functor + comonad
+surface** `echo_map` (`('a→'b) → Echo 'a → Echo 'b`), `echo_output`
+(`Echo 'a → 'a`, the counit), `echo_duplicate` (`Echo 'a → Echo (Echo 'a)`);
+the residue lowering `echo_to_residue` (`Echo 'a → EchoR 'a`); and the
+probabilistic bridge `sample_echo` (`Dist 'a → Echo 'a`). These mirror the
+graded comonad proved in `hyperpolymath/echo-types`.
+
+See link:docs/echo-types.adoc[`docs/echo-types.adoc`] for the full design rationale.
 
 ---
 
@@ -176,7 +211,7 @@ A **quantum-inspired interactive web environment** for exploring Betlang's proba
   * Configurable sample counts (1-100,000)
   * Dark/light theme switching
   * History navigation
-* **Technology**: ReScript + rescript-tea + Vite + Deno
+* **Technology**: AffineScript + Vite + Deno
 * **URL**: https://betlang.org/playground (when deployed)
 
 See: link:ui/README.adoc[ui/README.adoc] for complete documentation.
@@ -413,11 +448,12 @@ BetLang is built on three principles:
 
 | Racket frontend | ✅ Authoritative | Canonical semantics
 | Julia backend | 🟡 Active development | Primary compute kernel
-| Lean integration | 🟡 Planned / partial | Proof layer
-| Rust tooling | ⏸️ Optional / paused | Packaging, WASM
+| Lean 4 proofs | ✅ Machine-checked | Progress + Preservation + monad laws
+| Rust type-checker | ✅ Active | bet-check / bet-core (incl. Echo T + operations)
+| VS Code extension | 🟡 In progress | AffineScript source (replaces ReScript)
 | Web Playground (ui/) | ✅ Available | Quantum-inspired features
 | FFI (Zig) | 🟡 Experimental | playground/ffi/zig/
-| WASM backend | 🟡 Planned | compiler/bet-wasm/
+| WASM backend | ⏸️ Paused | Pre-existing build issue in bet-wasm
 |===
 
 ---
@@ -519,11 +555,14 @@ See link:CONTRIBUTING.md[CONTRIBUTING.md] for development guidelines.
 
 Key principles:
 
-* All files must have SPDX license headers
-* Machine-readable metadata must be kept in sync
-* Changes must pass RSR compliance checks
-* Follow ADR patterns for architectural decisions
-* K9 contractiles for configuration changes
+* All files must have SPDX license headers (`MPL-2.0`)
+* Machine-readable metadata in `.machine_readable/6a2/` must be kept in sync
+* Changes must pass RSR compliance checks (`just validate`)
+* Follow ADR patterns for architectural decisions (see `META.a2ml`)
+* No TypeScript outside `playground/` — use AffineScript
+* No `sorry` / `admit` in Lean proofs — `axiom` is permitted only for classified obligations
+* `Echo T` must remain distinct from `T` — do not add implicit coercion
+* New agents: read `EXPLAINME.adoc` first, then `.machine_readable/6a2/AGENTIC.a2ml`
 
 ---
 
@@ -547,7 +586,10 @@ It is about **making uncertainty programmable**.
 
 * link:https://github.com/hyperpolymath/betlang[GitHub Repository]
 * link:https://betlang.org[Project Homepage]
+* link:EXPLAINME.adoc[EXPLAINME — guided tour for contributors and agents]
 * link:ui/README.adoc[Quantum Playground Documentation]
 * link:playground/README.adoc[Experimental Playground Documentation]
+* link:docs/echo-types.adoc[Echo Types Design Doc]
+* link:docs/AFFINESCRIPT-ALIGNMENT.adoc[AffineScript Alignment Plan]
 * link:.machine_readable/6a2/ECOSYSTEM.a2ml[Ecosystem Position]
-* link:0-AI-MANIFEST.a2ml[AI Agent Manifest]
+* link:.machine_readable/6a2/AGENTIC.a2ml[AI Agent Manifest]

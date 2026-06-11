@@ -35,6 +35,18 @@ pub enum Type {
     Option(Box<Type>),
     /// Result type
     Result(Box<Type>, Box<Type>),
+    /// Echo type: `Echo T` — a proof-relevant *structured-loss* residue over
+    /// values of type `T` (after `hyperpolymath/echo-types`). Distinct from
+    /// `T`: no implicit forgetting `Echo T -> T`. Domain-agnostic in core; its
+    /// canonical betlang introduction site is probabilistic support retention
+    /// (a draw/branch is marginalised into `T`, while the echo keeps that
+    /// residue statically). The residue is ghost/proof-relevant — erased at
+    /// runtime for now.
+    Echo(Box<Type>),
+    /// Echo residue: `EchoR T` — the strict, non-recoverable weakening of
+    /// `Echo T` (no recovery operation is promised). Reserved former; rich
+    /// operations are deferred until the residue semantics are settled.
+    EchoR(Box<Type>),
     /// Type variable (for inference)
     Var(u32),
     /// Named type

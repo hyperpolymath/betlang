@@ -1,0 +1,65 @@
+// SPDX-License-Identifier: MPL-2.0
+// Owner: Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
+// SPDX-FileCopyrightText: 2026 Jonathan D.A. Jewell (hyperpolymath)
+// @taxonomy: contractiles/readme
+= BetLang Contractiles
+:toc:
+:sectnums:
+
+Contractiles are machine-readable operational contracts: invariants that *must* hold
+(`must/`), and recovery playbooks for when they don't (`dust/`).
+
+== Structure
+
+[source]
+----
+contractiles/
+├── README.adoc         # this file
+├── must/
+│   └── Mustfile        # declarative invariant checks
+└── dust/
+    └── Dustfile        # recovery and rollback semantics
+----
+
+== Mustfile — Invariants
+
+`must/Mustfile` declares the invariants betlang enforces at every significant change:
+
+* **SPDX headers** on all `.rkt`, `.rs`, `.lean`, `.scm`, `.adoc` source files.
+* **No banned proof escape hatches** — `sorry`, `admit`, `Admitted`, `postulate`, `believe_me`, `assert_total`, `unsafeCoerce` are forbidden in Lean. `axiom` is permitted for classified obligations (see `docs/proof-debt.adoc`).
+* **Lean builds** — `lake build` must pass (`lakefile.lean`, `lean-toolchain`).
+* **Racket tests pass** — `racket tests/basics.rkt`.
+* **No banned languages** outside approved sandbox — no `.ts` outside `playground/`, no Java, Python, or Go.
+* **Governance files present** — `.governance-allowlist`, `.hypatia-ignore`.
+* **Echo distinctness** — `unify(Echo T, T)` must fail; regression test in `bet-check`.
+
+== Dustfile — Recovery
+
+`dust/Dustfile` records recovery procedures for the known failure modes:
+
+* `proofs/` — Lean build failures, banned-pattern detections
+* `governance/` — TypeScript policy violations, licence inconsistency, Racket test failures
+* `echo-types/` — Echo distinctness regression
+* `infrastructure/` — CI workflow timeouts
+
+== How to Run
+
+[source,bash]
+----
+# Check all invariants (requires just + mustfile CLI)
+just validate
+
+# Individual proof scan
+bash tools/proof-scan.sh
+
+# Racket tests
+racket tests/basics.rkt
+
+# Echo distinctness regression test
+cargo test -p bet-check test_echo_distinct_from_carrier
+----
+
+== Extending
+
+Add new `checks:` entries to `must/Mustfile` with a `name`, `description`, and `run` command.
+Add corresponding `recovery:` entries to `dust/Dustfile` when a new invariant can be violated.

@@ -3,8 +3,8 @@
 #
 # AGENTIC.a2ml — AI agent constraints and capabilities
 [metadata]
-version = "0.1.0"
-last-updated = "2026-04-11"
+version = "1.1"
+last-updated = "2026-06-02"
 
 [agent-permissions]
 can-edit-source = true
@@ -15,11 +15,30 @@ can-create-files = true
 
 [agent-constraints]
 # What AI agents must NOT do:
-# - Never use banned language patterns (believe_me, unsafeCoerce, etc.)
+# - Never use banned language patterns in Lean: sorry, admit, Admitted, postulate, believe_me, assert_total, unsafeCoerce
+# - `axiom` is NOT banned — it is used for classified obligations (see docs/proof-debt.adoc)
 # - Never commit secrets or credentials
-# - Never use banned languages (TypeScript, Python, Go, etc.)
+# - Never use banned languages (TypeScript outside playground, Python, Go, Java, Kotlin, Swift, Node.js, npm)
 # - Never place state files in repository root (must be in .machine_readable/)
 # - Never use AGPL license (use MPL-2.0)
+# - PROOF-NEEDS.md is a stub — do not overwrite it; its intentional format is preserved
+# - Echo canonical operation names (echo_intro, echo_to_residue, etc.) are RESERVED — do not implement
+# - Echo T is distinct from T; no implicit Echo T → T coercion; unify(Echo T, T) must fail
+# - EchoR T operations are fully deferred; do not add runtime payload to Echo T / EchoR T
+
+[agent-entry-protocol]
+# On entering a session working on this repo:
+# 1. Read .machine_readable/6a2/STATE.a2ml (current phase, blockers, next actions)
+# 2. Read .machine_readable/6a2/META.a2ml (ADRs, architecture decisions)
+# 3. If touching proofs: read PROOF-NEEDS.md and PROOF-STATUS.md
+# 4. If touching echo types: read docs/echo-types.adoc
+# 5. If touching governance: read .hypatia-ignore and .governance-allowlist
+
+[agent-exit-protocol]
+# On completing a session:
+# 1. Update STATE.a2ml with session outcomes (last-updated, milestones completed, next actions)
+# 2. Update PROOF-STATUS.md if any proof obligations changed
+# 3. Commit documentation and state updates together with code changes
 
 [maintenance-integrity]
 fail-closed = true
@@ -28,7 +47,20 @@ allow-silent-skip = false
 require-rerun-after-fix = true
 release-claim-requires-hard-pass = true
 
+[proof-toolchain]
+lean-version = "leanprover/lean4:v4.15.0"
+build-command = "lake build"
+scan-command = "tools/proof-scan.sh"
+banned-patterns = ["sorry", "admit", "Admitted", "postulate", "believe_me", "assert_total", "unsafeCoerce"]
+permitted-axioms = ["substTop_preserves_typing  # classified, standards#203, docs/proof-debt.adoc"]
+
 [automation-hooks]
-# on-enter: Read 0-AI-MANIFEST.a2ml, then STATE.a2ml
+# on-enter: Read STATE.a2ml, then META.a2ml
 # on-exit: Update STATE.a2ml with session outcomes
 # on-commit: Run just validate-rsr
+
+[typescript-policy]
+# No new TypeScript files.
+# Approved exemption: playground/** (6 .ts files, sandbox only).
+# Enforcement: .governance-allowlist + .hypatia-ignore.
+# Unblock condition: migrate playground to AffineScript or delete once experiment is settled.

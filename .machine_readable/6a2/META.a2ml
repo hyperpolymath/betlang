@@ -3,22 +3,67 @@
 #
 # META.a2ml — Betlang meta-level information
 [metadata]
-version = "0.1.0"
-last-updated = "2026-04-11"
+version = "1.1"
+last-updated = "2026-06-02"
 
 [project-info]
-license = "MPL-2.0"
+license = "PMPL-1.0 (SPDX: MPL-2.0)"
 author = "Jonathan D.A. Jewell (hyperpolymath)"
+contact = "j.d.a.jewell@open.ac.uk"
 
 [architecture-decisions]
-decisions = [
-  # No ADRs recorded
-]
+# ADR-001: Ternary core primitive
+[[architecture-decisions.records]]
+id = "ADR-001"
+title = "Ternary (bet A B C) as core primitive, not binary"
+status = "accepted"
+rationale = "Real-world decisions are three-valued; musical ternary form A-B-A provides compositional structure. Dutch book semantics require three outcomes minimum."
+
+# ADR-002: Lean 4 + Lake for mechanised proofs
+[[architecture-decisions.records]]
+id = "ADR-002"
+title = "Lean 4 / Lake for proofs, pure-core (no Mathlib)"
+status = "accepted"
+rationale = "Lean 4 provides a buildable, CI-checkable proof project with Lake. Pure-core avoids Mathlib version coupling. Progress + Preservation + monad laws are mechanised; 0 sorry, 1 classified axiom."
+
+# ADR-003: Echo T / EchoR T unary formers, distinct from carrier
+[[architecture-decisions.records]]
+id = "ADR-003"
+title = "Echo T and EchoR T as distinct unary type formers (not subtypes of T)"
+status = "accepted"
+rationale = "Upstream echo-types Agda repo defines Echo f y := Σ(x:A), f x ≡ y. BetLang is non-dependent; adds unary Echo T / EchoR T. Distinctness (unify(Echo T, T) fails) is the entire point of retained loss. Ghost/erased at runtime until operations demand payload."
+reference = "docs/echo-types.adoc, spec/SPEC.core.scm#echo-types"
+
+# ADR-004: AffineScript replaces TypeScript/ReScript for editor tooling
+[[architecture-decisions.records]]
+id = "ADR-004"
+title = "AffineScript (not TypeScript or ReScript) for VS Code extension source"
+status = "accepted"
+rationale = "Hyperpolymath language policy: no new TypeScript. ReScript was the previous choice (now deleted). AffineScript is the canonical replacement. Playground TypeScript files are an approved time-limited exemption."
+reference = ".claude/CLAUDE.md TypeScript Exemptions table"
+
+# ADR-005: Three-PR AffineScript alignment strategy
+[[architecture-decisions.records]]
+id = "ADR-005"
+title = "Separate PRs for proofs infrastructure, governance cleanup, and echo types"
+status = "accepted"
+rationale = "PR #53 (proofs) + PR #54 (governance) + PR #55 (echo types) kept independent so each is reviewable in isolation. Governance fixes isolated from proof infrastructure so neither blocks the other."
+
+# ADR-006: Echo operation names mirror EchoTypes.jl (reserved/deferred)
+[[architecture-decisions.records]]
+id = "ADR-006"
+title = "Canonical echo operation names are RESERVED cross-repo anchors, not committed semantics"
+status = "accepted"
+rationale = "echo_intro, echo_to_residue, residue_strictly_loses, echo_input, echo_output mirror EchoTypes.jl for cross-repo conceptual consistency. Not implemented in BetLang yet — no runtime/proof story settled. Error-Lang's stability penalty for echo_to_residue does NOT apply to BetLang."
+reference = "docs/echo-types.adoc#deferred"
 
 [development-practices]
 versioning = "SemVer"
-documentation = "AsciiDoc"
-build-tool = "just"
+documentation = "AsciiDoc (primary) + Markdown (secondary)"
+build-tool = "just (Justfile)"
+proof-build = "lake (lakefile.lean)"
+ci = "GitHub Actions (SHA-pinned)"
+package-management = "Guix (primary) / Nix (fallback) / Deno (JS)"
 
 [maintenance-axes]
 scoping-first = true

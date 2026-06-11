@@ -6,36 +6,79 @@
 
 == Overview
 
-Unified verification gateway for betlang. Each subdirectory is a symlink
-to the actual location, providing a single entry point for all verification.
+Unified verification gateway for betlang and the primary RSR verification
+pillar. Established subdirectories are symlinks to the canonical locations;
+the remaining pillars are local directories holding their own evidence.
+This mirrors the AffineScript estate's verification posture — see
+`docs/AFFINESCRIPT-ALIGNMENT.adoc`.
 
 == Structure
 
 |===
-| Directory | Target | Purpose
+| Directory | Target | Purpose | Status
 
 | `proofs/`
 | ../proofs
-| Formal proofs and mathematical foundations
+| Formal proofs (Lean 4 + theorems); machine-checked via `proofs.yml`
+| ✅ live
 
 | `tests/`
 | ../tests
 | Unit and integration tests
+| ✅ live
 
 | `conformance/`
 | ../conformance
 | Language/spec conformance test suite
+| ✅ live
 
 | `benchmarks/`
 | ../bench
 | Performance benchmarks
+| ✅ live
 
 | `fuzzing/`
 | ../fuzz
 | Fuzz testing targets
+| ✅ live
+
+| `simulations/`
+| (local)
+| Seeded stochastic validation of probabilistic semantics
+| 📋 Phase 4
+
+| `coverage/`
+| (local)
+| Line/branch + MC/DC coverage of safety-critical paths
+| 📋 Phase 4
+
+| `traceability/`
+| (local)
+| Requirement ↔ obligation ↔ proof ↔ test matrix
+| 📋 Phase 4
+
+| `safety_case/`
+| (local)
+| GSN assurance argument for harm-reduction safety features
+| 📋 Phase 4
 |===
+
+== Proof governance
+
+* `PROOF-NEEDS.md` — proof obligations (what must be proven).
+* `PROOF-STATUS.md` — live completion table.
+* `docs/proof-debt.adoc` — trusted-base reduction ledger (standards#203).
+* `tools/proof-scan.sh` — banned-pattern gate.
 
 == Usage
 
+[source,bash]
+----
+just proof-check-all     # banned-pattern scan + lake build
+just proof-check-lean4   # machine-check the Lean 4 formalisation
+just proof-scan          # banned-pattern gate only
+----
+
 All verification can be discovered from this directory. Symlinks point to
-the actual directories so tools and CI can find everything from one place.
+the canonical directories so tools and CI can find everything from one
+place.

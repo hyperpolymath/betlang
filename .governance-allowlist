@@ -1,0 +1,25 @@
+# SPDX-License-Identifier: MPL-2.0
+#
+# .governance-allowlist — Layer 2.5 typed-infrastructure file enumerating
+# per-repo TypeScript exemptions for the standards-repo governance scanner
+# (check-ts-allowlist.deno.js). Sibling to the Layer 2 prose table in
+# .claude/CLAUDE.md (TypeScript Exemptions section), which already approves
+# the `playground/**` sandbox (see playground/README.adoc).
+#
+# Why this file exists *in addition to* the CLAUDE.md table:
+# the upstream scanner's `globToRegex` keeps the glob's relative form
+# (no `./` prefix) while its recursive walk of "." yields paths *with* the
+# `./` prefix (e.g. `./playground/src/ternary.ts`). A glob like
+# `playground/**` therefore compiles to a regex that fails to anchor
+# against `./playground/...`, so the CLAUDE.md row exempts zero files in
+# practice and the scanner reports "1 exemption parsed" yet still flags the
+# files. The lead-`*` wildcard below sidesteps that (it matches any run,
+# including `/` and the `./` prefix) until the scanner itself is fixed
+# upstream.
+#
+# Each non-blank, non-`#` line is a glob; `*` matches any run including `/`.
+# This single pattern covers all six approved playground .ts files:
+#   playground/src/{probability,ternary,main}.ts
+#   playground/test/{ternary_test,probability_test}.ts
+#   playground/examples/uncertainty.ts
+*playground/*.ts

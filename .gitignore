@@ -43,3 +43,10 @@ deps/
 .cache/
 build/
 dist/
+
+# Lean 4 / Lake (proofs)
+.lake/
+*.olean
+lake-packages/
+lakefile.olean
+lake-manifest.json

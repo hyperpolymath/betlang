@@ -10,11 +10,14 @@ cargo-fuzz = true
 [dependencies]
 libfuzzer-sys = "0.4"
 
-[dependencies.betlang]
-path = ".."
-
 [[bin]]
 name = "fuzz_main"
 path = "fuzz_targets/fuzz_main.rs"
 test = false
 doc = false
+
+# Keep the fuzz crate out of the root workspace (cargo-fuzz convention).
+# An empty [workspace] table makes this its own workspace root so that
+# `cargo fuzz build` (run from .clusterfuzzlite/build.sh) does not error
+# "current package believes it's in a workspace when it's not".
+[workspace]

@@ -1,0 +1,14 @@
+# SPDX-License-Identifier: MPL-2.0
+---
+### [META]
+id: "verification-unit-traceability"
+level: 2
+parent: "../0.1-AI-MANIFEST.a2ml"
+
+---
+### [AI_MANIFEST]
+description: |
+  Sub-unit focusing on traceability: a bidirectional matrix linking
+  proof obligations (PROOF-NEEDS.md) to mechanised proofs
+  (proofs/BetLang.lean, proofs/<prover>/) to tests (tests/, conformance/)
+  to spec clauses (spec/SPEC.core.scm, spec/grammar.ebnf). Phase 4.
