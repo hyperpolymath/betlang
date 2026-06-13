@@ -5,9 +5,9 @@
 [metadata]
 project = "betlang"
 version = "0.8.0-dev"
-last-updated = "2026-06-02"
+last-updated = "2026-06-13"
 status = "active"
-session = "affinescript-alignment + governance + echo-types — 2026-06-02"
+session = "echo operations (functor/comonad surface) + estate reconciliation — 2026-06-13"
 
 [project-context]
 name = "Betlang"
@@ -16,7 +16,7 @@ Safe probabilistic programming with Dutch book prevention and gambling harm redu
 Core primitive: (bet A B C) — ternary stochastic choice. Type system adds Echo T / EchoR T
 structured-loss formers (proof-relevant, ghost-erased). Proofs machine-checked in Lean 4.
 """
-completion-percentage = 87
+completion-percentage = 88
 
 [position]
 phase = "proof-foundation + governance-alignment + echo-types-integration"
@@ -28,6 +28,12 @@ maturity = "experimental"  # experimental | alpha | beta | production | lts
 # PR #54: Governance/CI debt — Cargo.toml license, rackunit conflict, timeout-minutes,
 #          .governance-allowlist, .hypatia-ignore, delete Java, ReScript → AffineScript
 # PR #55: Echo T / EchoR T type formers in Rust checker + Lean + spec + docs
+# PR #56: Echo operations typed — echo / echo_output / echo_map / echo_duplicate /
+#          echo_to_residue / sample_echo (functor + comonad surface; type-level/ghost).
+#          38 bet-check tests pass; proof-scan clean. README/docs/PROOF tracking updated.
+# Session 2026-06-13: estate reconciliation — synced local to main; identified
+#          estate-standardization-20260607 as FULLY MERGED into main (safe to delete;
+#          deletion blocked by git proxy HTTP 403 → owner UI action). Metadata currency.
 
 [route-to-mvp]
 milestones = [
@@ -35,27 +41,29 @@ milestones = [
   "M2: Governance clean — licence, language policy, Racket tests, timeout [DONE #54]",
   "M3: Echo types core — Type::Echo/EchoR, unify, lower, Lean Ty.echo/echoR [DONE #55]",
   "M4: Discharge substTop_preserves_typing axiom (PROOF-STATUS TP-4) [DONE — now a proved theorem; axiom-free core]",
-  "M5: Echo operations — echo_intro, proj1, echo_to_residue; typing rules",
-  "M6: sample_echo / bet_echo probabilistic bridge",
+  "M5: Echo operations — echo/echo_output/echo_map/echo_duplicate/echo_to_residue typing rules [DONE #56, type-level]",
+  "M6: sample_echo probabilistic bridge [DONE #56, type-level]; bet_echo runtime retention [deferred]",
   "M7: Julia backend Phase 2 — core language features",
 ]
 
 [proof-obligations]
-# See PROOF-STATUS.md for the full register (13 obligations)
+# See PROOF-STATUS.md for the full register
 proved = ["TP-1 Progress", "TP-2 Preservation", "TP-3 Monad laws", "TP-4 substTop_preserves_typing (discharged — axiom-free)"]
 axioms = []
-remaining = 9
+remaining = 10  # incl. new TP-5 (echo-operation metatheory in Lean — mirrors #56's typed surface)
 
 [blockers-and-issues]
 issues = [
-  "bet-wasm E0308: pre-existing WASM backend breakage (match arm type mismatch, not caused by any of #53-55)",
-  "Echo operations deferred: no echo_intro/proj1/echo_to_residue until runtime/proof story settled",
+  "bet-wasm E0308: pre-existing WASM backend breakage (match arm type mismatch, not caused by any of #53-56)",
+  "Echo operations typed at type-level (#56: functor/comonad surface); runtime residue payload + bet_echo retention still deferred; Lean metatheory is TP-5",
+  "estate-standardization-20260607 branch fully merged into main; deletion blocked by git proxy (403) — owner UI action",
 ]
 
 [critical-next-actions]
 actions = [
-  "TP-5: Echo-operation typing rules + metatheory in Lean (echo_intro, echo_to_residue, proj1)",
-  "sample_echo / bet_echo probabilistic bridge (Dist T → Echo T)",
+  "Harden bet-check: occurs check in unify() + real type schemes (replace shared-var pseudo-polymorphism)",
+  "TP-5: mirror #56's echo-operation typing rules in Lean + re-establish Progress/Preservation",
+  "bet_echo runtime branch-tag retention (Dist/bet collapse → Echo residue payload)",
   "Julia backend Phase 2 — core language features",
   "bet-wasm E0308: fix pre-existing WASM backend match-arm type mismatch",
 ]
@@ -71,9 +79,9 @@ config = "Nickel / 6a2 Scheme (.a2ml)"
 banned = ["TypeScript (except playground sandbox)", "Node.js", "npm", "Go", "Python", "Java", "Kotlin", "Swift"]
 
 [maintenance-status]
-last-run-utc = "2026-06-02T14:00:00Z"
+last-run-utc = "2026-06-13T00:00:00Z"
 last-result = "pass"  # unknown | pass | warn | fail
 # Racket tests: pass (current + 8.11 + 8.12 on PR #54)
 # Governance: pass (all checks on PR #54)
 # Lean proofs: pass (proofs.yml lake build on PR #53)
-# Echo types: pass (cargo test -p bet-check: 27 tests pass on PR #55)
+# Echo types: pass (cargo test -p bet-check: 38 tests pass on PR #56 — 27 base + echo operations)
