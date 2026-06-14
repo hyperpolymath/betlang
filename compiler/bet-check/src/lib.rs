@@ -27,11 +27,22 @@ use std::collections::HashMap;
 // Type Environment
 // ============================================
 
+/// A (possibly polymorphic) type scheme: `∀ vars. ty`. An empty `vars` is a
+/// monomorphic type. Used for let-generalization — each use site of a
+/// polymorphic binding instantiates the quantified variables afresh.
+#[derive(Debug, Clone)]
+pub struct Scheme {
+    /// Quantified type-variable ids.
+    pub vars: Vec<u32>,
+    /// The body type (may mention `vars` and/or monomorphic free vars).
+    pub ty: Type,
+}
+
 /// Type environment with scoping and type variable generation.
 #[derive(Debug, Clone)]
 pub struct CheckEnv {
-    /// Variable-to-type bindings in current scope.
-    bindings: HashMap<String, Type>,
+    /// Variable-to-scheme bindings in current scope.
+    bindings: HashMap<String, Scheme>,
     /// Parent scope (for lexical scoping).
     parent: Option<Box<CheckEnv>>,
     /// Counter for generating fresh type variables.
@@ -67,16 +78,130 @@ impl CheckEnv {
         }
     }
 
-    /// Bind a name to a type in the current scope.
+    /// Bind a name to a *monomorphic* type in the current scope.
     pub fn bind(&mut self, name: String, ty: Type) {
-        self.bindings.insert(name, ty);
+        self.bindings.insert(name, Scheme { vars: Vec::new(), ty });
     }
 
-    /// Look up a name, searching parent scopes.
-    pub fn lookup(&self, name: &str) -> Option<&Type> {
+    /// Bind a name to a (possibly polymorphic) type scheme.
+    pub fn bind_scheme(&mut self, name: String, scheme: Scheme) {
+        self.bindings.insert(name, scheme);
+    }
+
+    /// Look up a name's scheme, searching parent scopes.
+    pub fn lookup(&self, name: &str) -> Option<&Scheme> {
         self.bindings
             .get(name)
             .or_else(|| self.parent.as_ref().and_then(|p| p.lookup(name)))
+    }
+
+    /// Instantiate a scheme: replace each quantified variable with a fresh one,
+    /// so every use site of a polymorphic binding is independent.
+    pub fn instantiate(&mut self, scheme: &Scheme) -> Type {
+        if scheme.vars.is_empty() {
+            return scheme.ty.clone();
+        }
+        let mut mapping = HashMap::new();
+        for &v in &scheme.vars {
+            let fresh = self.fresh_var();
+            mapping.insert(v, fresh);
+        }
+        Self::subst_vars(&scheme.ty, &mapping)
+    }
+
+    /// Generalize a type into a scheme by quantifying over the type variables
+    /// free in it but not free in the environment (HM let-generalization).
+    pub fn generalize(&self, ty: &Type) -> Scheme {
+        let resolved = self.resolve(ty);
+        let mut ty_vars = std::collections::BTreeSet::new();
+        Self::collect_vars(&resolved, &mut ty_vars);
+        let env_vars = self.env_free_vars();
+        let vars: Vec<u32> = ty_vars
+            .into_iter()
+            .filter(|v| !env_vars.contains(v))
+            .collect();
+        Scheme { vars, ty: resolved }
+    }
+
+    /// Substitute the mapped type variables throughout a type.
+    fn subst_vars(ty: &Type, m: &HashMap<u32, Type>) -> Type {
+        match ty {
+            Type::Var(id) => m.get(id).cloned().unwrap_or_else(|| ty.clone()),
+            Type::Fun(a, b) => Type::Fun(
+                Box::new(Self::subst_vars(a, m)),
+                Box::new(Self::subst_vars(b, m)),
+            ),
+            Type::Dist(t) => Type::Dist(Box::new(Self::subst_vars(t, m))),
+            Type::List(t) => Type::List(Box::new(Self::subst_vars(t, m))),
+            Type::Set(t) => Type::Set(Box::new(Self::subst_vars(t, m))),
+            Type::Option(t) => Type::Option(Box::new(Self::subst_vars(t, m))),
+            Type::Echo(t) => Type::Echo(Box::new(Self::subst_vars(t, m))),
+            Type::EchoR(t) => Type::EchoR(Box::new(Self::subst_vars(t, m))),
+            Type::Map(k, v) => Type::Map(
+                Box::new(Self::subst_vars(k, m)),
+                Box::new(Self::subst_vars(v, m)),
+            ),
+            Type::Result(a, b) => Type::Result(
+                Box::new(Self::subst_vars(a, m)),
+                Box::new(Self::subst_vars(b, m)),
+            ),
+            Type::Tuple(es) => Type::Tuple(es.iter().map(|e| Self::subst_vars(e, m)).collect()),
+            _ => ty.clone(),
+        }
+    }
+
+    /// Collect the type variables appearing in a type.
+    fn collect_vars(ty: &Type, out: &mut std::collections::BTreeSet<u32>) {
+        match ty {
+            Type::Var(id) => {
+                out.insert(*id);
+            }
+            Type::Fun(a, b) => {
+                Self::collect_vars(a, out);
+                Self::collect_vars(b, out);
+            }
+            Type::Dist(t)
+            | Type::List(t)
+            | Type::Set(t)
+            | Type::Option(t)
+            | Type::Echo(t)
+            | Type::EchoR(t) => Self::collect_vars(t, out),
+            Type::Map(k, v) => {
+                Self::collect_vars(k, out);
+                Self::collect_vars(v, out);
+            }
+            Type::Result(a, b) => {
+                Self::collect_vars(a, out);
+                Self::collect_vars(b, out);
+            }
+            Type::Tuple(es) => {
+                for e in es {
+                    Self::collect_vars(e, out);
+                }
+            }
+            _ => {}
+        }
+    }
+
+    /// Type variables free in the environment (this scope and parents),
+    /// excluding each binding's own quantified variables.
+    fn env_free_vars(&self) -> std::collections::BTreeSet<u32> {
+        let mut out = std::collections::BTreeSet::new();
+        let mut cur = Some(self);
+        while let Some(e) = cur {
+            for scheme in e.bindings.values() {
+                let resolved = self.resolve(&scheme.ty);
+                let mut vs = std::collections::BTreeSet::new();
+                Self::collect_vars(&resolved, &mut vs);
+                for v in vs {
+                    if !scheme.vars.contains(&v) {
+                        out.insert(v);
+                    }
+                }
+            }
+            cur = e.parent.as_deref();
+        }
+        out
     }
 
     /// Generate a fresh type variable.
@@ -245,11 +370,18 @@ fn seed_builtins(env: &mut CheckEnv) {
         "print".to_string(),
         Type::Fun(Box::new(Type::String), Box::new(Type::Unit)),
     );
-    // to_string : 'a -> String  (polymorphic, approximated with a var)
-    let a = env.fresh_var();
-    env.bind(
+    // to_string : ∀a. a -> String  (properly polymorphic via a type scheme,
+    // so each use site instantiates a fresh carrier instead of sharing one var).
+    let a_id = match env.fresh_var() {
+        Type::Var(id) => id,
+        _ => unreachable!("fresh_var always returns Type::Var"),
+    };
+    env.bind_scheme(
         "to_string".to_string(),
-        Type::Fun(Box::new(a), Box::new(Type::String)),
+        Scheme {
+            vars: vec![a_id],
+            ty: Type::Fun(Box::new(Type::Var(a_id)), Box::new(Type::String)),
+        },
     );
 }
 
@@ -356,7 +488,10 @@ fn check_item(item: &Item, env: &mut CheckEnv) -> CompileResult<()> {
         Item::Let(def) => {
             let ty = check_let_def(def, env)?;
             let name = def.name.node.to_string();
-            env.bind(name, ty);
+            // Let-generalization: a top-level binding is polymorphic over the
+            // type variables free in its type but not free in the environment.
+            let scheme = env.generalize(&ty);
+            env.bind_scheme(name, scheme);
             Ok(())
         }
         Item::TypeDef(_) => {
@@ -414,8 +549,8 @@ fn check_let_def(def: &LetDef, env: &mut CheckEnv) -> CompileResult<Type> {
 
     // For recursive defs, unify the placeholder with the result.
     if def.is_rec {
-        if let Some(placeholder) = inner_env.lookup(&def.name.node.to_string()) {
-            let placeholder = placeholder.clone();
+        if let Some(scheme) = inner_env.lookup(&def.name.node.to_string()) {
+            let placeholder = scheme.ty.clone();
             inner_env.unify(&placeholder, &result, Some(def.name.span))?;
         }
     }
@@ -457,8 +592,8 @@ fn check_expr(expr: &Spanned<Expr>, env: &mut CheckEnv) -> CompileResult<Type> {
             // shadowed by a user binding of the same name); otherwise fall back
             // to the polymorphic echo-type operations, which are freshly
             // instantiated per use site.
-            if let Some(ty) = env.lookup(&n).cloned() {
-                Ok(ty)
+            if let Some(scheme) = env.lookup(&n).cloned() {
+                Ok(env.instantiate(&scheme))
             } else if let Some(ty) = echo_builtin_type(&n, env) {
                 Ok(ty)
             } else {
@@ -1620,5 +1755,48 @@ mod tests {
         let b = env.fresh_var();
         env.unify(&a, &Type::Fun(Box::new(b), Box::new(Type::Int)), None)
             .expect("'a = ('b -> Int) is a finite type");
+    }
+
+    // ---- Type schemes / let-polymorphism (generalize + instantiate) ----
+
+    /// A generalized scheme instantiates independently at each use, so the same
+    /// polymorphic value can be applied at two different types in one scope.
+    #[test]
+    fn test_generalize_instantiate_independent() {
+        let mut env = CheckEnv::new();
+        let a = env.fresh_var();
+        let id_ty = Type::Fun(Box::new(a.clone()), Box::new(a));
+        let scheme = env.generalize(&id_ty);
+        assert_eq!(scheme.vars.len(), 1, "the free var should be generalized");
+        let i1 = env.instantiate(&scheme);
+        let i2 = env.instantiate(&scheme);
+        env.unify(&i1, &Type::Fun(Box::new(Type::Int), Box::new(Type::Int)), None)
+            .expect("first instance specialises to Int -> Int");
+        env.unify(
+            &i2,
+            &Type::Fun(Box::new(Type::String), Box::new(Type::String)),
+            None,
+        )
+        .expect("second instance specialises to String -> String independently");
+    }
+
+    /// The seeded `to_string : ∀a. a -> String` is genuinely polymorphic: it
+    /// type-checks at `Int` and at `String` in the same scope. (The old
+    /// shared-variable approximation pinned it to the first use and would have
+    /// rejected the second.)
+    #[test]
+    fn test_to_string_is_polymorphic_across_uses() {
+        let mut env = CheckEnv::new();
+        seed_builtins(&mut env);
+        let at_int = call("to_string", vec![dummy(Expr::Int(1))]);
+        assert_eq!(
+            check_expr(&at_int, &mut env).expect("to_string 1 : String"),
+            Type::String
+        );
+        let at_str = call("to_string", vec![dummy(Expr::String("x".into()))]);
+        assert_eq!(
+            check_expr(&at_str, &mut env).expect("to_string \"x\" : String"),
+            Type::String
+        );
     }
 }
