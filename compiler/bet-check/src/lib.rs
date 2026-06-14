@@ -118,6 +118,26 @@ impl CheckEnv {
         }
     }
 
+    /// Occurs check: does the type variable `id` appear anywhere inside `ty`
+    /// (after resolution)? Used by `unify` to refuse constructing an infinite
+    /// type (e.g. `'a = 'a -> Int`), which would otherwise make `resolve` loop.
+    fn occurs(&self, id: u32, ty: &Type) -> bool {
+        match self.resolve(ty) {
+            Type::Var(v) => v == id,
+            Type::Fun(a, b) => self.occurs(id, &a) || self.occurs(id, &b),
+            Type::Dist(t)
+            | Type::List(t)
+            | Type::Set(t)
+            | Type::Option(t)
+            | Type::Echo(t)
+            | Type::EchoR(t) => self.occurs(id, &t),
+            Type::Map(k, v) => self.occurs(id, &k) || self.occurs(id, &v),
+            Type::Result(a, b) => self.occurs(id, &a) || self.occurs(id, &b),
+            Type::Tuple(elems) => elems.iter().any(|e| self.occurs(id, e)),
+            _ => false,
+        }
+    }
+
     /// Unify two types, updating substitutions. Returns an error on mismatch.
     pub fn unify(&mut self, a: &Type, b: &Type, span: Option<Span>) -> CompileResult<()> {
         let a = self.resolve(a);
@@ -127,12 +147,27 @@ impl CheckEnv {
             // Identical types always unify.
             _ if a == b => Ok(()),
 
-            // A type variable unifies with anything (occurs check omitted for simplicity).
+            // A type variable unifies with anything *except* a type that
+            // contains it (occurs check) — that would be an infinite type.
             (Type::Var(id), _) => {
+                if self.occurs(*id, &b) {
+                    return Err(CompileError::TypeMismatch {
+                        expected: format!("a finite type not containing '{}", id),
+                        found: format!("{:?}", b),
+                        span,
+                    });
+                }
                 self.substitutions.insert(*id, b);
                 Ok(())
             }
             (_, Type::Var(id)) => {
+                if self.occurs(*id, &a) {
+                    return Err(CompileError::TypeMismatch {
+                        expected: format!("a finite type not containing '{}", id),
+                        found: format!("{:?}", a),
+                        span,
+                    });
+                }
                 self.substitutions.insert(*id, a);
                 Ok(())
             }
@@ -1547,5 +1582,43 @@ mod tests {
             check_expr(&e, &mut env).expect("echo (bet 1 2 3) : Echo Int"),
             Type::Echo(Box::new(Type::Int))
         );
+    }
+
+    // ---- Occurs check (no infinite types; unify must not loop) ----
+
+    /// Unifying `'a` with a type that contains `'a` is rejected as an infinite
+    /// type, rather than being silently accepted (which would make `resolve`
+    /// loop).
+    #[test]
+    fn test_occurs_check_rejects_infinite_type() {
+        let mut env = CheckEnv::new();
+        let a = env.fresh_var();
+        let result = env.unify(
+            &a,
+            &Type::Fun(Box::new(a.clone()), Box::new(Type::Int)),
+            None,
+        );
+        assert!(result.is_err(), "'a = ('a -> Int) must be rejected");
+    }
+
+    /// The occurs check sees through the Echo former too (`'a = Echo 'a`).
+    #[test]
+    fn test_occurs_check_through_echo() {
+        let mut env = CheckEnv::new();
+        let a = env.fresh_var();
+        assert!(env
+            .unify(&a, &Type::Echo(Box::new(a.clone())), None)
+            .is_err());
+    }
+
+    /// Two *distinct* variables unify fine even when one is nested — the occurs
+    /// check must not reject legitimate bindings.
+    #[test]
+    fn test_occurs_check_allows_distinct_vars() {
+        let mut env = CheckEnv::new();
+        let a = env.fresh_var();
+        let b = env.fresh_var();
+        env.unify(&a, &Type::Fun(Box::new(b), Box::new(Type::Int)), None)
+            .expect("'a = ('b -> Int) is a finite type");
     }
 }
