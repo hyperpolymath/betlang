@@ -19,7 +19,10 @@ default:
     @just --list --unsorted
 
 # ============================================================================
-# CORE OPERATIONS (Racket - Authoritative)
+# LEGACY RACKET CORE (reference only — frozen, NOT authoritative)
+# Canonical betlang is the Rust toolchain + ML surface; see
+# docs/decisions/2026-06-15-L0-canonical-identity.adoc. These recipes drive the
+# historical Racket prototype and require `racket` (not part of the build).
 # ============================================================================
 
 # Run the betlang test suite
@@ -169,13 +172,14 @@ bench:
 status:
     @echo "=== Project Status ==="
     @echo ""
-    @echo "Authoritative implementation: Racket (core/betlang.rkt)"
-    @echo "Formal spec: SPEC.core.scm"
-    @echo "Conformance tests: conformance/"
+    @echo "Canonical implementation: Rust toolchain + ML surface (compiler/, runtime/, tools/)"
+    @echo "Mechanised metatheory: proofs/BetLang.lean (Lean 4)"
+    @echo "Legacy/reference (frozen): Racket core (core/betlang.rkt), conformance/*.bet"
+    @echo "Identity decision: docs/decisions/2026-06-15-L0-canonical-identity.adoc"
     @echo ""
     @echo "See ANCHOR.scope-arrest.2026-01-01.Jewell.scm for semantic anchor"
-    @echo "See AUTHORITY_STACK.mustfile-nickel.scm for operational authority"
-    @echo "See TOOLING.md for optional tooling documentation"
+    @echo "See AUTHORITY_STACK.mustfile-nickel.scm for operational authority (just/must)"
+    @echo "See docs/decisions/2026-06-15-betlang-core-plan.adoc for the core build plan"
 
 # ============================================================================
 # CLEAN

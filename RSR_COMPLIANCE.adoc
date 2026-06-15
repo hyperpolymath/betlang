@@ -15,10 +15,10 @@ This document describes the Rhodium Standard Repository (RSR) compliance status 
 |Attribute |Value
 
 |Project |betlang
-|Primary Language |unknown
-|RSR Tier |N/A
-|Compliance Status |Review Needed
-|Last Updated |2025-12-10
+|Primary Language |Rust (canonical toolchain — see docs/decisions/2026-06-15-L0-canonical-identity.adoc)
+|RSR Tier |Tier 1 (Rust)
+|Compliance Status |Active — core build in progress
+|Last Updated |2026-06-15
 |===
 
 == Language Tier Classification
@@ -48,7 +48,7 @@ This document describes the Rhodium Standard Repository (RSR) compliance status 
 |===
 |Requirement |Status |Notes
 
-|Primary language is Tier 1/2 |✓ |unknown
+|Primary language is Tier 1/2 |✓ |Rust (Tier 1)
 |No restricted languages outside exemptions |✓ |
 |.editorconfig present |✓ |
 |.well-known/ directory |✓ |
