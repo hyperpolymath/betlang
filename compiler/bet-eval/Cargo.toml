@@ -8,6 +8,9 @@ license.workspace = true
 [dependencies]
 bet-syntax = { path = "../bet-syntax" }
 bet-core = { path = "../bet-core" }
+bet-rt = { path = "../../runtime/bet-rt" }       # the unified runtime Value (Dist, …)
+bet-rand = { path = "../../runtime/bet-rand" }   # centralised ternary/weighted RNG
+im.workspace = true                              # bet_rt::Value::List is im::Vector
 rand.workspace = true
 rand_distr.workspace = true
 thiserror.workspace = true

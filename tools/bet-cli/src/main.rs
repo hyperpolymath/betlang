@@ -69,6 +69,20 @@ enum Commands {
         write: bool,
     },
 
+    /// Compile a file to a target backend (currently JavaScript)
+    Compile {
+        /// The file to compile
+        file: PathBuf,
+
+        /// Target backend: js (default), llvm, beam
+        #[arg(long, default_value = "js")]
+        target: String,
+
+        /// Write output to this path (instead of stdout)
+        #[arg(short, long)]
+        out: Option<PathBuf>,
+    },
+
     /// Show version information
     Version,
 }
@@ -102,6 +116,9 @@ fn main() -> Result<()> {
         }
         Some(Commands::Fmt { file, write }) => {
             format_file(&file, write)
+        }
+        Some(Commands::Compile { file, target, out }) => {
+            compile_file(&file, &target, out.as_ref())
         }
         Some(Commands::Version) => {
             print_version();
@@ -142,6 +159,52 @@ fn run_file(path: &PathBuf) -> Result<()> {
             }
             _ => {} // Type defs and imports handled at compile time
         }
+    }
+
+    Ok(())
+}
+
+/// Compile a file to a target backend and write the generated code.
+///
+/// Pipeline: parse → type-check (warnings only) → `bet_codegen::codegen_module`.
+/// JavaScript is fully supported; LLVM/BEAM are placeholder backends.
+fn compile_file(path: &PathBuf, target: &str, out: Option<&PathBuf>) -> Result<()> {
+    use bet_codegen::Target;
+
+    let target = match target.to_ascii_lowercase().as_str() {
+        "js" | "javascript" => Target::JavaScript,
+        "llvm" => Target::Llvm,
+        "beam" | "erlang" => Target::Beam,
+        other => {
+            return Err(miette::miette!(
+                "unknown target '{}': expected one of js, llvm, beam",
+                other
+            ))
+        }
+    };
+
+    let source = std::fs::read_to_string(path).into_diagnostic()?;
+    let module = bet_parse::parse(&source).map_err(|e| miette::miette!("{}", e))?;
+
+    // Type-check first (warnings only — compilation proceeds regardless, matching `run`).
+    if let Err(e) = bet_check::check_module(&module) {
+        eprintln!("Warning: type check error: {}", e);
+    }
+
+    let output =
+        bet_codegen::codegen_module(&module, target).map_err(|e| miette::miette!("{}", e))?;
+
+    match out {
+        Some(out_path) => {
+            std::fs::write(out_path, &output.code).into_diagnostic()?;
+            eprintln!(
+                "Compiled {} → {} ({:?})",
+                path.display(),
+                out_path.display(),
+                output.target
+            );
+        }
+        None => print!("{}", output.code),
     }
 
     Ok(())

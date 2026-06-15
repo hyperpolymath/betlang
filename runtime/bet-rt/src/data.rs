@@ -615,8 +615,10 @@ pub mod queue {
                 if self.back.is_empty() {
                     return None;
                 }
-                // Reverse back into front
-                let new_front: Vector<Value> = self.back.iter().cloned().rev().collect();
+                // Move `back` into `front`. `enqueue` appends with `push_back`,
+                // so `back` is already in arrival (FIFO) order — do NOT reverse,
+                // or `dequeue` would return the most-recently-enqueued element.
+                let new_front: Vector<Value> = self.back.iter().cloned().collect();
                 let value = new_front.head()?.clone();
                 Some((
                     value,
@@ -640,7 +642,9 @@ pub mod queue {
         /// Peek at front without removing
         pub fn peek(&self) -> Option<Value> {
             if self.front.is_empty() {
-                self.back.last().cloned()
+                // `back` is in FIFO order (see `dequeue`); the front of the
+                // queue is its head, not its last element.
+                self.back.head().cloned()
             } else {
                 self.front.head().cloned()
             }

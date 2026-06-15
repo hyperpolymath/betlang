@@ -1,5 +1,5 @@
-// SPDX-License-Identifier: MPL-2.0
-// Copyright (c) Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
+# SPDX-License-Identifier: MPL-2.0
+# Copyright (c) Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
 # betlang - Development Tasks
 # AUTHORITY: AUTHORITY_STACK.mustfile-nickel.scm
 # All operations MUST be invoked via `just <recipe>`.
@@ -83,6 +83,34 @@ test-tooling:
 # Clean Rust build artifacts
 clean-tooling:
     cargo clean
+
+# --- Rust toolchain recipes (the working compiler/interpreter pipeline) ------
+# These drive the real multi-crate Rust implementation under compiler/, runtime/
+# and tools/. (The Racket recipes above target the historical core/*.rkt tree.)
+
+# Build the entire Rust workspace (all crates)
+build-rust:
+    cargo build --workspace
+
+# Test the entire Rust workspace
+test-rust:
+    cargo test --workspace
+
+# Type-check a betlang source file with the Rust checker
+check FILE:
+    cargo run -q -p bet -- check {{FILE}}
+
+# Run a betlang source file with the Rust interpreter
+run FILE:
+    cargo run -q -p bet -- run {{FILE}}
+
+# Compile a betlang source file to a backend (TARGET = js | llvm | beam)
+compile FILE TARGET="js":
+    cargo run -q -p bet -- compile {{FILE}} --target {{TARGET}}
+
+# Start the Rust REPL
+repl-rust:
+    cargo run -q -p bet -- repl
 
 # ============================================================================
 # PROOFS (formal verification — see docs/AFFINESCRIPT-ALIGNMENT.adoc)

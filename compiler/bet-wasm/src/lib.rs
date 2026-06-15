@@ -552,9 +552,9 @@ impl WasmBackend {
                             func.instruction(&Instruction::I32Const(0));
                         }
                     }
-                    WasmType::I64 => func.instruction(&Instruction::I64Const(0)),
-                    WasmType::F32 => func.instruction(&Instruction::F32Const(0.0)),
-                    WasmType::F64 => func.instruction(&Instruction::F64Const(0.0)),
+                    WasmType::I64 => { func.instruction(&Instruction::I64Const(0)); }
+                    WasmType::F32 => { func.instruction(&Instruction::F32Const(0.0)); }
+                    WasmType::F64 => { func.instruction(&Instruction::F64Const(0.0)); }
                 }
             }
 

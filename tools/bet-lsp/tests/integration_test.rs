@@ -18,24 +18,28 @@ fn test_document_state_creation() {
 }
 
 #[test]
-fn test_document_tokens() {
+fn test_document_parses_valid_source() {
     let uri = Url::parse("file:///test.bet").unwrap();
-    let source = "bet { a, b, c }".to_string();
+    let source = "let r = bet { a, b, c }".to_string();
     let doc = DocumentState::new(uri, source, 1);
 
-    let tokens = doc.tokens();
-    assert!(tokens.is_ok());
-    assert!(tokens.as_ref().unwrap().len() > 0);
+    // Uses the real bet-parse parser (not a stub).
+    assert!(doc.parsed().is_ok());
 }
 
 #[test]
-fn test_document_ast() {
+fn test_document_reports_parse_error() {
     let uri = Url::parse("file:///test.bet").unwrap();
-    let source = "bet { a, b, c }".to_string();
+    // `let` with no binding name is a syntax error.
+    let source = "let = bet { a, b, c }".to_string();
     let doc = DocumentState::new(uri, source.clone(), 1);
 
-    let ast = doc.ast();
-    assert!(ast.is_ok());
+    let parsed = doc.parsed();
+    assert!(parsed.is_err());
+    // The error carries a usable byte offset for LSP diagnostics.
+    if let Err(e) = parsed {
+        assert!(e.offsets().is_some());
+    }
 }
 
 #[test]

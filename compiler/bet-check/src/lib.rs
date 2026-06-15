@@ -837,7 +837,10 @@ fn check_bet(bet: &BetExpr, env: &mut CheckEnv, span: Span) -> CompileResult<Typ
 
     env.unify(&t0, &t1, Some(span))?;
     env.unify(&t0, &t2, Some(span))?;
-    Ok(env.resolve(&t0))
+    // A `bet` introduces probabilistic choice: it has type `Dist T`, not `T`.
+    // (Matches the mechanised rule `tBet : … → HasType … (Ty.dist T)` in
+    // proofs/BetLang.lean; eliminate with `sample : Dist 'a -> 'a`.)
+    Ok(Type::Dist(Box::new(env.resolve(&t0))))
 }
 
 /// Check a weighted bet: branches unify, weights must be numeric.
@@ -863,7 +866,8 @@ fn check_weighted_bet(
     for i in 1..branch_types.len() {
         env.unify(&branch_types[0], &branch_types[i], Some(span))?;
     }
-    Ok(env.resolve(&branch_types[0]))
+    // Weighted bet, like uniform bet, is a distribution: `Dist T`.
+    Ok(Type::Dist(Box::new(env.resolve(&branch_types[0]))))
 }
 
 /// Check a conditional bet: condition is Bool/Ternary, all branches unify.
@@ -892,7 +896,9 @@ fn check_conditional_bet(
     env.unify(&true_ty, &f0, Some(span))?;
     env.unify(&true_ty, &f1, Some(span))?;
     env.unify(&true_ty, &f2, Some(span))?;
-    Ok(env.resolve(&true_ty))
+    // Conditional bet also yields a distribution over `T`: point-mass on the
+    // `if_true` value when the condition holds, else the ternary distribution.
+    Ok(Type::Dist(Box::new(env.resolve(&true_ty))))
 }
 
 // ============================================
@@ -1265,7 +1271,11 @@ mod tests {
             ],
         };
         let result = check_expr(&dummy(Expr::Bet(bet)), &mut env);
-        assert_eq!(result.expect("TODO: handle error"), Type::Int);
+        // `bet` introduces probabilistic choice, so its type is `Dist Int`.
+        assert_eq!(
+            result.expect("TODO: handle error"),
+            Type::Dist(Box::new(Type::Int))
+        );
     }
 
     #[test]
@@ -1699,9 +1709,11 @@ mod tests {
         );
     }
 
-    /// The core primitive bridges to Echo by composition at the type level:
-    /// `echo(bet a b c) : Echo T`. (Runtime branch-tag retention — `bet_echo` —
-    /// remains deferred; the *type* story needs no new primitive.)
+    /// The core primitive bridges to Echo by composition at the type level.
+    /// Since `bet a b c : Dist T`, the composite is `echo(bet a b c) : Echo (Dist T)`
+    /// — the retained-loss residue over the *distribution*. (Runtime branch-tag
+    /// retention — `bet_echo` — remains deferred; the *type* story needs no new
+    /// primitive.)
     #[test]
     fn test_bet_echo_bridge_by_composition() {
         let mut env = CheckEnv::new();
@@ -1714,8 +1726,8 @@ mod tests {
         };
         let e = call("echo", vec![dummy(Expr::Bet(bet))]);
         assert_eq!(
-            check_expr(&e, &mut env).expect("echo (bet 1 2 3) : Echo Int"),
-            Type::Echo(Box::new(Type::Int))
+            check_expr(&e, &mut env).expect("echo (bet 1 2 3) : Echo (Dist Int)"),
+            Type::Echo(Box::new(Type::Dist(Box::new(Type::Int))))
         );
     }
 

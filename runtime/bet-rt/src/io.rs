@@ -449,7 +449,12 @@ pub mod stdio {
                     Some('s') => {
                         chars.next();
                         if arg_idx < args.len() {
-                            result.push_str(&format!("{}", args[arg_idx]));
+                            // `%s` emits the raw string content (C-style); the
+                            // `Value` Display form quotes strings, which is wrong here.
+                            match &args[arg_idx] {
+                                Value::String(s) => result.push_str(s),
+                                other => result.push_str(&format!("{}", other)),
+                            }
                             arg_idx += 1;
                         }
                     }
