@@ -96,7 +96,7 @@ for the mechanised fragment.
 * `compiler/bet-core/` — core type definitions (incl. `Echo T`, `EchoR T`)
 * `compiler/bet-check/` — Hindley-Milner type checker + unifier (27 tests pass)
 * `compiler/bet-parse/` — LALRPOP-based surface parser
-* `compiler/bet-wasm/` — WASM backend (**paused**, pre-existing build issue)
+* `compiler/bet-wasm/` — WASM backend (builds; scaffolding — emits default-return stubs pending AST lowering)
 
 Rust is the compiler tooling layer. Core semantics remain in Racket.
 
@@ -453,7 +453,7 @@ BetLang is built on three principles:
 | VS Code extension | 🟡 In progress | AffineScript source (replaces ReScript)
 | Web Playground (ui/) | ✅ Available | Quantum-inspired features
 | FFI (Zig) | 🟡 Experimental | playground/ffi/zig/
-| WASM backend | ⏸️ Paused | Pre-existing build issue in bet-wasm
+| WASM backend | 🟡 Builds (scaffolding) | E0308 fixed; emits default-return stubs pending AST lowering
 |===
 
 ---
