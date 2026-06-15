@@ -273,7 +273,16 @@ pub mod msgpack {
     use rmp_serde::{self, Deserializer, Serializer};
     use serde::{Deserialize, Serialize};
 
-    /// Intermediate representation for serde
+    /// Intermediate representation for serde.
+    ///
+    /// This is an `untagged` enum, so on deserialize serde tries variants in
+    /// declaration order and takes the first that succeeds. `Array` MUST come
+    /// before `Bytes`: rmp-serde encodes a `Vec<u8>` as a msgpack *array* (not
+    /// `bin`) by default, so a serialized `List` of small ints would otherwise
+    /// match `Bytes(Vec<u8>)` first and a `List` would round-trip to `Bytes`.
+    /// (Fully distinguishing `Value::Bytes` from `Value::List` on the wire would
+    /// require `serde_bytes`/msgpack `bin`; not pulled in for this peripheral
+    /// path, so a genuine `Bytes` currently round-trips as a `List`.)
     #[derive(Serialize, Deserialize)]
     #[serde(untagged)]
     enum MsgPackValue {
@@ -282,8 +291,8 @@ pub mod msgpack {
         Int(i64),
         Float(f64),
         String(String),
-        Bytes(Vec<u8>),
         Array(Vec<MsgPackValue>),
+        Bytes(Vec<u8>),
         Map(std::collections::HashMap<String, MsgPackValue>),
     }
 

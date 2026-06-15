@@ -1,14 +1,13 @@
 // SPDX-License-Identifier: MPL-2.0
 // Copyright (c) Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
-//! Diagnostics handler — produces parse-level and structural diagnostics
-//! for betlang documents.
-//!
-//! Performs lightweight lexical analysis to detect common errors without
-//! requiring the full LALR parser (which has known grammar conflicts).
+//! Diagnostics handler — surfaces real parse and type-check diagnostics for
+//! betlang documents, produced by the `bet-parse` parser and `bet-check`
+//! type checker (not lexical heuristics).
 
 use tower_lsp::lsp_types::*;
 
 use crate::backend::Backend;
+use crate::utils::range_from_offsets;
 
 /// Publish diagnostics for a document.
 pub async fn publish_diagnostics(backend: &Backend, uri: &Url) {
@@ -20,7 +19,19 @@ pub async fn publish_diagnostics(backend: &Backend, uri: &Url) {
         .await;
 }
 
-/// Collect all diagnostics for a document.
+/// A small default range at the start of the document, used when an error
+/// carries no usable source span.
+fn fallback_range() -> Range {
+    Range {
+        start: Position::new(0, 0),
+        end: Position::new(0, 1),
+    }
+}
+
+/// Collect parse + type diagnostics for a document.
+///
+/// Pipeline mirrors `bet run`/`bet check`: parse with `bet-parse`; on success,
+/// type-check with `bet-check`. Each error is mapped to its real source span.
 fn collect_diagnostics(backend: &Backend, uri: &Url) -> Vec<Diagnostic> {
     let mut diagnostics = Vec::new();
 
@@ -29,199 +40,42 @@ fn collect_diagnostics(backend: &Backend, uri: &Url) -> Vec<Diagnostic> {
         None => return diagnostics,
     };
 
-    // Check tokenization
-    if let Err(err) = doc.tokens() {
-        diagnostics.push(Diagnostic {
-            range: Range {
-                start: Position::new(0, 0),
-                end: Position::new(0, 1),
-            },
-            severity: Some(DiagnosticSeverity::ERROR),
-            code: Some(NumberOrString::String("lex-error".into())),
-            source: Some("bet-lsp".into()),
-            message: err.clone(),
-            ..Default::default()
-        });
-        return diagnostics;
-    }
+    match doc.parsed() {
+        Err(parse_err) => {
+            let range = parse_err
+                .offsets()
+                .and_then(|(start, end)| range_from_offsets(start, end, &doc.line_index))
+                .unwrap_or_else(fallback_range);
 
-    // Check basic parsing
-    if let Err(err) = doc.ast() {
-        diagnostics.push(Diagnostic {
-            range: Range {
-                start: Position::new(0, 0),
-                end: Position::new(0, 1),
-            },
-            severity: Some(DiagnosticSeverity::ERROR),
-            code: Some(NumberOrString::String("parse-error".into())),
-            source: Some("bet-lsp".into()),
-            message: err.clone(),
-            ..Default::default()
-        });
-        return diagnostics;
-    }
-
-    // Structural analysis
-    let source = &doc.source;
-    let mut paren_depth: i32 = 0;
-    let mut brace_depth: i32 = 0;
-    let mut bracket_depth: i32 = 0;
-    let mut in_string = false;
-
-    for (line_idx, line) in source.lines().enumerate() {
-        let ln = line_idx as u32;
-
-        for (col_idx, ch) in line.char_indices() {
-            if ch == '"' {
-                in_string = !in_string;
-                continue;
-            }
-            if in_string {
-                continue;
-            }
-            match ch {
-                '(' => paren_depth += 1,
-                ')' => {
-                    paren_depth -= 1;
-                    if paren_depth < 0 {
-                        diagnostics.push(Diagnostic {
-                            range: Range {
-                                start: Position::new(ln, col_idx as u32),
-                                end: Position::new(ln, col_idx as u32 + 1),
-                            },
-                            severity: Some(DiagnosticSeverity::ERROR),
-                            code: Some(NumberOrString::String("unmatched-paren".into())),
-                            source: Some("bet-lsp".into()),
-                            message: "Unmatched closing parenthesis".into(),
-                            ..Default::default()
-                        });
-                    }
-                }
-                '{' => brace_depth += 1,
-                '}' => {
-                    brace_depth -= 1;
-                    if brace_depth < 0 {
-                        diagnostics.push(Diagnostic {
-                            range: Range {
-                                start: Position::new(ln, col_idx as u32),
-                                end: Position::new(ln, col_idx as u32 + 1),
-                            },
-                            severity: Some(DiagnosticSeverity::ERROR),
-                            code: Some(NumberOrString::String("unmatched-brace".into())),
-                            source: Some("bet-lsp".into()),
-                            message: "Unmatched closing brace".into(),
-                            ..Default::default()
-                        });
-                    }
-                }
-                '[' => bracket_depth += 1,
-                ']' => {
-                    bracket_depth -= 1;
-                    if bracket_depth < 0 {
-                        diagnostics.push(Diagnostic {
-                            range: Range {
-                                start: Position::new(ln, col_idx as u32),
-                                end: Position::new(ln, col_idx as u32 + 1),
-                            },
-                            severity: Some(DiagnosticSeverity::ERROR),
-                            code: Some(NumberOrString::String("unmatched-bracket".into())),
-                            source: Some("bet-lsp".into()),
-                            message: "Unmatched closing bracket".into(),
-                            ..Default::default()
-                        });
-                    }
-                }
-                _ => {}
-            }
-        }
-
-        // Check for bet expressions with wrong arity (not exactly 3)
-        let trimmed = line.trim();
-        if trimmed.starts_with("bet ") || trimmed.starts_with("(bet ") {
-            // Count comma-separated alternatives in braces
-            if let Some(brace_start) = trimmed.find('{') {
-                if let Some(brace_end) = trimmed.rfind('}') {
-                    let inner = &trimmed[brace_start + 1..brace_end];
-                    let alt_count = inner.split(',').count();
-                    if alt_count != 3 && !inner.trim().is_empty() {
-                        diagnostics.push(Diagnostic {
-                            range: Range {
-                                start: Position::new(ln, 0),
-                                end: Position::new(ln, line.len() as u32),
-                            },
-                            severity: Some(DiagnosticSeverity::WARNING),
-                            code: Some(NumberOrString::String("ternary-arity".into())),
-                            source: Some("bet-lsp".into()),
-                            message: format!(
-                                "bet expression has {} alternatives (expected 3 — ternary)",
-                                alt_count
-                            ),
-                            ..Default::default()
-                        });
-                    }
-                }
-            }
-        }
-
-        // Check for unclosed string on a single line
-        let quote_count = trimmed.chars().filter(|&c| c == '"').count();
-        if quote_count % 2 != 0 {
             diagnostics.push(Diagnostic {
-                range: Range {
-                    start: Position::new(ln, 0),
-                    end: Position::new(ln, line.len() as u32),
-                },
+                range,
                 severity: Some(DiagnosticSeverity::ERROR),
-                code: Some(NumberOrString::String("unclosed-string".into())),
+                code: Some(NumberOrString::String("parse-error".into())),
                 source: Some("bet-lsp".into()),
-                message: "Unclosed string literal".into(),
+                message: parse_err.to_string(),
                 ..Default::default()
             });
         }
-    }
+        Ok(module) => {
+            // Parse succeeded — run the real type checker.
+            if let Err(type_err) = bet_check::check_module(module) {
+                let range = type_err
+                    .span()
+                    .and_then(|sp| {
+                        range_from_offsets(sp.start as usize, sp.end as usize, &doc.line_index)
+                    })
+                    .unwrap_or_else(fallback_range);
 
-    // Report unbalanced delimiters at end of document
-    if paren_depth > 0 {
-        let last_line = source.lines().count().saturating_sub(1) as u32;
-        diagnostics.push(Diagnostic {
-            range: Range {
-                start: Position::new(last_line, 0),
-                end: Position::new(last_line, 1),
-            },
-            severity: Some(DiagnosticSeverity::ERROR),
-            code: Some(NumberOrString::String("unmatched-paren".into())),
-            source: Some("bet-lsp".into()),
-            message: format!("{} unclosed parenthesis(es)", paren_depth),
-            ..Default::default()
-        });
-    }
-    if brace_depth > 0 {
-        let last_line = source.lines().count().saturating_sub(1) as u32;
-        diagnostics.push(Diagnostic {
-            range: Range {
-                start: Position::new(last_line, 0),
-                end: Position::new(last_line, 1),
-            },
-            severity: Some(DiagnosticSeverity::ERROR),
-            code: Some(NumberOrString::String("unmatched-brace".into())),
-            source: Some("bet-lsp".into()),
-            message: format!("{} unclosed brace(s)", brace_depth),
-            ..Default::default()
-        });
-    }
-    if bracket_depth > 0 {
-        let last_line = source.lines().count().saturating_sub(1) as u32;
-        diagnostics.push(Diagnostic {
-            range: Range {
-                start: Position::new(last_line, 0),
-                end: Position::new(last_line, 1),
-            },
-            severity: Some(DiagnosticSeverity::ERROR),
-            code: Some(NumberOrString::String("unmatched-bracket".into())),
-            source: Some("bet-lsp".into()),
-            message: format!("{} unclosed bracket(s)", bracket_depth),
-            ..Default::default()
-        });
+                diagnostics.push(Diagnostic {
+                    range,
+                    severity: Some(DiagnosticSeverity::ERROR),
+                    code: Some(NumberOrString::String("type-error".into())),
+                    source: Some("bet-lsp".into()),
+                    message: type_err.to_string(),
+                    ..Default::default()
+                });
+            }
+        }
     }
 
     diagnostics

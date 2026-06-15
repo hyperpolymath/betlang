@@ -309,18 +309,16 @@ pub fn histogram(data: &Vector<Value>, bins: usize, config: &PlotConfig) -> VizR
             .draw()
             .map_err(|e| VizError::RenderError(e.to_string()))?;
 
+        // Draw bars as filled rectangles. `Histogram::vertical` requires a
+        // `DiscreteRanged` x-axis; our axis is a continuous `f64` range, so we
+        // render the bins directly as `Rectangle`s on the cartesian plane.
+        let bar_style = config.line_color.filled();
         chart
-            .draw_series(
-                Histogram::vertical(&chart)
-                    .style(config.line_color.filled())
-                    .margin(1)
-                    .data(
-                        counts
-                            .iter()
-                            .enumerate()
-                            .map(|(i, &c)| (min_val + i as f64 * bin_width, c)),
-                    ),
-            )
+            .draw_series(counts.iter().enumerate().map(|(i, &c)| {
+                let x0 = min_val + i as f64 * bin_width;
+                let x1 = x0 + bin_width;
+                Rectangle::new([(x0, 0u32), (x1, c)], bar_style.clone())
+            }))
             .map_err(|e| VizError::RenderError(e.to_string()))?;
 
         root.present()

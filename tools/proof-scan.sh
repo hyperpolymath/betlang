@@ -14,10 +14,12 @@
 #   assert_total       — Idris2
 #   unsafeCoerce       — Haskell / Lean
 #
-# NOTE: `axiom` is intentionally NOT banned. BetLang has exactly one
-# classified necessary axiom (`substTop_preserves_typing`), triaged in
-# docs/proof-debt.adoc under standards#203. AffineScript's banned list
-# likewise permits explicit axioms.
+# NOTE: `axiom` is intentionally NOT banned by policy (standards#203, as in
+# AffineScript's banned list). HOWEVER, BetLang currently has ZERO axiom
+# declarations: the formerly-classified `substTop_preserves_typing` has been
+# discharged to a proved `theorem` (TP-4), and every theorem — including the
+# echo-comonad metatheory (TP-5) — depends only on the standard Lean kernel
+# axioms. Any future classified `axiom` must be triaged in docs/proof-debt.adoc.
 #
 # Comment-awareness: Lean line comments (`-- ...`) are stripped before
 # matching so that prose like "all theorems are fully proved — no sorry"

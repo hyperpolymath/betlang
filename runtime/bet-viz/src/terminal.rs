@@ -73,11 +73,16 @@ pub fn term_line_plot(x: &[f32], y: &[f32], config: &TermPlotConfig) -> VizResul
         output.push('\n');
     }
 
-    // Use textplots for ASCII rendering
-    let chart = Chart::new(config.width * 2, config.height, points[0].0, points.last().expect("TODO: handle error").0)
-        .lineplot(&Shape::Lines(&points));
-
-    output.push_str(&format!("{}", chart));
+    // Use textplots for ASCII rendering. Bind the chart and shape to locals so
+    // neither is dropped while `lineplot`'s `&mut Chart` is still in use.
+    let mut chart = Chart::new(
+        config.width * 2,
+        config.height,
+        points[0].0,
+        points.last().expect("TODO: handle error").0,
+    );
+    let shape = Shape::Lines(&points);
+    output.push_str(&format!("{}", chart.lineplot(&shape)));
 
     Ok(output)
 }
@@ -179,10 +184,9 @@ pub fn term_scatter(x: &[f32], y: &[f32], config: &TermPlotConfig) -> VizResult<
     let x_min = x.iter().cloned().fold(f32::INFINITY, f32::min);
     let x_max = x.iter().cloned().fold(f32::NEG_INFINITY, f32::max);
 
-    let chart = Chart::new(config.width * 2, config.height, x_min, x_max)
-        .lineplot(&Shape::Points(&points));
-
-    output.push_str(&format!("{}", chart));
+    let mut chart = Chart::new(config.width * 2, config.height, x_min, x_max);
+    let shape = Shape::Points(&points);
+    output.push_str(&format!("{}", chart.lineplot(&shape)));
 
     Ok(output)
 }

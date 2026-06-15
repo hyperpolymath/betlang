@@ -36,7 +36,23 @@ pub enum ParseError {
     UnexpectedToken {
         found: String,
         expected: Vec<String>,
+        /// Byte offsets of the offending token (start, end).
+        start: usize,
+        end: usize,
     },
+}
+
+impl ParseError {
+    /// Byte-offset range `(start, end)` of the error in the source, when known.
+    /// Used by tooling (LSP) to place a precise diagnostic; `None` falls back
+    /// to the start of the document.
+    pub fn offsets(&self) -> Option<(usize, usize)> {
+        match self {
+            ParseError::Parse { location, .. } => Some((*location, *location + 1)),
+            ParseError::UnexpectedToken { start, end, .. } => Some((*start, *end)),
+            ParseError::Lexer(_) | ParseError::UnexpectedEof => None,
+        }
+    }
 }
 
 /// Result of parsing with error recovery: partial AST + diagnostics.
@@ -70,6 +86,8 @@ fn convert_lalrpop_error(e: lalrpop_util::ParseError<usize, Token, LexError>) ->
             ParseError::UnexpectedToken {
                 found: format!("{:?}", token.1),
                 expected,
+                start: token.0,
+                end: token.2,
             }
         }
         lalrpop_util::ParseError::ExtraToken { token } => ParseError::Parse {

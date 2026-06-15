@@ -15,6 +15,7 @@ bet-parse = { path = "../../compiler/bet-parse" }
 bet-eval = { path = "../../compiler/bet-eval" }
 bet-check = { path = "../../compiler/bet-check" }
 bet-core = { path = "../../compiler/bet-core" }
+bet-codegen = { path = "../../compiler/bet-codegen" }
 serde_json = "1.0"
 
 clap.workspace = true
