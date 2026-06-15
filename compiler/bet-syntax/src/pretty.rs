@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: MPL-2.0
+// Copyright (c) Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
 //! Pretty-printer for BetLang AST.
 //!
 //! Converts AST nodes into formatted source code strings. Used for the

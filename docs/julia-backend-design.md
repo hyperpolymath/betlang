@@ -1,3 +1,7 @@
+<!--
+SPDX-License-Identifier: MPL-2.0
+Copyright (c) Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
+-->
 # BetLang Julia Backend Design (v0.8)
 
 **Status:** Planning Phase (2026-02-07)

@@ -4,13 +4,13 @@
 # ECOSYSTEM.a2ml — Betlang ecosystem position
 [metadata]
 version = "1.1"
-last-updated = "2026-06-02"
+last-updated = "2026-06-13"
 
 [project]
 name = "Betlang"
 purpose = "Ternary probabilistic programming with Dutch book prevention and gambling harm reduction"
 role = "programming-language"
-license = "PMPL-1.0 (SPDX: MPL-2.0)"
+license = "Palimpsest License (SPDX: MPL-2.0)"
 repo = "https://github.com/hyperpolymath/betlang"
 
 [position-in-ecosystem]
@@ -54,7 +54,7 @@ role = "AffineScript tooling"
 [[related-projects.tooling]]
 name = "palimpsest-license"
 repo = "https://github.com/hyperpolymath/palimpsest-license"
-role = "PMPL-1.0 license definition (betlang uses PMPL-1.0 / SPDX: MPL-2.0)"
+role = "Palimpsest License definition (betlang uses Palimpsest License / SPDX: MPL-2.0)"
 
 [external-dependencies]
 proof-verifier = "Lean 4 (leanprover/lean4:v4.15.0)"

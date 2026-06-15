@@ -33,19 +33,25 @@ inductive Ty : Type where
   | dist   : Ty → Ty
   -- Echo types (structured loss; see `hyperpolymath/echo-types`). `echo T` is
   -- a proof-relevant retained-loss residue over `T`, distinct from `T`;
-  -- `echoR T` is its strict, non-recoverable weakening. These are type
-  -- *formers* only in this Lean development: no `Expr` constructor introduces
-  -- or eliminates them and `HasType` assigns no expression an echo type, so
-  -- the carrier's metatheory (Progress/Preservation below) is unaffected.
-  -- NOTE: the Rust checker `bet-check` now carries the *typing rules* for the
-  -- echo operations — introduction `echo : 'a → Echo 'a`, the functor/comonad
-  -- surface `echo_map`/`echo_output` (counit)/`echo_duplicate`, the residue
+  -- `echoR T` is its strict, non-recoverable weakening.
+  -- TP-5 (DISCHARGED below): `echo T` is now modelled at the term level by the
+  -- `Expr.echoIntro` (introduction, `T → echo T`) and `Expr.echoElim`
+  -- (elimination / the `echo_output` counit projection, `echo T → T`)
+  -- constructors, with typing rules `tEchoIntro`/`tEchoElim`, the β-rule
+  -- `echoElimIntro`, congruences `echoIntroStep`/`echoElimStep`, the canonical
+  -- forms lemma `canonical_echo`, and Progress/Preservation re-established over
+  -- the extended calculus. The intro/elim pair is a single-subexpression,
+  -- non-binding, ghost former (modelled exactly like `distPure`/`sample`).
+  -- TP-5b (DEFERRED): `echoR T` remains a type *former* only (no `Expr`
+  -- constructor introduces or eliminates it), and the richer Rust surface
+  -- ops — the functor/comonad `echo_map`/`echo_duplicate`, the residue
   -- lowering `echo_to_residue : Echo 'a → EchoR 'a`, and the probabilistic
-  -- bridge `sample_echo : Dist 'a → Echo 'a` (all type-level / ghost; the
-  -- ungraded shadow of `EchoGradedComonad.agda`). Mirroring those rules here
-  -- and re-establishing Progress/Preservation is tracked as obligation TP-5
-  -- (PROOF-NEEDS.md), deferred until the runtime residue representation is
-  -- settled.
+  -- bridge `sample_echo : Dist 'a → Echo 'a` (the ungraded shadow of
+  -- `EchoGradedComonad.agda`) — are not modelled here. They compose from
+  -- `echoIntro`/`echoElim` plus the existing forms (e.g. `echo_map g` is
+  -- `λx. echoIntro (g (echoElim x))`) and are tracked as TP-5b, deferred
+  -- until the runtime residue representation is settled. The Rust checker
+  -- `bet-check` carries their type-level / ghost typing rules.
   | echo   : Ty → Ty
   | echoR  : Ty → Ty
   deriving DecidableEq, Repr
@@ -66,6 +72,8 @@ inductive Expr : Type where
   | sample    : Expr → Expr               -- sample e  (Dist T → T)
   | distPure  : Expr → Expr               -- return/pure for Dist (wraps value)
   | distBind  : Expr → Expr → Expr        -- bind : Dist A → (A → Dist B) → Dist B
+  | echoIntro : Expr → Expr               -- echo intro: T → echo T (retain loss)
+  | echoElim  : Expr → Expr               -- echo elim / echo_output: echo T → T
   deriving Repr
 
 -- ════════════════════════════════════════════════════════════════════════════
@@ -81,6 +89,7 @@ inductive IsValue : Expr → Prop where
   | litUnit   : IsValue Expr.litUnit
   | lam       : IsValue (Expr.lam t body)
   | distPure  : IsValue v → IsValue (Expr.distPure v)
+  | echoIntro : IsValue v → IsValue (Expr.echoIntro v)
 
 /-- Values are decidable (we need this for case analysis in proofs). -/
 def isValue : Expr → Bool
@@ -91,6 +100,7 @@ def isValue : Expr → Bool
   | Expr.litUnit     => true
   | Expr.lam _ _     => true
   | Expr.distPure v  => isValue v
+  | Expr.echoIntro v => isValue v
   | _                => false
 
 -- ════════════════════════════════════════════════════════════════════════════
@@ -152,6 +162,12 @@ inductive HasType : Ctx → Expr → Ty → Prop where
   | tDistBind : HasType Γ e₁ (Ty.dist A) →
                 HasType Γ e₂ (Ty.arrow A (Ty.dist B)) →
                 HasType Γ (Expr.distBind e₁ e₂) (Ty.dist B)
+  /-- T-EchoIntro: echo introduction — T → echo T -/
+  | tEchoIntro : HasType Γ e T →
+                 HasType Γ (Expr.echoIntro e) (Ty.echo T)
+  /-- T-EchoElim: echo elimination (echo_output counit) — echo T → T -/
+  | tEchoElim : HasType Γ e (Ty.echo T) →
+                HasType Γ (Expr.echoElim e) T
 
 -- ════════════════════════════════════════════════════════════════════════════
 -- Section 4. Substitution
@@ -173,6 +189,8 @@ def shift (amount : Int) (cutoff : Nat) : Expr → Expr
   | Expr.sample e      => Expr.sample (shift amount cutoff e)
   | Expr.distPure e    => Expr.distPure (shift amount cutoff e)
   | Expr.distBind e₁ e₂ => Expr.distBind (shift amount cutoff e₁) (shift amount cutoff e₂)
+  | Expr.echoIntro e   => Expr.echoIntro (shift amount cutoff e)
+  | Expr.echoElim e    => Expr.echoElim (shift amount cutoff e)
 
 /-- Substitute expression `s` for variable `j` in expression `e`. -/
 def subst (j : Nat) (s : Expr) : Expr → Expr
@@ -190,6 +208,8 @@ def subst (j : Nat) (s : Expr) : Expr → Expr
   | Expr.sample e      => Expr.sample (subst j s e)
   | Expr.distPure e    => Expr.distPure (subst j s e)
   | Expr.distBind e₁ e₂ => Expr.distBind (subst j s e₁) (subst j s e₂)
+  | Expr.echoIntro e   => Expr.echoIntro (subst j s e)
+  | Expr.echoElim e    => Expr.echoElim (subst j s e)
 
 /-- Top-level substitution: replace variable 0 and shift down. -/
 def substTop (s : Expr) (e : Expr) : Expr :=
@@ -265,6 +285,15 @@ inductive Step : Expr → Expr → Prop where
   | distBindStep2 : IsValue v →
                     Step e₂ e₂' →
                     Step (Expr.distBind v e₂) (Expr.distBind v e₂')
+  -- EchoElim of echoIntro: echoElim (echoIntro v) → v  (counit β-rule)
+  | echoElimIntro : IsValue v →
+                    Step (Expr.echoElim (Expr.echoIntro v)) v
+  -- EchoIntro congruence
+  | echoIntroStep : Step e e' →
+                    Step (Expr.echoIntro e) (Expr.echoIntro e')
+  -- EchoElim congruence
+  | echoElimStep  : Step e e' →
+                    Step (Expr.echoElim e) (Expr.echoElim e')
 
 -- ════════════════════════════════════════════════════════════════════════════
 -- Section 6. Canonical forms lemma
@@ -283,6 +312,7 @@ theorem canonical_arrow {v : Expr} {S T : Ty} :
   | litString => cases ht
   | litUnit => cases ht
   | distPure _ => cases ht
+  | echoIntro _ => cases ht
 
 /-- Canonical forms: a closed value of Bool type must be a boolean literal. -/
 theorem canonical_bool {v : Expr} :
@@ -297,6 +327,7 @@ theorem canonical_bool {v : Expr} :
   | litUnit => cases ht
   | lam => cases ht
   | distPure _ => cases ht
+  | echoIntro _ => cases ht
 
 /-- Canonical forms: a closed value of Dist T must be distPure of a value. -/
 theorem canonical_dist {v : Expr} {T : Ty} :
@@ -311,6 +342,21 @@ theorem canonical_dist {v : Expr} {T : Ty} :
   | litString => cases ht
   | litUnit => cases ht
   | lam => cases ht
+  | echoIntro _ => cases ht
+
+/-- Canonical forms: a closed value of `echo T` must be `echoIntro` of a value. -/
+theorem canonical_echo {Γ : Ctx} {e : Expr} {T : Ty}
+    (ht : HasType Γ e (Ty.echo T)) (hv : IsValue e) :
+    ∃ v, e = Expr.echoIntro v ∧ IsValue v := by
+  cases hv with
+  | echoIntro hv' => cases ht with | tEchoIntro h => exact ⟨_, rfl, hv'⟩
+  | litInt => cases ht
+  | litFloat => cases ht
+  | litBool => cases ht
+  | litString => cases ht
+  | litUnit => cases ht
+  | lam => cases ht
+  | distPure _ => cases ht
 
 -- ════════════════════════════════════════════════════════════════════════════
 -- Section 7. Progress theorem
@@ -381,6 +427,17 @@ theorem progress {e : Expr} {T : Ty} (ht : HasType [] e T) :
       obtain ⟨_, rfl, hvw⟩ := canonical_dist ht1 hv1
       exact ⟨_, Step.distBindPure hvw⟩
     · exact ⟨_, Step.distBindStep1 hs1⟩
+  | tEchoIntro _ ihe =>
+    rcases ihe hΓ with hve | ⟨_, hse⟩
+    · left; exact IsValue.echoIntro hve
+    · right; exact ⟨_, Step.echoIntroStep hse⟩
+  | tEchoElim hte ihe =>
+    right
+    rcases ihe hΓ with hve | ⟨_, hse⟩
+    · subst hΓ
+      obtain ⟨w, rfl, hvw⟩ := canonical_echo hte hve
+      exact ⟨w, Step.echoElimIntro hvw⟩
+    · exact ⟨_, Step.echoElimStep hse⟩
 
 -- ════════════════════════════════════════════════════════════════════════════
 -- Section 8. Weakening and substitution lemmas
@@ -542,6 +599,14 @@ theorem shift_preserves_typing
     intro k U hk
     simp only [shift]
     exact HasType.tDistBind (ih1 k U hk) (ih2 k U hk)
+  | tEchoIntro _ ih =>
+    intro k U hk
+    simp only [shift]
+    exact HasType.tEchoIntro (ih k U hk)
+  | tEchoElim _ ih =>
+    intro k U hk
+    simp only [shift]
+    exact HasType.tEchoElim (ih k U hk)
 
 /-- Shift down then up cancels: `shift (-1) k (shift 1 k e) = e`.
     Holds unconditionally because every variable that gets shifted up by `shift 1 k`
@@ -628,6 +693,16 @@ theorem shift_down_shift_up (e : Expr) :
                        (shift (-1) k (shift 1 k e₂))
        = Expr.distBind e₁ e₂
     rw [ih1, ih2]
+  | echoIntro e ih =>
+    intro k
+    show shift (-1) k (Expr.echoIntro (shift 1 k e)) = Expr.echoIntro e
+    show Expr.echoIntro (shift (-1) k (shift 1 k e)) = Expr.echoIntro e
+    rw [ih]
+  | echoElim e ih =>
+    intro k
+    show shift (-1) k (Expr.echoElim (shift 1 k e)) = Expr.echoElim e
+    show Expr.echoElim (shift (-1) k (shift 1 k e)) = Expr.echoElim e
+    rw [ih]
 
 /-- General shift-shift commutation: for `i ≤ j`,
     `shift 1 i (shift 1 j e) = shift 1 (j+1) (shift 1 i e)`.
@@ -742,6 +817,20 @@ theorem shift_one_comm_general (e : Expr) :
     show Expr.distBind (shift 1 i (shift 1 j e₁)) (shift 1 i (shift 1 j e₂))
        = Expr.distBind (shift 1 (j+1) (shift 1 i e₁)) (shift 1 (j+1) (shift 1 i e₂))
     rw [ih1 i j hij, ih2 i j hij]
+  | echoIntro e ih =>
+    intros i j hij
+    show shift 1 i (Expr.echoIntro (shift 1 j e))
+       = shift 1 (j+1) (Expr.echoIntro (shift 1 i e))
+    show Expr.echoIntro (shift 1 i (shift 1 j e))
+       = Expr.echoIntro (shift 1 (j+1) (shift 1 i e))
+    rw [ih i j hij]
+  | echoElim e ih =>
+    intros i j hij
+    show shift 1 i (Expr.echoElim (shift 1 j e))
+       = shift 1 (j+1) (Expr.echoElim (shift 1 i e))
+    show Expr.echoElim (shift 1 i (shift 1 j e))
+       = Expr.echoElim (shift 1 (j+1) (shift 1 i e))
+    rw [ih i j hij]
 
 /-- Specialisation of `shift_one_comm_general` at i = 0. -/
 theorem shift_one_comm (e : Expr) :
@@ -912,6 +1001,18 @@ theorem substAt_preserves_typing :
       exact HasType.tDistBind
         (ih1 Γ k S _ v ht1 hv hk)
         (ih2 Γ k S _ v ht2 hv hk)
+  | echoIntro e ih =>
+    intros Γ k S T v hbody hv hk
+    cases hbody with
+    | tEchoIntro ht =>
+      simp only [subst, shift]
+      exact HasType.tEchoIntro (ih Γ k S _ v ht hv hk)
+  | echoElim e ih =>
+    intros Γ k S T v hbody hv hk
+    cases hbody with
+    | tEchoElim ht =>
+      simp only [subst, shift]
+      exact HasType.tEchoElim (ih Γ k S _ v ht hv hk)
 
 -- ════════════════════════════════════════════════════════════════════════════
 -- Section 9. Preservation theorem
@@ -1004,6 +1105,17 @@ theorem preservation {Γ : Ctx} {e e' : Expr} {T : Ty}
   | distBindStep2 _ _ ih =>
     cases ht with
     | tDistBind ht1 ht2 => exact HasType.tDistBind ht1 (ih ht2)
+  | echoElimIntro _ =>
+    cases ht with
+    | tEchoElim hte =>
+      cases hte with
+      | tEchoIntro he => exact he
+  | echoIntroStep _ ih =>
+    cases ht with
+    | tEchoIntro hte => exact HasType.tEchoIntro (ih hte)
+  | echoElimStep _ ih =>
+    cases ht with
+    | tEchoElim hte => exact HasType.tEchoElim (ih hte)
 
 -- ════════════════════════════════════════════════════════════════════════════
 -- Section 10. Type safety (corollary)
@@ -1159,6 +1271,9 @@ theorem value_no_step {v e : Expr} (hv : IsValue v) : ¬ Step v e := by
   | distPure hv' =>
     cases hs with
     | distPureStep hs' => exact value_no_step hv' hs'
+  | echoIntro hv' =>
+    cases hs with
+    | echoIntroStep hs' => exact value_no_step hv' hs'
 
 -- ════════════════════════════════════════════════════════════════════════════
 -- End of formalisation

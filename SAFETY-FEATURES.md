@@ -1,3 +1,7 @@
+<!--
+SPDX-License-Identifier: MPL-2.0
+Copyright (c) Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
+-->
 # BetLang Safety Features
 
 **Status:** ✅ **IMPLEMENTED** (2026-02-01)
@@ -270,7 +274,7 @@ BetLang's safety features are based on:
 
 ## License
 
-MPL-2.0 (Palimpsest License)
+MPL-2.0 (MPL-2.0)
 
 ## Authors
 

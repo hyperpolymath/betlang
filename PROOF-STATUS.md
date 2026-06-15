@@ -1,4 +1,5 @@
 <!-- SPDX-License-Identifier: MPL-2.0 -->
+<!-- Owner: Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk> -->
 <!-- SPDX-FileCopyrightText: 2026 Jonathan D.A. Jewell (hyperpolymath) -->
 <!-- Tracks proof completion. Obligations defined in PROOF-NEEDS.md. -->
 <!-- Aligned to the AffineScript estate PROOF-STATUS format. -->
@@ -12,14 +13,14 @@ See `docs/AFFINESCRIPT-ALIGNMENT.adoc` for the phased plan and
 
 | Category | Total | Done | In Progress | Blocked | Remaining |
 |----------|-------|------|-------------|---------|-----------|
-| Typing / metatheory (TP)   | 5 | 3 | 0 | 0 | 2 |
+| Typing / metatheory (TP)   | 6 | 5 | 0 | 0 | 1 |
 | Semantics (SEM)            | 1 | 0 | 0 | 0 | 1 |
 | Statistics (STAT)          | 2 | 0 | 0 | 0 | 2 |
 | ABI / FFI (ABI)            | 5 | 0 | 0 | 0 | 5 |
 | Concurrency (CONC)         | 1 | 0 | 0 | 0 | 1 |
-| **Total**                  | **14** | **3** | **0** | **0** | **11** |
+| **Total**                  | **15** | **5** | **0** | **0** | **10** |
 
-**Overall**: 21% proven (3 / 14). Lean core metatheory mechanised and
+**Overall**: 33% proven (5 / 15). Lean core metatheory mechanised and
 (as of Phase 1) machine-checked in CI.
 
 ## Proofs Done
@@ -30,6 +31,7 @@ See `docs/AFFINESCRIPT-ALIGNMENT.adoc` for the phased plan and
 | TP-2 | Preservation — typing preserved under reduction | Lean4 | `proofs/BetLang.lean` | `lake build` (CI: `proofs.yml`) |
 | TP-3 | Distribution monad laws (left id, right id, assoc) | Lean4 | `proofs/BetLang.lean` | `lake build` (CI: `proofs.yml`) |
 | TP-4 | Discharge `substTop_preserves_typing` (de Bruijn subst lemma) — now a proved theorem, axiom-free | Lean4 | `proofs/BetLang.lean` | `lake build` (CI: `proofs.yml`) |
+| TP-5 | Echo intro/elim metatheory — `echoIntro`/`echoElim` (echo_output) typing + β-rule + congruences + `canonical_echo`; Progress/Preservation re-established over the extended calculus | Lean4 | `proofs/BetLang.lean` | `lake build` (CI: `proofs.yml`) |
 
 > Note: TP-2 is axiom-free. `substTop_preserves_typing`
 > (`proofs/BetLang.lean:918`) is a fully proved `theorem` — the former
@@ -52,7 +54,7 @@ See `docs/AFFINESCRIPT-ALIGNMENT.adoc` for the phased plan and
 
 | ID | Proof | Category | Prover | Phase | Priority |
 |----|-------|----------|--------|-------|----------|
-| TP-5   | Echo-operation typing rules + metatheory — mirror `bet-check`'s functor/comonad surface (`echo`, `echo_map`, `echo_output`, `echo_duplicate`, `echo_to_residue`, `sample_echo`), incl. the comonad laws from `EchoGradedComonad.agda` | TP | Lean4 | 2 | P2 |
+| TP-5b  | Richer echo surface ops in Lean — `echo_map`/`echo_duplicate`/`echo_to_residue`/`sample_echo` (compose from `echoIntro`/`echoElim`) + the comonad laws from `EchoGradedComonad.agda` | TP | Lean4 | 2 | P3 |
 | SEM-1  | Continuous measure-theoretic denotational semantics           | SEM  | Lean4  | 2 | P2 |
 | STAT-1 | Maximum entropy of uniform ternary = log₂3 bits               | STAT | Lean4  | 2 | P2 |
 | STAT-2 | SLLN for bet sample means (a.s. convergence to expectation)   | STAT | Lean4  | 2 | P2 |
@@ -85,3 +87,4 @@ policy (standards#203) and registered in `docs/proof-debt.adoc`.
 |------|--------|-----|
 | 2026-06-02 | Phase 1: Lean proofs made CI-machine-checked; status table created. | alignment branch |
 | 2026-06-03 | Echo operations typed in `bet-check` (`echo`/`echo_output`/`echo_to_residue`/`sample_echo`); registered TP-5 for the Lean metatheory mirror. | echo-types pass |
+| 2026-06-15 | TP-5 discharged: `echoIntro`/`echoElim` modelled in Lean (typing + β-rule + congruences + `canonical_echo`); Progress/Preservation re-established; zero `sorry`. Richer surface ops split to TP-5b. | TP-5 pass |

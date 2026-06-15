@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: MPL-2.0
+// Copyright (c) Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
 //! Comprehensive lexer and parser tests for Betlang.
 //!
 //! These tests exercise all token types in the logos lexer and all major
