@@ -102,24 +102,36 @@ pub fn codegen_module(module: &Module, target: Target) -> CompileResult<CodeOutp
 fn js_preamble() -> &'static str {
     r#"// === Betlang Runtime Preamble ===
 
-// Uniform ternary choice among exactly 3 alternatives
+// Uniform ternary choice among exactly 3 alternatives.
+// `bet` has type `Dist T`: it returns a *distribution object* (sample with
+// `__bet_sample`), not an eager draw — consistent with the checker/interpreter.
 function __bet_uniform(a, b, c) {
-  const r = Math.random();
-  if (r < 1/3) return a;
-  if (r < 2/3) return b;
-  return c;
+  return {
+    name: 'bet',
+    sample() {
+      const r = Math.random();
+      if (r < 1/3) return a;
+      if (r < 2/3) return b;
+      return c;
+    },
+  };
 }
 
-// Weighted ternary choice (weights normalised internally)
+// Weighted ternary choice (weights normalised internally). Returns a Dist.
 function __bet_weighted(alts, weights) {
-  const total = weights.reduce((s, w) => s + w, 0);
-  const r = Math.random() * total;
-  let cumul = 0;
-  for (let i = 0; i < alts.length; i++) {
-    cumul += weights[i];
-    if (r < cumul) return alts[i];
-  }
-  return alts[alts.length - 1];
+  return {
+    name: 'weighted_bet',
+    sample() {
+      const total = weights.reduce((s, w) => s + w, 0);
+      const r = Math.random() * total;
+      let cumul = 0;
+      for (let i = 0; i < alts.length; i++) {
+        cumul += weights[i];
+        if (r < cumul) return alts[i];
+      }
+      return alts[alts.length - 1];
+    },
+  };
 }
 
 // --- Distribution objects ---

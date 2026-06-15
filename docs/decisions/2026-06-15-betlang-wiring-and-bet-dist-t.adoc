@@ -1,0 +1,221 @@
+// SPDX-License-Identifier: MPL-2.0
+// Owner: Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
+// SPDX-FileCopyrightText: 2026 Jonathan D.A. Jewell (hyperpolymath)
+= Design-decision log — betlang wiring pass & `bet : Dist T` (2026-06-15)
+:toc:
+
+A consolidated, ADR-style log of the 2026-06-15 betlang session: a wire-first
+pass across the toolchain, the decision to make `bet : Dist T` canonical and
+unify the interpreter onto `bet-rt`'s value type, the proof work, and the
+reconciliation with a parallel session that landed its own TP-5 + checker
+hardening. Recorded so the *encounters on the journey* — not just the final
+state — survive as decisions.
+
+Each entry is `Context → Decision → Consequences`. Status legend:
+LANDED (in this branch), CANONICAL (owner-adjudicated), DEFERRED, SURFACED
+(owner decision pending).
+
+== ADR-0: Ground truth — betlang is the Rust workspace, not the Racket DSL
+
+*Context.* The root `CLAUDE.md` described betlang as a minimal Racket DSL
+(`core/betlang.rkt`, `repl/shell.rkt`). The actual project is a multi-crate
+*Rust* compiler (`bet-syntax → bet-parse → bet-check → bet-eval / bet-codegen /
+bet-wasm`), a Lean 4 metatheory, a Julia backend, and LSP/DAP tooling, with
+`racket` not even installed. A 17-agent audit + direct reads established what
+actually works versus what is built-in-isolation.
+
+*Decision.* Treat the Rust/Lean reality as authoritative for engineering work.
+Two orchestrator "facts" were corrected on the journey: Lean is *4.15.0 and
+matches* the `lean-toolchain` pin (the "v4.15 vs 4.13" mismatch was a phantom —
+`elan` overrides per-directory; `lake build` is green), and TP-4's `substTop`
+is a *proved theorem*, zero axioms (the "single classified axiom" was already
+discharged).
+
+*Consequences.* The wiring pass (ADR-5) connects the orphaned Rust components.
+The "Racket is authoritative" declaration in `Justfile` / `AUTHORITY_STACK` /
+`CLAUDE.md` was left untouched — see ADR-8 (SURFACED).
+
+== ADR-1: `bet` has type `Dist T` (CANONICAL)
+
+*Context.* The Lean proof (`proofs/BetLang.lean`) mechanises `tBet : … →
+HasType … (Ty.dist T)` — `bet` introduces a distribution. But the Rust checker
+returned the bare branch type `T`, and the interpreter returned a drawn value.
+So `Progress`/`Preservation` (TP-1/TP-2) certified a rule the implementation did
+not run — a soundness-meaning gap, not just missing work.
+
+*Decision (owner: option a).* Make `bet : Dist T` canonical across the
+implementation, aligning it with the already-correct proof. Eliminate a
+distribution with `sample : Dist 'a -> 'a`. Weighted and conditional bets are
+distributions too (`Dist T`); a conditional bet is a point-mass on `if_true`
+when the condition holds, else the ternary distribution.
+
+*Consequences.*
+* `bet-check`: `check_bet`/`check_weighted_bet`/`check_conditional_bet` now
+  return `Dist T`. Programs must `sample` before using a drawn value:
+  `bet { 1,2,3 } + 1` is now correctly rejected (`expected Dist(Int), found Int`).
+* `echo(bet a b c) : Echo (Dist T)` (the retained-loss residue is over the
+  *distribution*).
+* TP-1/TP-2 now describe the shipped rule; the proof became load-bearing.
+
+== ADR-2: One runtime — unify the interpreter onto `bet_rt::Value` (LANDED)
+
+*Context.* Two independently-built runtimes existed with *different* value
+types: `bet-eval` (a tree-walker with its own simple `Value`, used by the CLI)
+and `bet-rt` (a richer embeddable runtime — `Dist`/`Map`/`Set`/`Native` — used
+only by the FFI bindings). `bet-rt` already had `Value::Dist(Arc<Distribution>)`
+and `Value::bet(a,b,c)` — exactly what `bet : Dist T` needs.
+
+*Decision.* `bet-eval` adopts `bet_rt::value::Value` as its value type (re-exported
+as `bet_eval::Value`). `bet` evaluates to a real `Value::Dist`; `sample` draws
+via the distribution's sampler.
+
+*The impedance, and its resolution.* `bet_rt::Closure` holds a *native*
+`Box<dyn Fn(Vec<Value>) -> Value + Send + Sync>`, not an AST closure — this is
+*why* the two runtimes were separate (compiled-runtime style vs tree-walker).
+We *closure-convert*: a betlang lambda becomes a native closure that captures the
+body `Expr` + defining environment and re-invokes `eval`. Feasible because
+`Symbol` is a `u32` over a global interner, so `Expr` is `Send + Sync + 'static`.
+The native closure has no `Result` channel, so an evaluation error inside a
+closure is encoded as `Value::Error` and re-raised by `apply` — a documented,
+self-consistent degradation (betlang `eval` produces `Value::Error` only via
+this mechanism).
+
+*Consequences.* `bet-rt` and `bet-rand` (previously *zero* dependents) are now
+consumed by the interpreter — one runtime, not two. Native functions
+(`Value::Native`) and the full data-structure surface come for free.
+
+== ADR-3: JS codegen emits distribution objects (LANDED)
+
+*Context.* Under ADR-1, the JS backend was inconsistent: `bet` emitted an
+*eager draw* (`__bet_uniform` returned a value) while `__bet_sample` expected a
+*distribution object* — so `sample(bet …)` threw "Cannot sample from
+non-distribution".
+
+*Decision.* `__bet_uniform`/`__bet_weighted` return distribution objects with a
+`.sample()` method (matching `__bet_dist_normal` and `__bet_sample`). The emitted
+*call sites* are unchanged, so the 34 codegen string-tests stay valid; only the
+preamble bodies change.
+
+*Consequences.* Generated JS executes correctly end-to-end:
+`bet compile examples/dice.bet --target js` produces JavaScript whose `sample`
+draws from a real distribution object (verified under deno).
+
+== ADR-4: Surface interpreter gaps as errors, not silent `Unit` (LANDED)
+
+*Context.* `bet-eval` had a catch-all `_ => Ok(Value::Unit)` collapsing every
+unimplemented form (`Do`, `Match`, `Observe`, `Infer`, `Record`, `Field`,
+`Index`, echo ops) to `Unit` — silently wrong results with no signal.
+
+*Decision.* Replace it with an explicit `Runtime` error naming the construct
+(`expr_form_name`). `Sample` is documented as identity-on-non-Dist (the checker
+guarantees it only ever sees a `Dist`).
+
+*Consequences.* "We know what works and what does not" — the interpreter now
+*tells* you when it hits an unimplemented form.
+
+== ADR-5: Wire-first pass across the toolchain (LANDED)
+
+The orphan/breakage map from the audit, each fixed and verified:
+
+[cols="1,4"]
+|===
+| Area | Change
+
+| Justfile
+| Was *unparseable* (`//` comment on line 1 — `just` rejected the whole file).
+  Fixed to `#`; added Rust task-runner recipes (`build-rust`, `test-rust`,
+  `check`, `run`, `compile`, `repl-rust`) alongside the historical Racket ones.
+
+| Rust workspace
+| Was RED. Fixed `bet-wasm` (E0308 match arm), `bet-viz` (`im` dep +
+  `Histogram`→`Rectangle` for a continuous axis + textplots `Chart`/`Shape`
+  lifetimes), `bet-chapel` (`rand_pcg` dep). Also fixed *three real
+  pre-existing `bet-rt` bugs*: a queue returning the wrong end (refill reversed
+  an already-FIFO `back`), `printf %s` quoting strings (used `Value` Display),
+  and msgpack decoding a `List` as `Bytes` (untagged-enum variant order).
+
+| cbindgen / licence
+| `bindings/chapel/build.rs` stripped the SPDX header from the generated
+  `include/betlang.h` on *every* build — an automated licence edit, which estate
+  policy forbids. Fixed with `.with_header(...)` so the header is preserved.
+
+| CLI → codegen
+| The JS backend (34 tests) was dead surface. Added `bet compile <file>
+  --target js\|llvm\|beam [--out]`.
+
+| LSP → parser/checker
+| `document.ast()` was a stub returning the source string; `bet-parse`/`bet-check`
+  were commented out as "LALR grammar conflicts" (obsolete — the parser builds,
+  164 tests pass). Wired the real parser + type checker; diagnostics now surface
+  real parse *and* type errors with precise spans (enhanced
+  `ParseError::UnexpectedToken` to carry byte offsets, which also helps the CLI).
+
+| interpreter → bet-rand
+| `bet-rand` (zero dependents) now backs `bet`/weighted/conditional RNG —
+  centralised, seedable later.
+|===
+
+A first working `.bet` example (`examples/dice.bet`) was added — none existed
+(`examples/*` were stale `.rkt`). betlang comments are `--` / `{- -}`.
+
+== ADR-6: TP-5 — echo metatheory; richer surface split to TP-5b (CANONICAL)
+
+*Context.* Two sessions independently implemented TP-5 in `proofs/BetLang.lean`.
+The parallel session landed a *lean* core: `echoIntro` / `echoElim` (the
+`echo_output` counit), the `echoElimIntro` β-rule, congruences, `canonical_echo`,
+and Progress/Preservation re-established. This session had built a *richer*
+version: all six operations as primitives plus the three comonad laws and the
+functor identity, proved as `MultiStep` confluence (the ungraded operational
+shadow of `EchoGradedComonad.agda`).
+
+*Decision (owner-adjudicated).* The parallel session's intro/elim core is the
+canonical *TP-5*. The richer surface — `echo_map`/`echo_duplicate`/
+`echo_to_residue`/`sample_echo` composed from `echoIntro`/`echoElim`, plus the
+comonad laws — becomes *TP-5b* (P3, deferred). This branch keeps origin's
+`BetLang.lean` untouched; it does not re-land the richer version.
+
+*Consequences.* `PROOF-STATUS.md` records TP-5 done (intro/elim) and TP-5b
+remaining. The richer comonad-law development is preserved in this session's
+history (local commit `964d106`) and this log, as the reference implementation
+for whoever discharges TP-5b. Both echo-types caveats stand: the *graded*
+comonad framing for the shipped 3-grade object is retracted upstream
+(R-2026-05-18); the loss-combining variance (comonad / monad / adjunction) is
+open in `echo-types/experimental/echo-additive` (R2/R3, author-gated).
+
+== ADR-7: Parallel-session reconciliation (LANDED on this branch)
+
+*Context.* While this session worked locally, a parallel session pushed five
+commits to `origin/main` — its own TP-5 (`da8a232`), checker *let-polymorphism*
+(`77ba191`) and *occurs-check* (`431420f`, fixing the unsoundness the audit
+flagged), plus estate/licence and CI work — then a merge `b31f7a6`. That merge
+reconciled the TP-5/checker collisions but *dropped this session's wiring*.
+
+*Decision.* Follow the estate parallel-session discipline (review, don't
+compete; reconcile surgically). Branch off the current `origin/main`; bring this
+session's 24 non-colliding wiring files; keep origin's `BetLang.lean` (TP-5) and
+checker base (occurs-check + let-poly — complementary, *kept*); re-apply only the
+small `bet : Dist T` delta on top of the reconciled checker. `docs/echo-types.adoc`
+was left at origin's baseline (owner-managed; this session's edits were stale
+under the TP-5/TP-5b split).
+
+*Consequences.* The reconciled branch builds clean: 317 workspace tests pass,
+`lake build` green, banned-pattern scan clean. The occurs-check + let-poly the
+parallel session added are exactly what the audit said the checker lacked — the
+two streams are complementary, not redundant.
+
+== ADR-8: Deferred / surfaced for the owner
+
+* *Racket → Rust authority (SURFACED).* `Justfile` / `AUTHORITY_STACK.mustfile`
+  / `CLAUDE.md` still declare Racket authoritative. Rust recipes were *added*
+  alongside, not substituted; flipping the declaration is an owner decision.
+* *Runtime operational model (DEFERRED).* The Lean proof models `bet → distPure
+  vᵢ` (draw-then-wrap); the interpreter and JS codegen use a *distribution-object*
+  model. The typing (`bet : Dist T`) is shared; both are valid operational
+  semantics for the same typed calculus. A materialised runtime residue payload
+  for echo remains future work.
+* *TP-5b (DEFERRED, P3).* Richer echo surface + comonad laws (see ADR-6).
+* *SEM-1 / STAT-1 / STAT-2 (DEFERRED).* Analytic obligations that realistically
+  need Mathlib — an architectural decision to keep the proof core hermetic vs.
+  add a separate Mathlib-dependent lake target.
+* *ABI-1..5 (DEFERRED, P1).* Idris2 FFI proofs; need a `proof-check-idris2`
+  recipe + CI wired first, and manual MPL licence care on the exemplar copy.

@@ -1,0 +1,19 @@
+-- SPDX-License-Identifier: MPL-2.0
+-- Copyright (c) Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
+--
+-- dice.bet — a minimal working betlang example for the Rust toolchain.
+--
+-- Verified with the `bet` CLI:
+--   just check   examples/dice.bet      (type-checks)
+--   just run     examples/dice.bet      (interprets)
+--   just compile examples/dice.bet js   (emits runnable JavaScript)
+
+-- A `bet` is a *distribution* (type `Dist T`), not a drawn value.
+-- Uniform ternary bet: equally likely 1, 2, or 3.
+let roll = bet { 1, 2, 3 }
+
+-- Weighted ternary bet: weights need not be normalised.
+let loaded = bet { 1 @ 0.6, 2 @ 0.3, 3 @ 0.1 }
+
+-- `sample : Dist T -> T` draws a value; arithmetic is over the drawn values.
+let total = (sample roll) + (sample loaded)

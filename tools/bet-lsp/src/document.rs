@@ -5,6 +5,9 @@
 use once_cell::sync::OnceCell;
 use tower_lsp::lsp_types::Url;
 
+use bet_parse::ParseError;
+use bet_syntax::ast::Module;
+
 use crate::utils::LineIndex;
 
 /// Document state with lazy-evaluated caches
@@ -14,11 +17,8 @@ pub struct DocumentState {
     pub source: String,
     pub line_index: LineIndex,
 
-    // Lazy-evaluated caches
-    // Note: Actual parsing would use bet-parse crate
-    // For now, we store parse results as strings (simplified)
-    tokens: OnceCell<Result<Vec<String>, String>>,
-    ast: OnceCell<Result<String, String>>,
+    /// Lazy, cached parse result from the real `bet-parse` parser.
+    parsed: OnceCell<Result<Module, ParseError>>,
 }
 
 impl DocumentState {
@@ -31,33 +31,16 @@ impl DocumentState {
             version,
             source,
             line_index,
-            tokens: OnceCell::new(),
-            ast: OnceCell::new(),
+            parsed: OnceCell::new(),
         }
     }
 
-    /// Get tokens (lazy evaluation)
-    pub fn tokens(&self) -> &Result<Vec<String>, String> {
-        self.tokens.get_or_init(|| {
-            // Simplified tokenization - would use bet-parse in production
-            let tokens: Vec<String> = self
-                .source
-                .split_whitespace()
-                .map(String::from)
-                .collect();
-            Ok(tokens)
-        })
-    }
-
-    /// Get AST (lazy evaluation)
-    pub fn ast(&self) -> &Result<String, String> {
-        self.ast.get_or_init(|| {
-            // Simplified AST parsing - would use bet-parse in production
-            match self.tokens() {
-                Ok(_) => Ok(self.source.clone()),
-                Err(e) => Err(e.clone()),
-            }
-        })
+    /// Parse the document with the real betlang parser (lazy, cached).
+    ///
+    /// Returns the parsed `Module` on success, or the `ParseError` (which
+    /// carries byte offsets via [`ParseError::offsets`]) on failure.
+    pub fn parsed(&self) -> &Result<Module, ParseError> {
+        self.parsed.get_or_init(|| bet_parse::parse(&self.source))
     }
 
     /// Get word at position (for completion/hover)

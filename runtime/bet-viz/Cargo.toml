@@ -8,6 +8,9 @@ license.workspace = true
 [dependencies]
 bet-rt = { path = "../bet-rt" }
 
+# Data structures (immutable Vector, matching bet-rt's Value collections)
+im.workspace = true
+
 # Core
 thiserror.workspace = true
 serde = { workspace = true, features = ["derive"] }
