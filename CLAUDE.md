@@ -6,6 +6,15 @@ Copyright (c) Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
 
 This file provides context for Claude Code when working with the betlang repository.
 
+> **CANONICAL IDENTITY (owner decision, 2026-06-15 — see
+> `docs/decisions/2026-06-15-L0-canonical-identity.adoc`).** The canonical betlang
+> is the **Rust toolchain with the ML-style surface** (`compiler/*`, `runtime/*`,
+> `tools/*`) plus the Lean metatheory (`proofs/BetLang.lean`). The Racket core +
+> S-expr surface described below (`core/betlang.rkt`, `lib/`, `repl/`, `tests/`,
+> `conformance/*.bet`) is **legacy / reference — frozen, not deleted**, and is *not*
+> authoritative. Treat the "implemented in Racket" framing in this section as
+> historical; new work targets the Rust/ML surface.
+
 ## Project Overview
 
 **betlang** is a ternary DSL (Domain-Specific Language) for probabilistic modeling and symbolic wagers, implemented in Racket. The core primitive is the `(bet A B C)` form, which randomly selects one of three values, inspired by musical ternary form (A–B–A).

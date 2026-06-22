@@ -1,0 +1,199 @@
+// SPDX-License-Identifier: MPL-2.0
+// Owner: Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
+// SPDX-FileCopyrightText: 2026 Jonathan D.A. Jewell (hyperpolymath)
+= betlang — Core Build Plan (core → post-core tier)
+:toc:
+:sectnums:
+
+The level-by-level plan to bring betlang to *absolutely core* — a single-identity
+language that **runs real probabilistic programs end to end** — followed by the
+post-core tier (native compile + inference + coprocessor acceleration). Companion
+to link:2026-06-15-betlang-wiring-and-bet-dist-t.adoc[the wiring/bet:Dist T ADR log].
+
+== Definition of "absolutely core"
+
+____
+You write a real betlang program in ONE canonical syntax, and `bet check` +
+`bet run` parse it, type-check it (`bet : Dist T`), and **interpret it correctly
+end to end** — distributions and a minimal stdlib are callable, type errors are
+real errors, and a conformance corpus in that syntax is green in CI. The Lean
+proof certifies the typed core on top of that.
+____
+
+Everything else — extra backends, native compile, full PPL inference, the meta
+layer, Julia/aLib/StatistEase, the analytic/FFI/concurrency proofs — is *post-core*.
+
+== Locked architecture decisions (from the 2026-06-15 design pass)
+
+* *One production language: Rust.* Front-end (parse/check/AST), interpreter, the
+  `bet-rt` runtime, and the eventual native backend are all Rust. No polyglot
+  production pipeline (avoids a cross-language seam / interstitial drift).
+* *Two execution tiers.* **Iterate** = tree-walking interpreter (core). **Deploy**
+  = compile (post-core). Don't put a compiler on the iterate path.
+* *World B (native).* Native x86_64 via **Cranelift** (pure-Rust, fast, JIT-capable);
+  inference offloaded to **Julia (Turing.jl) + Axiom.jl**; *not* .NET. (Rejected:
+  betlang→.NET/Infer.NET — would be a second runtime; .NET's own JIT makes Cranelift
+  redundant in that world. Rejected: F# as a production stage — second runtime,
+  can't share `bet-rt` or feed Cranelift.)
+* *F# = optional prototyping/reference lane, off the shipped path.* Use `dotnet fsi`
+  to sketch a new semantics, then port the settled design to Rust. Never shipped.
+  (The estate's sanctioned ML-compiler lane is OCaml; the Lean model + legacy Racket
+  core already partly occupy the "reference oracle" niche.)
+* *Two seams: design EARLY, build LATE.*
+  ** an *effect-handler seam* for `sample`/`observe` in the interpreter — this is
+     what a metainterpreter (= the inference engine) plugs into;
+  ** a *typed coprocessor `Handle`/`Bridge`* (AffineScript pattern: `NotReady →
+     Ready(Bridge)`) routing numeric kernels to **Axiom.jl** (Julia → Zig SIMD →
+     GPU, self-healing fallback).
+* *Metacompiler:* only the *grammar → parser generation* slice is in scope (post-L1,
+  to kill spec/impl drift). Full staging / partial-evaluation is deferred.
+
+== L0 — Canonical identity (THE GATE; owner decision)
+
+Resolve the *syntax schism* (ML surface for the Rust toolchain vs S-expr for the
+Racket core) and the *authority inversion* (docs call the 163-LOC Racket DSL
+"authoritative", the ~17k-LOC Rust toolchain "optional"). Recommendation, consistent
+with the whole architecture above: **Rust + ML surface is canonical; the Racket
+S-expr core becomes legacy/reference (kept, not deleted).** Fix `Justfile` /
+`AUTHORITY_STACK.mustfile-nickel.scm` / `CLAUDE.md` / `RSR_COMPLIANCE.adoc`.
+
+_Nothing below is well-defined until L0 is set._ Effort: *S* once decided.
+*Proof impact: none* (docs/config).
+
+== Core levels
+
+[cols="1,3,1,3"]
+|===
+| Level | Goal & current state | Effort | Proof obligation
+
+| *L1 — Spec truth*
+| Restore/replace the missing normative `SPEC.core.scm` (referenced, absent);
+  reconcile `spec/grammar.ebnf` with the real LALRPOP grammar so docs describe the
+  canonical surface. The Lean small-step model *is* the semantics spine.
+| M
+| *None new.* The existing Progress/Preservation IS the normative core semantics;
+  L1 makes the prose/grammar match it.
+
+| *L2 — Parser/AST completeness*
+| Verify the parser accepts the full core grammar (close any remaining gaps);
+  AST already ~95%.
+| S–M
+| *None.* Parsing is below the Lean model (which starts from typed terms).
+
+| *L3 — Typechecker gates*
+| Already strong: HM + occurs-check + let-poly + `bet:Dist T` + echo. Make `check`
+  *reject* ill-typed programs (today downgraded to warnings in `run`).
+| S–M
+| *None new* — but this is where the checker must keep matching the Lean rules
+  (it now does for `bet:Dist T`). Keep them in lock-step.
+
+| *L4 — Interpreter runnable core* (the big one)
+| Today errors on 7 forms (`Do`/`Match`/`Observe`/`Infer`/`Record`/`Field`/`Index`)
+  and starts with an EMPTY env. Bind the distribution constructors; implement the
+  *structural* core forms (`Match`, `Record`, `Field`, `Index`, `Do`). **Design the
+  effect-handler seam for `sample`/`observe` here** (build the metainterpreter later).
+  Decide `Observe`/`Infer` are post-core (see §Core scope).
+| L
+| *GROWS with the language* — see §"Do we need more proofs?". Each *primitive*
+  typed form added earns a Lean Progress/Preservation extension (the TP-5 pattern).
+  Forms that *desugar* to the proven core need no new proof.
+
+| *L5 — Minimal program-facing stdlib*
+| Expose distributions, `sample`, basic list/string/math to programs on the canonical
+  path (wire the internal `bet-rt` through; today it's only reachable via JS codegen).
+| M
+| *None new* for plain typed library functions (they instantiate existing schemes).
+  A builtin that introduces a *new* typing/eval rule would earn a proof.
+
+| *L6 — Conformance corpus + CI gate* ← *core reached here*
+| Real `*.bet` fixtures in the canonical surface that parse→check→run; wire into CI
+  as the conformance gate (today all `conformance/*.bet` are stale S-expr).
+| M
+| *None* (tests, not proofs) — but conformance is the *empirical* complement to the
+  Lean *formal* guarantee.
+|===
+
+== Core scope decision (L4)
+
+Recommended: core = deterministic + `bet`/`sample` + the structural forms
+(`Match`/`Do`/`Record`/`Field`/`Index`) + callable distributions + minimal stdlib.
+**Defer `Observe`/`Infer`** (conditioning + inference) to the post-core inference
+tier — they need the metainterpreter, which is a post-core build.
+
+== Design-in-now seams (the elegance/correctness investment)
+
+Owner directive (2026-06-15): defer the inference *engine*, but design its *seams*
+now — cheap at L4's birth, painful to retrofit, and correctness-compounding. Build
+only the trivial handler in core; `infer` stays post-core.
+
+. *Effect-handler seam for `sample`/`observe`.* The L4 interpreter dispatches
+  probabilistic operations to a *handler*, not hardcoded `eval` branches. Core ships
+  one trivial handler (`sample` = draw from RNG). The whole inference tier later is
+  "install a different handler" (IS/MCMC/SMC) with ZERO base-interpreter change — the
+  algebraic-effects design (cf. Gen/Pyro/Anglican).
+. *`Dist` as a lawful monad (`pure`/`bind`/`score`).* So `Do` *desugars* to monadic
+  bind (no new metatheory — it's sugar over the proven core) and the already-proven
+  *TP-3 monad laws become the runtime's semantic backbone*.
+. *`observe` = `score`/`factor(logpdf)`* — the measure-theoretically correct
+  primitive. Under the default prior-sampling handler it's behaviour-preserving (so it
+  can even run in core); `infer` is the deferred handler that *reads* the accumulated
+  weight. Pre-pays correctness into the future *SEM-1* proof (which is provable cleanly
+  over score semantics).
+. *Typed coprocessor `Handle`/`Bridge`* (`NotReady → Ready`, AffineScript pattern) in
+  the value space now, even unused — so the eventual Axiom.jl offload plugs into a
+  principled, typed boundary rather than an ad-hoc FFI.
+
+== Post-core tier (design seams early; build late)
+
+* *Metainterpreter = the inference engine.* For a PPL, `infer`/`observe` are
+  implemented by intercepting `sample`/`observe` during interpretation (IS / MCMC /
+  SMC). Plugs into the L4 effect-handler seam. (007 has a template: reify→intercept
+  →reflect.) Also yields trace/provenance/cost for free.
+* *Cranelift native backend (World B).* betlang → Cranelift IR → native x86_64
+  (+ JIT). Cost to budget: the `bet-rt` runtime bridge (C-ABI handles + value
+  representation across the codegen boundary). Cheaper interim native option:
+  betlang→Rust-source→`rustc` (reuses `bet-rt` for free).
+* *Coprocessor acceleration (to accelerate the numeric/inference runtime, NOT the
+  front-end).* Typed `Handle`/`Bridge` (AffineScript) → **Axiom.jl** dispatch
+  (Julia → Zig SIMD → GPU, self-healing fallback). betlang *consumes* the estate's
+  existing coprocessor (Axiom.jl). Caveat: Axiom.jl's GPU/coprocessor paths self-rate
+  ~20% (need real hardware). Composition: metainterpreter = control; coprocessor =
+  fast compute kernels.
+* *Grammar→parser metacompiler slice* (kills spec/impl drift; needs L1's canonical
+  grammar first).
+
+=== Deferred proof tracks (NOT on the core path)
+
+These attach to *features*, not to the runnable core — add each when you build its
+feature:
+
+* *TP-5b* — richer echo surface (`echo_map`/`echo_duplicate`/`echo_to_residue`/
+  `sample_echo`) + comonad laws (the `MultiStep` shadow exists as reference). P3.
+* *SEM-1* — measure-theoretic denotation + adequacy. Needs Mathlib (architectural
+  decision: separate Mathlib-dependent lake target vs hand-rolled).
+* *STAT-1 / STAT-2* — max-entropy-ternary / SLLN. Needs Mathlib.
+* *ABI-1..5* — Idris2 FFI proofs. P1, but only relevant once the native/FFI surface
+  (Cranelift bridge, Julia/Axiom.jl coprocessor) exists; needs a `proof-check-idris2`
+  recipe + CI wired first.
+* *CONC-1* — TLA+ parallel bet-execution. P3; subject code not ready; `tlc` absent.
+
+== Sequencing summary
+
+. *L0* (owner decision) → reframe identity.
+. *L1 → L2 → L3* — make the spec true, the parser complete, the checker gate.
+. *L4* — the runnable-core push (structural forms + callable distributions +
+  *design* the effect-handler & coprocessor seams). Extend the Lean model for each
+  new primitive typed form.
+. *L5 → L6* — minimal stdlib + conformance gate. **← core reached.**
+. *Post-core* — metainterpreter (inference) → Cranelift native → coprocessor offload
+  (Axiom.jl); deferred proof tracks per feature; F# prototyping off to the side.
+
+== Proof strategy in one line
+
+The existing proofs (Progress/Preservation/type-safety/monad-laws/echo intro-elim)
+are *correct and sufficient for the fragment they model* and are green in CI. They
+are *not automatically sufficient for the larger language L4 builds*: the proof
+**grows with the typed core** — every new *primitive* form earns a Lean extension
+(TP-5 pattern), while forms that *desugar* to the proven core need none. The
+analytic/FFI/concurrency proofs are genuinely deferred-until-you-build-that-feature.
+Keep the proven core *minimal* and desugar the rest to minimise new proof debt.

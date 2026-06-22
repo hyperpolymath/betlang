@@ -1,0 +1,43 @@
+// SPDX-License-Identifier: MPL-2.0
+// Owner: Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
+// SPDX-FileCopyrightText: 2026 Jonathan D.A. Jewell (hyperpolymath)
+= L0 — Canonical identity of betlang
+:toc:
+
+Status: *DECIDED (owner, 2026-06-15)*. Gate for the core build plan
+(link:2026-06-15-betlang-core-plan.adoc[]).
+
+== Decision
+
+The *canonical betlang* is the **Rust toolchain with the ML-style surface syntax**:
+`compiler/*` (bet-syntax/parse/core/check/eval/codegen/wasm), `runtime/*`
+(bet-rt/bet-rand/bet-viz), `tools/*` (bet-cli/bet-lsp/bet-dap), and the mechanised
+Lean metatheory at `proofs/BetLang.lean`. All future language work (spec, grammar,
+typechecker, interpreter, stdlib, conformance) targets this surface.
+
+The **Racket core + S-expr surface** (`core/betlang.rkt`, `lib/`, `repl/shell.rkt`,
+`tests/basics.rkt`, and the `conformance/*.bet` S-expr corpus) is reclassified as
+**legacy / reference — frozen, NOT deleted**. It remains as historical record and an
+executable second opinion; it is not built upon and is not authoritative.
+
+== Why
+
+* The Rust toolchain holds ~17k LOC of real machinery; the Lean proof models the
+  ML/Rust core; the entire 2026-06-15 architecture pass (bet:Dist T, the unified
+  `bet_rt::Value` runtime, World-B native/Cranelift, the inference seams) lives there.
+* The prior "Racket is authoritative / Rust is optional" framing was an *authority
+  inversion* — the documented authority pointed at a 163-LOC prototype while the real
+  language lived in the "optional" toolchain. This decision corrects that.
+* `racket` is not part of the build/runtime; keeping it authoritative blocked a
+  coherent core.
+
+== Consequences
+
+* Docs reframed to match: `CLAUDE.md`, `Justfile` (CORE OPERATIONS header + `status`
+  recipe), `RSR_COMPLIANCE.adoc` (Primary Language → Rust, Tier 1).
+* `AUTHORITY_STACK.mustfile-nickel.scm` is unchanged — it governs the *operational
+  interface* (just/must/nickel/podman), which is language-agnostic and still holds.
+* L6 will rebuild the conformance corpus in the ML surface; the S-expr corpus stays
+  as frozen reference.
+* The Racket side is *frozen, not removed* (per the estate "never delete by
+  access-recency / foundational work is cold" rule).
