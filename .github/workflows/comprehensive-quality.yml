@@ -17,7 +17,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v4
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v4
       - name: Check test coverage
         run: |
           echo "Checking for test files..."
@@ -37,9 +37,9 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v4
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v4
       - name: Secret scanning
-        uses: trufflesecurity/trufflehog@d411fff7b8879a62509f3fa98c07f247ac089a51 # v3.95.5
+        uses: trufflesecurity/trufflehog@30d5bb91af1a771378349dbbb0c82129392acf70 # v3.95.6
         continue-on-error: true
       - name: Dependency vulnerabilities
         run: |
@@ -58,7 +58,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v4
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v4
       - name: Check API specs
         run: |
           if [ -f "openapi.yaml" ] || [ -f "openapi.json" ]; then
@@ -76,7 +76,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v4
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v4
       - name: Check for validation patterns
         run: |
           VALIDATION=$(grep -rE "validate|sanitize|Schema|Validator" --include="*.rs" --include="*.res" --include="*.ex" . 2>/dev/null | wc -l || echo "0")
@@ -91,7 +91,7 @@ jobs:
       contents: read
       attestations: write
     steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v4
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v4
       - name: Generate SBOM
         run: |
           echo "SBOM generation would run here"
@@ -108,7 +108,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v4
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v4
       - name: Check SPARK proofs
         run: |
           if find . -name "*.ads" | grep -q .; then
@@ -125,7 +125,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v4
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v4
       - name: Check TODOs and FIXMEs
         run: |
           echo "=== Incomplete items ==="
@@ -139,7 +139,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v4
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v4
       - name: Check for benchmarks
         run: |
           BENCHES=$(find . -name "*bench*" -o -name "*perf*" | wc -l)
@@ -157,7 +157,7 @@ jobs:
     timeout-minutes: 30
     if: hashFiles('**/*.html') != ''
     steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v4
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v4
       - name: HTML accessibility check
         run: |
           echo "Checking for a11y attributes..."
@@ -172,7 +172,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v4
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v4
       - name: Check license files
         run: |
           if [ -f "LICENSE" ] || [ -f "LICENSE.txt" ] || [ -f "LICENSE.md" ]; then
@@ -191,7 +191,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v4
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v4
       - name: Check docs completeness
         run: |
           DOCS=""
