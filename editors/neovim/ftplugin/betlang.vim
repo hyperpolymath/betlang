@@ -1,4 +1,4 @@
-" SPDX-License-Identifier: MIT OR Apache-2.0
+" SPDX-License-Identifier: MPL-2.0 OR Apache-2.0
 " Filetype plugin for Betlang
 
 if exists("b:did_ftplugin")

@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: MIT OR Apache-2.0
+// SPDX-License-Identifier: MPL-2.0 OR Apache-2.0
 //// JSON-RPC 2.0 implementation for LSP
 
 import gleam/dynamic.{type Dynamic}
