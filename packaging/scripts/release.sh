@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# SPDX-License-Identifier: MIT OR Apache-2.0
+# SPDX-License-Identifier: MPL-2.0 OR Apache-2.0
 # Create a release with all platform binaries
 
 set -euo pipefail

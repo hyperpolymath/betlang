@@ -1,5 +1,5 @@
 #!/bin/bash
-# SPDX-License-Identifier: MIT OR Apache-2.0
+# SPDX-License-Identifier: MPL-2.0 OR Apache-2.0
 # Build script for Betlang containers
 #
 # Prefers nerdctl, falls back to podman

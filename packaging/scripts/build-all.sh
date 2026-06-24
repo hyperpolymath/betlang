@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# SPDX-License-Identifier: MIT OR Apache-2.0
+# SPDX-License-Identifier: MPL-2.0 OR Apache-2.0
 # Build all betlang packages
 
 set -euo pipefail
@@ -181,7 +181,7 @@ build_homebrew() {
     info "Building Homebrew formula..."
 
     cat > "$PROJECT_ROOT/packaging/homebrew/betlang.rb" << 'EOF'
-# SPDX-License-Identifier: MIT OR Apache-2.0
+# SPDX-License-Identifier: MPL-2.0 OR Apache-2.0
 class Betlang < Formula
   desc "Ternary probabilistic programming language"
   homepage "https://github.com/hyperpolymath/betlang"
@@ -229,7 +229,7 @@ build_aur() {
     info "Building AUR PKGBUILD..."
 
     cat > "$PROJECT_ROOT/packaging/aur/PKGBUILD" << 'EOF'
-# SPDX-License-Identifier: MIT OR Apache-2.0
+# SPDX-License-Identifier: MPL-2.0 OR Apache-2.0
 # Maintainer: Hyperpolymath <support@hyperpolymath.com>
 
 pkgname=betlang
@@ -312,7 +312,7 @@ build_flatpak() {
     info "Building Flatpak manifest..."
 
     cat > "$PROJECT_ROOT/packaging/flatpak/com.hyperpolymath.betlang.yml" << 'EOF'
-# SPDX-License-Identifier: MIT OR Apache-2.0
+# SPDX-License-Identifier: MPL-2.0 OR Apache-2.0
 app-id: com.hyperpolymath.betlang
 runtime: org.freedesktop.Platform
 runtime-version: '23.08'
@@ -400,7 +400,7 @@ EOF
     # Chocolatey nuspec
     cat > "$PROJECT_ROOT/packaging/windows/betlang.nuspec" << 'EOF'
 <?xml version="1.0" encoding="utf-8"?>
-<!-- SPDX-License-Identifier: MIT OR Apache-2.0 -->
+<!-- SPDX-License-Identifier: MPL-2.0 OR Apache-2.0 -->
 <package xmlns="http://schemas.microsoft.com/packaging/2015/06/nuspec.xsd">
   <metadata>
     <id>betlang</id>
@@ -424,7 +424,7 @@ EOF
     # winget manifest
     mkdir -p "$PROJECT_ROOT/packaging/windows/winget"
     cat > "$PROJECT_ROOT/packaging/windows/winget/Hyperpolymath.Betlang.yaml" << 'EOF'
-# SPDX-License-Identifier: MIT OR Apache-2.0
+# SPDX-License-Identifier: MPL-2.0 OR Apache-2.0
 PackageIdentifier: Hyperpolymath.Betlang
 PackageVersion: 0.1.0
 PackageLocale: en-US
