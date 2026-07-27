@@ -153,15 +153,21 @@ jobs:
   accessibility:
     runs-on: ubuntu-latest
     timeout-minutes: 30
-    if: hashFiles('**/*.html') != ''
+    # NOTE: `hashFiles()` is NOT available in a job-level `if:` — it is only
+    # valid in step-level contexts, and Actions rejects the WHOLE FILE at parse
+    # time if it appears here (zero jobs, no check run). It would also be
+    # meaningless at job level, since nothing is checked out yet. The guard
+    # therefore lives on the steps below, after checkout.
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v4
       - name: HTML accessibility check
+        if: hashFiles('**/*.html') != ''
         run: |
           echo "Checking for a11y attributes..."
           A11Y=$(grep -rE 'aria-|role=|alt=' --include="*.html" . 2>/dev/null | wc -l || echo "0")
           echo "A11y attributes found: $A11Y"
       - name: Lighthouse (if web project)
+        if: hashFiles('**/*.html') != ''
         run: |
           echo "Lighthouse would run on deployed URL"
 
