@@ -47,8 +47,16 @@ jobs:
           if [ -f "requirements.txt" ]; then
             pip install safety && safety check -r requirements.txt || true
           fi
+      # NB: the previous pin (73f3246...) did NOT EXIST. The repo is alive, so
+      # this was an invented SHA, not a dead action. An unresolvable `uses:` ref
+      # fails during action RESOLUTION, before the step runs, so the
+      # `continue-on-error: true` below could not and did not rescue it.
+      # SHA below verified against the tags API: v1 = 713efdd...
+      # NOTE: this action is deprecated (last push 2024-01-22) and the step is
+      # non-blocking, so SAST here is advisory only — worth replacing with a
+      # maintained scanner.
       - name: SAST scan
-        uses: returntocorp/semgrep-action@73f32468d6f519542a17585b5463b2f542475476 # v1.11.0
+        uses: returntocorp/semgrep-action@713efdd345f3035192eaa63f56867b88e63e4e5d # v1
         continue-on-error: true
 
   # INTEROPERABILITY - API and format compatibility
@@ -181,7 +189,15 @@ jobs:
         run: |
           if [ -f "LICENSE" ] || [ -f "LICENSE.txt" ] || [ -f "LICENSE.md" ]; then
             echo "✅ License file present"
-            head -5 LICENSE* 2>/dev/null
+            # NB: `head -5 LICENSE*` fails the step under `bash -e`, because the
+            # glob also matches the LICENSES/ DIRECTORY and `head` exits 1 on a
+            # directory. `2>/dev/null` hides the message but NOT the exit code.
+            # Iterate and skip non-files instead.
+            # Use `if`, not `[ -f "$f" ] && head ...`: as the LAST statement in
+            # the loop a false test makes the step exit 1 under `bash -e`.
+            for f in LICENSE LICENSE.txt LICENSE.md; do
+              if [ -f "$f" ]; then head -5 "$f"; fi
+            done
           else
             echo "::warning::No LICENSE file"
           fi
