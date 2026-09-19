@@ -250,7 +250,7 @@ julia> bet("a", "b", "c")
 
 === Contributing
 
-See `+../CONTRIBUTING.adoc+` for contribution guidelines.
+See `+../.github/CONTRIBUTING.md+` for contribution guidelines.
 
 === License
 
