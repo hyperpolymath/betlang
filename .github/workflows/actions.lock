@@ -127,7 +127,7 @@ dependencies:
         repo_id: 219137853
     'dtolnay/rust-toolchain@stable':
         ref: 'stable'
-        commit: 'sha1-4cda84d5c5c54efe2404f9d843567869ab1699d4'
+        commit: 'sha1-6bed0761d98439e5a578e2877258200ad565ba87'
         owner_id: 1940490
         repo_id: 260749683
     'erlef/setup-beam@v1.24.1':
