@@ -11,6 +11,7 @@ permissions: read-all
 jobs:
   analysis:
     permissions:
+      actions: read
       # A job-level `permissions:` block REPLACES the default grant, so
       # `contents` must be listed explicitly: the reusable declares
       # `permissions: contents: read` at workflow_call level, and a reusable
