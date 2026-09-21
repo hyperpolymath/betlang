@@ -1,0 +1,189 @@
+{
+  "title": "betlang",
+  "output": "_site",
+  "index_page": "index.html",
+  "copy": [
+    {
+      "from": "www/public",
+      "to": ".",
+      "required": false
+    },
+    {
+      "from": "www/.well-known",
+      "to": ".well-known",
+      "required": false
+    },
+    {
+      "from": "LICENSES",
+      "to": "LICENSES",
+      "required": false
+    },
+    {
+      "from": "audits",
+      "to": "audits",
+      "required": false
+    },
+    {
+      "from": "bench",
+      "to": "bench",
+      "required": false
+    },
+    {
+      "from": "benchmarks",
+      "to": "benchmarks",
+      "required": false
+    },
+    {
+      "from": "bindings",
+      "to": "bindings",
+      "required": false
+    },
+    {
+      "from": "compiler",
+      "to": "compiler",
+      "required": false
+    },
+    {
+      "from": "conformance",
+      "to": "conformance",
+      "required": false
+    },
+    {
+      "from": "containers",
+      "to": "containers",
+      "required": false
+    },
+    {
+      "from": "contractiles",
+      "to": "contractiles",
+      "required": false
+    },
+    {
+      "from": "core",
+      "to": "core",
+      "required": false
+    },
+    {
+      "from": "docs",
+      "to": "docs",
+      "required": false
+    },
+    {
+      "from": "editors",
+      "to": "editors",
+      "required": false
+    },
+    {
+      "from": "examples",
+      "to": "examples",
+      "required": false
+    },
+    {
+      "from": "fuzz",
+      "to": "fuzz",
+      "required": false
+    },
+    {
+      "from": "homepage",
+      "to": "homepage",
+      "required": false
+    },
+    {
+      "from": "hooks",
+      "to": "hooks",
+      "required": false
+    },
+    {
+      "from": "julia-backend",
+      "to": "julia-backend",
+      "required": false
+    },
+    {
+      "from": "lib",
+      "to": "lib",
+      "required": false
+    },
+    {
+      "from": "lsp",
+      "to": "lsp",
+      "required": false
+    },
+    {
+      "from": "packaging",
+      "to": "packaging",
+      "required": false
+    },
+    {
+      "from": "playground",
+      "to": "playground",
+      "required": false
+    },
+    {
+      "from": "proofs",
+      "to": "proofs",
+      "required": false
+    },
+    {
+      "from": "repl",
+      "to": "repl",
+      "required": false
+    },
+    {
+      "from": "runtime",
+      "to": "runtime",
+      "required": false
+    },
+    {
+      "from": "site",
+      "to": "site",
+      "required": false
+    },
+    {
+      "from": "spec",
+      "to": "spec",
+      "required": false
+    },
+    {
+      "from": "tools",
+      "to": "tools",
+      "required": false
+    },
+    {
+      "from": "ui",
+      "to": "ui",
+      "required": false
+    },
+    {
+      "from": "verification",
+      "to": "verification",
+      "required": false
+    },
+    {
+      "from": "wiki",
+      "to": "wiki",
+      "required": false
+    },
+    {
+      "from": "README.adoc",
+      "to": "README.adoc",
+      "required": false
+    }
+  ],
+  "listing": [
+    {
+      "root": "docs",
+      "label": "Documentation",
+      "match": [
+        ".adoc",
+        ".md"
+      ],
+      "link_target": "source"
+    }
+  ],
+  "nojekyll": true,
+  "notes": [
+    "Derived by scripts/estate-ruby-exit.mjs — review before merge.",
+    "index_page is hub/index.html when the repo publishes index.json: GitHub Pages",
+    "serves index.json for '/' if no index.html exists, and some consumers rely on it."
+  ]
+}
