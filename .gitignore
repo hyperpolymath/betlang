@@ -50,3 +50,6 @@ dist/
 lake-packages/
 lakefile.olean
 lake-manifest.json
+
+# Pages output
+/_site/
