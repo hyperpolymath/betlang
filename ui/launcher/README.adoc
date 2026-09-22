@@ -11,7 +11,7 @@
 
 This directory contains the **standards-compliant launcher** for the Betlang Playground, following the specification at:
 
-* https://github.com/hyperpolymath/standards/tree/main/launcher/launcher-standard.a2ml
+* https://github.com/hyperpolymath/standards/blob/main/launcher/launcher-standard_praxis.deed
 * https://github.com/hyperpolymath/standards/blob/main/launcher/README.adoc
 
 == Launcher Standard Compliance
@@ -396,4 +396,4 @@ ls ~/.local/share/applications/betlang-playground.desktop 2>&1 || echo "Removed"
 * link:../README.adoc[Betlang UI README]
 * link:../../README.adoc[Main Betlang README]
 * https://github.com/hyperpolymath/standards/tree/main/launcher/[Launcher Standard]
-* https://github.com/hyperpolymath/standards/blob/main/launcher/launcher-standard.a2ml[Launcher Standard (A2ML)]
+* https://github.com/hyperpolymath/standards/blob/main/launcher/launcher-standard_praxis.deed[Launcher Standard (DEED)]

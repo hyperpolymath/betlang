@@ -1,7 +1,7 @@
 #!/bin/bash
 # SPDX-License-Identifier: MPL-2.0
 # keepopen.sh - Fallback ladder wrapper for Betlang Playground
-# Compliant with: https://github.com/hyperpolymath/standards/tree/main/launcher/launcher-standard.a2ml
+# Compliant with: https://github.com/hyperpolymath/standards/blob/main/launcher/launcher-standard_praxis.deed
 
 # Usage: keepopen.sh APP_NAME REPO_DIR "GUI_CMD" "TUI_CMD" [LOG_FILE]
 #
