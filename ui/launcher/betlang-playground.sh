@@ -1,7 +1,7 @@
 #!/bin/bash
 # SPDX-License-Identifier: MPL-2.0
 # Betlang Playground Launcher
-# Compliant with: https://github.com/hyperpolymath/standards/tree/main/launcher/launcher-standard.a2ml
+# Compliant with: https://github.com/hyperpolymath/standards/blob/main/launcher/launcher-standard_praxis.deed
 
 # This script is the primary entry point for the Betlang Playground
 # It implements the launcher standard's required modes and fallback ladder
@@ -26,7 +26,7 @@ GUI_CMD="python3 -m http.server 3000"
 TUI_CMD="python3 -m http.server 3000"
 LOG_FILE="/tmp/${APP_NAME}.log"
 
-# Required modes per launcher-standard.a2ml
+# Required modes per launcher-standard_praxis.deed
 MODES=("--start" "--stop" "--status" "--auto" "--browser" "--integ" "--disinteg" "--help" "--debug" "--logs" "--tail")
 
 # ============================================================================
