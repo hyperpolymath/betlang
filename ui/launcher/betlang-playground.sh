@@ -24,7 +24,12 @@ STANDARDS_COMPLIANCE="launcher-standard-0.2.0"
 # Use Python's simple HTTP server, falling back to PHP, then Deno
 GUI_CMD="python3 -m http.server 3000"
 TUI_CMD="python3 -m http.server 3000"
-LOG_FILE="/tmp/${APP_NAME}.log"
+# CWE-377: a predictable /tmp log path lets another local user pre-create or
+# symlink the file. Durable + re-findable (not scratch): --logs/--tail in a
+# separate invocation must find what --start wrote.
+LOG_FILE="${XDG_STATE_HOME:-$HOME/.local/state}/launch-scaffolder/${APP_NAME}/server.log"
+mkdir -p "$(dirname "$LOG_FILE")"
+chmod 0700 "$(dirname "$LOG_FILE")"
 
 # Required modes per launcher-standard_praxis.deed
 MODES=("--start" "--stop" "--status" "--auto" "--browser" "--integ" "--disinteg" "--help" "--debug" "--logs" "--tail")
@@ -110,7 +115,7 @@ mode_start() {
         "$PROJECT_ROOT/public" \
         "cd $PROJECT_ROOT/public && $GUI_CMD" \
         "cd $PROJECT_ROOT/public && $TUI_CMD" \
-        "/tmp/${APP_NAME}.log"
+        "$LOG_FILE"
 }
 
 # ============================================================================
