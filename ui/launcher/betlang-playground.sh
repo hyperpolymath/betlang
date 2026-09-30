@@ -97,6 +97,11 @@ mode_help() {
 # Mode: --start
 # ============================================================================
 
+# Start the playground through keepopen.sh's GUI/TUI/shell fallback ladder,
+# passing the public directory and configured LOG_FILE.
+# Exits with status 1 if pgrep finds a command line matching "http.server".
+# Replaces the current process; the wrapper determines the eventual exit status.
+# Failure to execute the wrapper terminates the launcher.
 mode_start() {
     local port="${BETLANG_PORT:-3000}"
     
