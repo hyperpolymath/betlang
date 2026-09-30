@@ -28,7 +28,10 @@ TUI_CMD="${4:-"echo TUI mode not configured"}"
 # path a caller's --logs/--tail can find.
 LOG_FILE="${5:-${XDG_STATE_HOME:-$HOME/.local/state}/launch-scaffolder/${APP_NAME}/server.log}"
 mkdir -p "$(dirname "$LOG_FILE")"
-chmod 0700 "$(dirname "$LOG_FILE")"
+# Only restrict permissions on the default application log directory.
+if [ -z "${5:-}" ]; then
+    chmod 0700 "$(dirname "$LOG_FILE")"
+fi
 
 # Banner colors per stage
 GUI_COLOR="yellow"
@@ -172,7 +175,7 @@ log "Repo directory: $REPO_DIR"
 log "Log file: $LOG_FILE"
 log "========================================"
 
-# Log directory already created (mode 0700) alongside the LOG_FILE default above.
+# Log directory already created during configuration above.
 
 # Write initial marker
 log "Launch attempt started at $(date)"
