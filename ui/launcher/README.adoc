@@ -109,7 +109,7 @@ keepopen.sh APP_NAME REPO_DIR "GUI_CMD" "TUI_CMD" [LOG_FILE]
 keepopen.sh betlang-playground /opt/betlang/ui \
     "deno task dev" \
     "deno task dev --no-browser" \
-    /tmp/betlang-playground.log
+    "${XDG_STATE_HOME:-$HOME/.local/state}/launch-scaffolder/betlang-playground/server.log"
 ----
 
 == Usage

@@ -22,7 +22,16 @@ APP_NAME="${1:-betlang-playground}"
 REPO_DIR="${2:-"(unknown)"}"
 GUI_CMD="${3:-"echo GUI mode not configured"}"
 TUI_CMD="${4:-"echo TUI mode not configured"}"
-LOG_FILE="${5:-/tmp/${APP_NAME}.log}"
+# CWE-377: a predictable /tmp log path lets another local user pre-create or
+# symlink the file. Default matches betlang-playground.sh's LOG_FILE so a run
+# without an explicit 5th arg still lands under the same durable, re-findable
+# path a caller's --logs/--tail can find.
+LOG_FILE="${5:-${XDG_STATE_HOME:-$HOME/.local/state}/launch-scaffolder/${APP_NAME}/server.log}"
+mkdir -p "$(dirname "$LOG_FILE")"
+# Only restrict permissions on the default application log directory.
+if [ -z "${5:-}" ]; then
+    chmod 0700 "$(dirname "$LOG_FILE")"
+fi
 
 # Banner colors per stage
 GUI_COLOR="yellow"
@@ -166,8 +175,7 @@ log "Repo directory: $REPO_DIR"
 log "Log file: $LOG_FILE"
 log "========================================"
 
-# Ensure log directory exists
-mkdir -p "$(dirname "$LOG_FILE")" 2>/dev/null || true
+# Log directory already created during configuration above.
 
 # Write initial marker
 log "Launch attempt started at $(date)"
