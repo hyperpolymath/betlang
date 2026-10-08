@@ -3,228 +3,230 @@
 # This workflow is managed by gh actions-lock.
 # This workflow is managed by gh actions-lock.
 # SPDX-FileCopyrightText: 2026 Jonathan D.A. Jewell (hyperpolymath)
-name: Comprehensive Quality Gates
-permissions: read-all
-on:
-  push:
-    branches: [main, master]
-  pull_request:
-  schedule:
-    - cron: '0 5 * * 0'
-
-jobs:
-  # DEPENDABILITY - Stability and reliability
-  dependability:
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
-    steps:
-      - uses: actions/checkout@v7.0.1
-      - name: Check test coverage
-        run: |
-          echo "Checking for test files..."
-          TESTS=$(find . -name "*_test.*" -o -name "test_*" -o -name "*_spec.*" -o -name "*.test.*" | wc -l)
-          echo "Found $TESTS test files"
-          if [ "$TESTS" -lt 1 ]; then
-            echo "::warning::No test files detected"
-          fi
-      - name: Check error handling
-        run: |
-          # Check for proper error handling patterns
-          PANICS=$(grep -rE "panic!|unwrap\(\)|expect\(" --include="*.rs" . 2>/dev/null | wc -l || echo "0")
-          echo "Rust panics/unwraps: $PANICS"
-
-  # SECURITY - Multi-layer security scanning
-  security:
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
-    steps:
-      - uses: actions/checkout@v7.0.1
-      - name: Secret scanning
-        uses: trufflesecurity/trufflehog@v3.97.9
-        continue-on-error: true
-      - name: Dependency vulnerabilities
-        run: |
-          if [ -f "Cargo.toml" ]; then
-            cargo install cargo-audit && cargo audit || true
-          fi
-          if [ -f "requirements.txt" ]; then
-            pip install safety && safety check -r requirements.txt || true
-          fi
-      # NB: the previous pin (73f3246...) did NOT EXIST. The repo is alive, so
-      # this was an invented SHA, not a dead action. An unresolvable `uses:` ref
-      # fails during action RESOLUTION, before the step runs, so the
-      # `continue-on-error: true` below could not and did not rescue it.
-      # SHA below verified against the tags API: v1 = 713efdd...
-      # NOTE: this action is deprecated (last push 2024-01-22) and the step is
-      # non-blocking, so SAST here is advisory only — worth replacing with a
-      # maintained scanner.
-      - name: SAST scan
-        uses: returntocorp/semgrep-action@v1
-        continue-on-error: true
-
-  # INTEROPERABILITY - API and format compatibility
-  interoperability:
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
-    steps:
-      - uses: actions/checkout@v7.0.1
-      - name: Check API specs
-        run: |
-          if [ -f "openapi.yaml" ] || [ -f "openapi.json" ]; then
-            echo "✅ OpenAPI spec found"
-          fi
-          if [ -f "schema.graphql" ]; then
-            echo "✅ GraphQL schema found"
-          fi
-      - name: Validate JSON/YAML schemas
-        run: |
-          find . -name "*.json" -exec python3 -m json.tool {} \; 2>/dev/null | head -5 || true
-
-  # VALIDATION - Input/output validation
-  validation:
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
-    steps:
-      - uses: actions/checkout@v7.0.1
-      - name: Check for validation patterns
-        run: |
-          VALIDATION=$(grep -rE "validate|sanitize|Schema|Validator" --include="*.rs" --include="*.res" --include="*.ex" . 2>/dev/null | wc -l || echo "0")
-          echo "Validation patterns found: $VALIDATION"
-
-  # ATTESTATION - Supply chain integrity (SLSA)
-  attestation:
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
-    permissions:
-      id-token: write
-      contents: read
-      attestations: write
-    steps:
-      - uses: actions/checkout@v7.0.1
-      - name: Generate SBOM
-        run: |
-          echo "SBOM generation would run here"
-          # For Rust: cargo-sbom
-          # For Node: npm sbom
-      - name: Check signatures
-        run: |
-          if [ -f "CHECKSUMS.txt" ] || [ -f "SHA256SUMS" ]; then
-            echo "✅ Checksums file present"
-          fi
-
-  # VERIFICATION - Formal methods where applicable
-  verification:
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
-    steps:
-      - uses: actions/checkout@v7.0.1
-      - name: Check SPARK proofs
-        run: |
-          if find . -name "*.ads" | grep -q .; then
-            echo "Ada/SPARK files found - formal verification applicable"
-          fi
-      - name: Type coverage
-        run: |
-          if [ -f "affinescript.json" ]; then
-            echo "AffineScript provides 100% type coverage"
-          fi
-
-  # FUNCTIONALITY - Feature completeness
-  functionality:
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
-    steps:
-      - uses: actions/checkout@v7.0.1
-      - name: Check TODOs and FIXMEs
-        run: |
-          echo "=== Incomplete items ==="
-          grep -rn "TODO\|FIXME\|UNIMPLEMENTED\|unimplemented!" . 2>/dev/null | head -20 || echo "None"
-      - name: Check deprecated usage
-        run: |
-          grep -rn "deprecated\|DEPRECATED" . 2>/dev/null | head -10 || echo "No deprecations"
-
-  # PERFORMANCE - Benchmarks and profiling
-  performance:
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
-    steps:
-      - uses: actions/checkout@v7.0.1
-      - name: Check for benchmarks
-        run: |
-          BENCHES=$(find . -name "*bench*" -o -name "*perf*" | wc -l)
-          echo "Benchmark files: $BENCHES"
-      - name: Binary size check (Rust)
-        run: |
-          if [ -f "Cargo.toml" ]; then
-            cargo build --release 2>/dev/null || true
-            find target/release -maxdepth 1 -type f -executable -exec ls -lh {} \; 2>/dev/null || true
-          fi
-
-  # ACCESSIBILITY - A11y compliance
-  accessibility:
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
-    # NOTE: `hashFiles()` is NOT available in a job-level `if:` — it is only
-    # valid in step-level contexts, and Actions rejects the WHOLE FILE at parse
-    # time if it appears here (zero jobs, no check run). It would also be
-    # meaningless at job level, since nothing is checked out yet. The guard
-    # therefore lives on the steps below, after checkout.
-    steps:
-      - uses: actions/checkout@v7.0.1
-      - name: HTML accessibility check
-        if: hashFiles('**/*.html') != ''
-        run: |
-          echo "Checking for a11y attributes..."
-          A11Y=$(grep -rE 'aria-|role=|alt=' --include="*.html" . 2>/dev/null | wc -l || echo "0")
-          echo "A11y attributes found: $A11Y"
-      - name: Lighthouse (if web project)
-        if: hashFiles('**/*.html') != ''
-        run: |
-          echo "Lighthouse would run on deployed URL"
-
-  # LICENSE COMPLIANCE
-  license:
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
-    steps:
-      - uses: actions/checkout@v7.0.1
-      - name: Check license files
-        run: |
-          if [ -f "LICENSE" ] || [ -f "LICENSE.txt" ] || [ -f "LICENSE.md" ]; then
-            echo "✅ License file present"
-            # NB: `head -5 LICENSE*` fails the step under `bash -e`, because the
-            # glob also matches the LICENSES/ DIRECTORY and `head` exits 1 on a
-            # directory. `2>/dev/null` hides the message but NOT the exit code.
-            # Iterate and skip non-files instead.
-            # Use `if`, not `[ -f "$f" ] && head ...`: as the LAST statement in
-            # the loop a false test makes the step exit 1 under `bash -e`.
-            for f in LICENSE LICENSE.txt LICENSE.md; do
-              if [ -f "$f" ]; then head -5 "$f"; fi
-            done
-          else
-            echo "::warning::No LICENSE file"
-          fi
-      - name: Check SPDX headers
-        run: |
-          SPDX=$(grep -rE "SPDX-License-Identifier" . 2>/dev/null | wc -l || echo "0")
-          echo "Files with SPDX headers: $SPDX"
-
-  # DOCUMENTATION QUALITY
-  documentation:
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
-    steps:
-      - uses: actions/checkout@v7.0.1
-      - name: Check docs completeness
-        run: |
-          DOCS=""
-          [ -f "README.md" ] || [ -f "README.adoc" ] && DOCS="$DOCS README"
-          [ -f "CONTRIBUTING.md" ] || [ -f "CONTRIBUTING.adoc" ] && DOCS="$DOCS CONTRIBUTING"
-          [ -f "CHANGELOG.md" ] && DOCS="$DOCS CHANGELOG"
-          [ -f "SECURITY.md" ] && DOCS="$DOCS SECURITY"
-          [ -d "docs" ] && DOCS="$DOCS docs/"
-          echo "Documentation:$DOCS"
-      - name: Check code comments
-        run: |
-          COMMENTS=$(grep -rE "^[[:space:]]*(//|#|/\*)" --include="*.rs" --include="*.res" --include="*.py" . 2>/dev/null | wc -l || echo "0")
-          echo "Comment lines: $COMMENTS"
+{
+  name: "Comprehensive Quality Gates",
+  permissions: "read-all",
+  on: {
+    push: {
+      branches: [
+        "main",
+        "master",
+      ],
+    },
+    pull_request: null,
+    schedule: [
+      {
+        cron: "0 5 * * 0",
+      },
+    ],
+  },
+  jobs: {
+    # DEPENDABILITY - Stability and reliability
+    dependability: {
+      runs-on: "ubuntu-latest",
+      timeout-minutes: 30,
+      steps: [
+        {
+          uses: "actions/checkout@v7.0.1",
+        },
+        {
+          name: "Check test coverage",
+          run: "echo \"Checking for test files...\"\nTESTS=$(find . -name \"*_test.*\" -o -name \"test_*\" -o -name \"*_spec.*\" -o -name \"*.test.*\" | wc -l)\necho \"Found $TESTS test files\"\nif [ \"$TESTS\" -lt 1 ]; then\n  echo \"::warning::No test files detected\"\nfi\n",
+        },
+        {
+          name: "Check error handling",
+          run: "# Check for proper error handling patterns\nPANICS=$(grep -rE \"panic!|unwrap\\(\\)|expect\\(\" --include=\"*.rs\" . 2>/dev/null | wc -l || echo \"0\")\necho \"Rust panics/unwraps: $PANICS\"\n",
+        },
+      ],
+    },
+    # SECURITY - Multi-layer security scanning
+    security: {
+      runs-on: "ubuntu-latest",
+      timeout-minutes: 30,
+      steps: [
+        {
+          uses: "actions/checkout@v7.0.1",
+        },
+        {
+          name: "Secret scanning",
+          uses: "trufflesecurity/trufflehog@v3.97.9",
+          continue-on-error: true,
+        },
+        {
+          name: "Dependency vulnerabilities",
+          run: "if [ -f \"Cargo.toml\" ]; then\n  cargo install cargo-audit && cargo audit || true\nfi\nif [ -f \"requirements.txt\" ]; then\n  pip install safety && safety check -r requirements.txt || true\nfi\n",
+        },
+      ],
+    },
+    # INTEROPERABILITY - API and format compatibility
+    interoperability: {
+      runs-on: "ubuntu-latest",
+      timeout-minutes: 30,
+      steps: [
+        {
+          uses: "actions/checkout@v7.0.1",
+        },
+        {
+          name: "Check API specs",
+          run: "if [ -f \"openapi.yaml\" ] || [ -f \"openapi.json\" ]; then\n  echo \"✅ OpenAPI spec found\"\nfi\nif [ -f \"schema.graphql\" ]; then\n  echo \"✅ GraphQL schema found\"\nfi\n",
+        },
+        {
+          name: "Validate JSON/YAML schemas",
+          run: "find . -name \"*.json\" -exec python3 -m json.tool {} \\; 2>/dev/null | head -5 || true\n",
+        },
+      ],
+    },
+    # VALIDATION - Input/output validation
+    validation: {
+      runs-on: "ubuntu-latest",
+      timeout-minutes: 30,
+      steps: [
+        {
+          uses: "actions/checkout@v7.0.1",
+        },
+        {
+          name: "Check for validation patterns",
+          run: "VALIDATION=$(grep -rE \"validate|sanitize|Schema|Validator\" --include=\"*.rs\" --include=\"*.res\" --include=\"*.ex\" . 2>/dev/null | wc -l || echo \"0\")\necho \"Validation patterns found: $VALIDATION\"\n",
+        },
+      ],
+    },
+    # ATTESTATION - Supply chain integrity (SLSA)
+    attestation: {
+      runs-on: "ubuntu-latest",
+      timeout-minutes: 30,
+      permissions: {
+        id-token: "write",
+        contents: "read",
+        attestations: "write",
+      },
+      steps: [
+        {
+          uses: "actions/checkout@v7.0.1",
+        },
+        {
+          name: "Generate SBOM",
+          run: "echo \"SBOM generation would run here\"\n# For Rust: cargo-sbom\n# For Node: npm sbom\n",
+        },
+        {
+          name: "Check signatures",
+          run: "if [ -f \"CHECKSUMS.txt\" ] || [ -f \"SHA256SUMS\" ]; then\n  echo \"✅ Checksums file present\"\nfi\n",
+        },
+      ],
+    },
+    # VERIFICATION - Formal methods where applicable
+    verification: {
+      runs-on: "ubuntu-latest",
+      timeout-minutes: 30,
+      steps: [
+        {
+          uses: "actions/checkout@v7.0.1",
+        },
+        {
+          name: "Check SPARK proofs",
+          run: "if find . -name \"*.ads\" | grep -q .; then\n  echo \"Ada/SPARK files found - formal verification applicable\"\nfi\n",
+        },
+        {
+          name: "Type coverage",
+          run: "if [ -f \"affinescript.json\" ]; then\n  echo \"AffineScript provides 100% type coverage\"\nfi\n",
+        },
+      ],
+    },
+    # FUNCTIONALITY - Feature completeness
+    functionality: {
+      runs-on: "ubuntu-latest",
+      timeout-minutes: 30,
+      steps: [
+        {
+          uses: "actions/checkout@v7.0.1",
+        },
+        {
+          name: "Check TODOs and FIXMEs",
+          run: "echo \"=== Incomplete items ===\"\ngrep -rn \"TODO\\|FIXME\\|UNIMPLEMENTED\\|unimplemented!\" . 2>/dev/null | head -20 || echo \"None\"\n",
+        },
+        {
+          name: "Check deprecated usage",
+          run: "grep -rn \"deprecated\\|DEPRECATED\" . 2>/dev/null | head -10 || echo \"No deprecations\"\n",
+        },
+      ],
+    },
+    # PERFORMANCE - Benchmarks and profiling
+    performance: {
+      runs-on: "ubuntu-latest",
+      timeout-minutes: 30,
+      steps: [
+        {
+          uses: "actions/checkout@v7.0.1",
+        },
+        {
+          name: "Check for benchmarks",
+          run: "BENCHES=$(find . -name \"*bench*\" -o -name \"*perf*\" | wc -l)\necho \"Benchmark files: $BENCHES\"\n",
+        },
+        {
+          name: "Binary size check (Rust)",
+          run: "if [ -f \"Cargo.toml\" ]; then\n  cargo build --release 2>/dev/null || true\n  find target/release -maxdepth 1 -type f -executable -exec ls -lh {} \\; 2>/dev/null || true\nfi\n",
+        },
+      ],
+    },
+    # ACCESSIBILITY - A11y compliance
+    accessibility: {
+      runs-on: "ubuntu-latest",
+      timeout-minutes: 30,
+      # NOTE: `hashFiles()` is NOT available in a job-level `if:` — it is only
+      # valid in step-level contexts, and Actions rejects the WHOLE FILE at parse
+      # time if it appears here (zero jobs, no check run). It would also be
+      # meaningless at job level, since nothing is checked out yet. The guard
+      # therefore lives on the steps below, after checkout.
+      steps: [
+        {
+          uses: "actions/checkout@v7.0.1",
+        },
+        {
+          name: "HTML accessibility check",
+          if: "hashFiles('**/*.html') != ''",
+          run: "echo \"Checking for a11y attributes...\"\nA11Y=$(grep -rE 'aria-|role=|alt=' --include=\"*.html\" . 2>/dev/null | wc -l || echo \"0\")\necho \"A11y attributes found: $A11Y\"\n",
+        },
+        {
+          name: "Lighthouse (if web project)",
+          if: "hashFiles('**/*.html') != ''",
+          run: "echo \"Lighthouse would run on deployed URL\"\n",
+        },
+      ],
+    },
+    # LICENSE COMPLIANCE
+    license: {
+      runs-on: "ubuntu-latest",
+      timeout-minutes: 30,
+      steps: [
+        {
+          uses: "actions/checkout@v7.0.1",
+        },
+        {
+          name: "Check license files",
+          run: "if [ -f \"LICENSE\" ] || [ -f \"LICENSE.txt\" ] || [ -f \"LICENSE.md\" ]; then\n  echo \"✅ License file present\"\n  # NB: `head -5 LICENSE*` fails the step under `bash -e`, because the\n  # glob also matches the LICENSES/ DIRECTORY and `head` exits 1 on a\n  # directory. `2>/dev/null` hides the message but NOT the exit code.\n  # Iterate and skip non-files instead.\n  # Use `if`, not `[ -f \"$f\" ] && head ...`: as the LAST statement in\n  # the loop a false test makes the step exit 1 under `bash -e`.\n  for f in LICENSE LICENSE.txt LICENSE.md; do\n    if [ -f \"$f\" ]; then head -5 \"$f\"; fi\n  done\nelse\n  echo \"::warning::No LICENSE file\"\nfi\n",
+        },
+        {
+          name: "Check SPDX headers",
+          run: "SPDX=$(grep -rE \"SPDX-License-Identifier\" . 2>/dev/null | wc -l || echo \"0\")\necho \"Files with SPDX headers: $SPDX\"\n",
+        },
+      ],
+    },
+    # DOCUMENTATION QUALITY
+    documentation: {
+      runs-on: "ubuntu-latest",
+      timeout-minutes: 30,
+      steps: [
+        {
+          uses: "actions/checkout@v7.0.1",
+        },
+        {
+          name: "Check docs completeness",
+          run: "DOCS=\"\"\n[ -f \"README.md\" ] || [ -f \"README.adoc\" ] && DOCS=\"$DOCS README\"\n[ -f \"CONTRIBUTING.md\" ] || [ -f \"CONTRIBUTING.adoc\" ] && DOCS=\"$DOCS CONTRIBUTING\"\n[ -f \"CHANGELOG.md\" ] && DOCS=\"$DOCS CHANGELOG\"\n[ -f \"SECURITY.md\" ] && DOCS=\"$DOCS SECURITY\"\n[ -d \"docs\" ] && DOCS=\"$DOCS docs/\"\necho \"Documentation:$DOCS\"\n",
+        },
+        {
+          name: "Check code comments",
+          run: "COMMENTS=$(grep -rE \"^[[:space:]]*(//|#|/\\*)\" --include=\"*.rs\" --include=\"*.res\" --include=\"*.py\" . 2>/dev/null | wc -l || echo \"0\")\necho \"Comment lines: $COMMENTS\"\n",
+        },
+      ],
+    },
+  },
+}
