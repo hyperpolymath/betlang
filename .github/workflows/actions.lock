@@ -23,7 +23,7 @@ workflows:
         - 'github/codeql-action@9b3254085494b55a0f7c4c2b3d2d52cc712ce370'
     '.github/workflows/comprehensive-quality.yml':
         - 'actions/checkout@v7.0.1'
-        - 'trufflesecurity/trufflehog@v3.99.4'
+        - 'trufflesecurity/trufflehog@v3.99.7'
     '.github/workflows/governance.yml': []
     '.github/workflows/hypatia-scan.yml': []
     '.github/workflows/label-triage.yml': []
@@ -37,7 +37,7 @@ workflows:
     '.github/workflows/proofs.yml':
         - 'actions/checkout@v7.0.1'
     '.github/workflows/push-email-notify.yml':
-        - 'hyperpolymath/smtp-notify-action@v0.5.0'
+        - 'hyperpolymath/smtp-notify-action@v0.5.1'
     '.github/workflows/release.yml':
         - 'actions/attest-build-provenance@v4.2.2'
         - 'actions/checkout@v7.0.1'
@@ -139,9 +139,9 @@ dependencies:
         commit: 'sha1-0f8e8c99d88aeb3fbfd523f1ef2c6f762d10d64d'
         owner_id: 75048950
         repo_id: 623796603
-    'hyperpolymath/smtp-notify-action@v0.5.0':
-        ref: 'v0.5.0'
-        commit: 'sha1-c1c9fa07992a02c1fd3d67a0dc1b08cccb852aef'
+    'hyperpolymath/smtp-notify-action@v0.5.1':
+        ref: 'v0.5.1'
+        commit: 'sha1-e384daf6167a7a7567642d6a62060106244d2413'
         owner_id: 6759885
         repo_id: 1352485172
     'softprops/action-gh-release@v3.0.3':
@@ -149,8 +149,8 @@ dependencies:
         commit: 'sha1-efb35369e0ad2afab669f228072c1b0d510eae64'
         owner_id: 2242
         repo_id: 204253808
-    'trufflesecurity/trufflehog@v3.99.4':
-        ref: 'v3.99.4'
-        commit: 'sha1-c85580b712841eda4c53bc28fc6ace6100e8c16c'
+    'trufflesecurity/trufflehog@v3.99.7':
+        ref: 'v3.99.7'
+        commit: 'sha1-31ce31ee1abbcc7dc8eee5764c17121c3044c8b2'
         owner_id: 79229934
         repo_id: 77726177
