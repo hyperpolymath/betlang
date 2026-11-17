@@ -16,7 +16,7 @@ See `+docs/AFFINESCRIPT-ALIGNMENT.adoc+` for the phased plan and
 |*Total* |*15* |*5* |*0* |*0* |*10*
 |===
 
-*Overall*: 33% proven (5 / 15). Lean core metatheory mechanised and (as
+*Overall*: 5 of 15 proven. Lean core metatheory mechanised and (as
 of Phase 1) machine-checked in CI.
 
 === Proofs Done
