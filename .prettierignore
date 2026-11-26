@@ -2,3 +2,41 @@
 # Prettier must not reformat them.
 package.json
 pnpm-lock.yaml
+
+# No Prettier baseline yet: files below are not Prettier-formatted (or are stamped/generated).
+# Remove an entry once the file is formatted.
+.claude/CLAUDE.md
+.github/CONTRIBUTING.md
+.github/dependabot.yml
+.github/label-classifier.json
+.github/workflows/cargo-audit.yml
+.github/workflows/casket-pages.yml
+.github/workflows/cflite_batch.yml
+.github/workflows/cflite_pr.yml
+.github/workflows/codeql.yml
+.github/workflows/comprehensive-quality.yml
+.github/workflows/hypatia-scan.yml
+.github/workflows/labels.yml
+.github/workflows/proofs.yml
+.github/workflows/push-email-notify.yml
+.github/workflows/release.yml
+.github/workflows/scorecard.yml
+.github/workflows/test.yml
+.github/workflows/workflow-linter.yml
+CLAUDE.md
+codemeta.json
+editors/betlang.tmLanguage.json
+scripts/build-site.mjs
+site.json
+ui/public/app.js
+ui/public/index.html
+ui/public/styles.css
+wiki/Architecture.md
+wiki/Echo-Types.md
+wiki/Formal-Verification.md
+wiki/Home.md
+wiki/Number-Tower.md
+wiki/Roadmap.md
+wiki/Ternary-Semantics.md
+wiki/Type-System.md
+homepage/index.html
