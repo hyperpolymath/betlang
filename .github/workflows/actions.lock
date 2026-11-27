@@ -23,7 +23,7 @@ workflows:
         - 'github/codeql-action@33d7b85da1a04171e211befe2c739303b9a4c066'
     '.github/workflows/comprehensive-quality.yml':
         - 'actions/checkout@v7.0.1'
-        - 'trufflesecurity/trufflehog@v3.99.8'
+        - 'trufflesecurity/trufflehog@v3.99.9'
     '.github/workflows/governance.yml': []
     '.github/workflows/hypatia-scan.yml': []
     '.github/workflows/label-triage.yml': []
@@ -149,8 +149,8 @@ dependencies:
         commit: 'sha1-efb35369e0ad2afab669f228072c1b0d510eae64'
         owner_id: 2242
         repo_id: 204253808
-    'trufflesecurity/trufflehog@v3.99.8':
-        ref: 'v3.99.8'
-        commit: 'sha1-ea68ca03c865c5f324e86e849ced20ed3cf9dbbb'
+    'trufflesecurity/trufflehog@v3.99.9':
+        ref: 'v3.99.9'
+        commit: 'sha1-3bd2b5887eb0efb8fa18bfd1d296032924e4ffdc'
         owner_id: 79229934
         repo_id: 77726177
